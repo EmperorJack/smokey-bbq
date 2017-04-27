@@ -1,5 +1,4 @@
 #include <iostream>
-#include <math.h>
 
 #include <opengl.hpp>
 #include <shaderLoader.hpp>
@@ -51,7 +50,7 @@ int main(int argc, char **argv) {
     GLuint VertexArrayID;
     glGenVertexArrays(1, &VertexArrayID);
     glBindVertexArray(VertexArrayID);
-    
+
     int frameCount = 0;
     smokeSimulation = new SmokeSimulation(screenWidth);
 
