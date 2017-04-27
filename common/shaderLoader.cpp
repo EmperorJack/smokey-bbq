@@ -2,10 +2,8 @@
 #include <fstream>
 #include <vector>
 
-#define GLEW_STATIC
-#include <GL/glew.h>
-
-#include <shaderLoader.h>
+#include <opengl.hpp>
+#include <shaderLoader.hpp>
 
 GLuint loadShaders(const char * vertex_file_path,const char * fragment_file_path){
     // Create the shaders
