@@ -9,6 +9,20 @@ SmokeSimulation* smokeSimulation = nullptr;
 int screenWidth = 800;
 int screenHeight = 800;
 
+glm::vec2 mousePosition;
+
+// Mouse Position callback
+void mouseMovedCallback(GLFWwindow* win, double xPos, double yPos) {
+    mousePosition = glm::vec2(xPos, yPos);
+}
+
+// Keyboard callback
+void keyCallback(GLFWwindow *win, int key, int scancode, int action, int mods) {
+    if (key == ' ') {
+        smokeSimulation->setupVelocityField();
+    }
+}
+
 int main(int argc, char **argv) {
 
     // Initialise GLFW
@@ -43,6 +57,10 @@ int main(int argc, char **argv) {
     // Ensure we can capture the escape key being pressed below
     glfwSetInputMode(window, GLFW_STICKY_KEYS, GL_TRUE);
 
+    // Input callbacks
+    glfwSetCursorPosCallback(window, mouseMovedCallback);
+    glfwSetKeyCallback(window, keyCallback);
+
     // Create and compile our GLSL program from the shaders
     GLuint programID = loadShaders("resources/shaders/SimpleVertexShader.vs", "resources/shaders/SimpleFragmentShader.fs");
 
@@ -70,7 +88,7 @@ int main(int argc, char **argv) {
 
         glm::mat4 mvp = projection * view;
 
-        smokeSimulation->render(mvp);
+        smokeSimulation->render(mvp, mousePosition);
 
         // Swap buffers
         glfwSwapBuffers(window);
