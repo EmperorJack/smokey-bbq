@@ -1,6 +1,8 @@
 #version 330 core
-out vec3 color;
+out vec4 color;
+
+uniform vec4 fillColor = vec4(0.0, 0.0, 0.0, 0.0);
 
 void main() {
-  color = vec3(1, 1, 1);
+  color = fillColor;
 }

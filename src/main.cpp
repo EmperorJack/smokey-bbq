@@ -7,6 +7,9 @@
 
 SmokeSimulation* smokeSimulation = nullptr;
 
+int screenWidth = 800;
+int screenHeight = 800;
+
 int main(int argc, char **argv) {
 
     // Initialise GLFW
@@ -23,7 +26,7 @@ int main(int argc, char **argv) {
 
     // Open a window and create its OpenGL context
     GLFWwindow* window;
-    window = glfwCreateWindow( 1024, 768, "Window", NULL, NULL);
+    window = glfwCreateWindow(screenWidth, screenHeight, "Window", NULL, NULL);
     if( window == NULL ){
         fprintf( stderr, "Failed to open GLFW window. If you have an Intel GPU, they are not 3.3 compatible. Try the 2.1 version of the tutorials.\n" );
         glfwTerminate();
@@ -49,12 +52,27 @@ int main(int argc, char **argv) {
     glGenVertexArrays(1, &VertexArrayID);
     glBindVertexArray(VertexArrayID);
 
-    int frameCount = 0;
+    // Setup the mvp matrix
+    GLint mvpID = glGetUniformLocation(programID, "MVP");
 
-    smokeSimulation = new SmokeSimulation();
+    int frameCount = 0;
+    smokeSimulation = new SmokeSimulation(screenWidth);
 
     // Check if the ESC key was pressed or the window was closed
     while(glfwGetKey(window, GLFW_KEY_ESCAPE) != GLFW_PRESS && glfwWindowShouldClose(window) == 0) {
+
+        glm::mat4 translation = glm::mat4(1.0f);
+        glm::mat4 rotation = glm::mat4(1.0f);
+        glm::mat4 scale = glm::mat4(1.0f);
+        glm::mat4 model = translation * rotation * scale;
+
+        glm::mat4 view = glm::translate(glm::vec3(0.0f, 0.0f, 0.0f)); // screenWidth / 2, screenHeight / 2, 0.0f
+
+        glm::mat4 projection = glm::ortho(0.0f, (float) screenWidth, (float) screenHeight, 0.0f);
+
+        glm::mat4 mvp = projection * view * model;
+
+        glUniformMatrix4fv(mvpID, 1, GL_FALSE, &mvp[0][0]);
 
         smokeSimulation->update();
 

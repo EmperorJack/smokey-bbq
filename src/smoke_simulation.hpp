@@ -4,10 +4,10 @@
 class SmokeSimulation {
 
     public:
-        SmokeSimulation();
+        SmokeSimulation(float);
         void update();
         void render();
-
+        void drawSquare(float, float, float);
 };
 
 #endif
