@@ -6,8 +6,8 @@ class SmokeSimulation {
     public:
         SmokeSimulation(float);
         void update();
-        void render();
-        void drawSquare(float, float, float);
+        void render(glm::mat4);
+        void drawSquare(glm::mat4, float);
 };
 
 #endif

@@ -16,7 +16,7 @@ void SmokeSimulation::update() {
 
 }
 
-void SmokeSimulation::render() {
+void SmokeSimulation::render(glm::mat4 transform) {
     float color[] = { 0.5f, 0.5f, 0.5f, 0.0f };
     GLint cLoc = glGetUniformLocation(3, "fillColor");
     glProgramUniform4fv(3, cLoc, GL_TRUE, color);
@@ -25,18 +25,22 @@ void SmokeSimulation::render() {
         for (int j = 0; j < GRID_SIZE; j++) {
             float x = i * gridSpacing;
             float y = j * gridSpacing;
+            glm::mat4 translate = glm::translate(glm::vec3(x, y, 0.0f));
 
-            drawSquare(x, y, gridSpacing);
+            drawSquare(transform * translate, gridSpacing);
         }
     }
 }
 
-void SmokeSimulation::drawSquare(float x, float y, float size) {
+void SmokeSimulation::drawSquare(glm::mat4 transform, float size) {
+    GLint transformID = glGetUniformLocation(3, "MVP");
+    glUniformMatrix4fv(transformID, 1, GL_FALSE, &transform[0][0]);
+
     float vertices[] = {
-            x, y,
-            x, y + size,
-            x + size, y + size,
-            x + size, y,
+            0.0f, 0.0f,
+            0.0f, size,
+            size, size,
+            size, 0.0f,
     };
 
     GLuint vbo;

@@ -51,28 +51,12 @@ int main(int argc, char **argv) {
     GLuint VertexArrayID;
     glGenVertexArrays(1, &VertexArrayID);
     glBindVertexArray(VertexArrayID);
-
-    // Setup the mvp matrix
-    GLint mvpID = glGetUniformLocation(programID, "MVP");
-
+    
     int frameCount = 0;
     smokeSimulation = new SmokeSimulation(screenWidth);
 
     // Check if the ESC key was pressed or the window was closed
     while(glfwGetKey(window, GLFW_KEY_ESCAPE) != GLFW_PRESS && glfwWindowShouldClose(window) == 0) {
-
-        glm::mat4 translation = glm::mat4(1.0f);
-        glm::mat4 rotation = glm::mat4(1.0f);
-        glm::mat4 scale = glm::mat4(1.0f);
-        glm::mat4 model = translation * rotation * scale;
-
-        glm::mat4 view = glm::translate(glm::vec3(0.0f, 0.0f, 0.0f)); // screenWidth / 2, screenHeight / 2, 0.0f
-
-        glm::mat4 projection = glm::ortho(0.0f, (float) screenWidth, (float) screenHeight, 0.0f);
-
-        glm::mat4 mvp = projection * view * model;
-
-        glUniformMatrix4fv(mvpID, 1, GL_FALSE, &mvp[0][0]);
 
         smokeSimulation->update();
 
@@ -82,7 +66,12 @@ int main(int argc, char **argv) {
         // Use our shader
         glUseProgram(programID);
 
-        smokeSimulation->render();
+        glm::mat4 projection = glm::ortho(0.0f, (float) screenWidth, (float) screenHeight, 0.0f);
+        glm::mat4 view = glm::translate(glm::vec3(0.0f, 0.0f, 0.0f)); // screenWidth / 2, screenHeight / 2
+
+        glm::mat4 mvp = projection * view;
+
+        smokeSimulation->render(mvp);
 
         // Swap buffers
         glfwSwapBuffers(window);
