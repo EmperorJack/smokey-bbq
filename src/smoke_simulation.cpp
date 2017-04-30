@@ -2,9 +2,11 @@
 #include <smoke_simulation.hpp>
 #include <iostream>
 
-const int GRID_SIZE = 25;
+const int GRID_SIZE = 21;
 const float TIME_STEP = 10.0f;
-const bool WRAP_BORDERS = false;
+const bool WRAP_BORDERS = true;
+const float STROKE_WEIGHT = 2.0f;
+const float PULSE_RANGE = 250.0f;
 
 glm::vec2 velocityField[GRID_SIZE][GRID_SIZE];
 GLuint squareVBO;
@@ -25,11 +27,13 @@ SmokeSimulation::SmokeSimulation(float gridWorldSize) {
     };
     glGenBuffers(1, &squareVBO);
     glBindBuffer(GL_ARRAY_BUFFER, squareVBO);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(squareVertices), squareVertices, GL_STREAM_DRAW);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(squareVertices), squareVertices, GL_STATIC_DRAW);
 
     float vectorVertices[] = {
-            0.0f, 0.0f,
-            0.0f, gridSpacing / 2.5f,
+            -STROKE_WEIGHT / 2.0f, 0.0f,
+            -STROKE_WEIGHT / 2.0f, gridSpacing / 2.5f,
+            STROKE_WEIGHT / 2.0f, gridSpacing / 2.5f,
+            STROKE_WEIGHT / 2.0f, 0.0f,
     };
     glGenBuffers(1, &velocityVBO);
     glBindBuffer(GL_ARRAY_BUFFER, velocityVBO);
@@ -40,12 +44,15 @@ void SmokeSimulation::setupVelocityField() {
     // Setup 2D vectors
     for (int i = 0; i < GRID_SIZE; i++) {
         for (int j = 0; j < GRID_SIZE; j++) {
-            float x = i * gridSpacing - GRID_SIZE * gridSpacing / 2.0f; // Adding a small offset here to prevent 0 length vectors
-            float y = j * gridSpacing - GRID_SIZE * gridSpacing / 2.0f; // 0.0000000000001f
-            velocityField[i][j] = glm::normalize(glm::vec2(x, y));
-            // sin(2 * M_PI * y), sin(2 * M_PI * x)
-            // y, x
-            // myRandom() * 2.0f - 1.0f, myRandom() * 2.0f - 1.0f
+            float x = i * gridSpacing + gridSpacing / 2.0f; // Adding a small offset here to prevent 0 length vectors
+            float y = j * gridSpacing + gridSpacing / 2.0f; // 0.0000000000001f
+            velocityField[i][j] = glm::normalize(glm::vec2(
+                    //sin(2 * M_PI * y), sin(2 * M_PI * x)
+                    y, x
+                    //myRandom() * 2.0f - 1.0f, myRandom() * 2.0f - 1.0f
+                    //1.0f, 0.0f
+                    //1.0f, sin(2 * M_PI * y)
+            ));
         }
     }
 }
@@ -56,7 +63,7 @@ void SmokeSimulation::update() {
     for (int i = 0; i < GRID_SIZE; i++) {
         for (int j = 0; j < GRID_SIZE; j++) {
             uAdvected[i][j] = advectedVelocityAt(i, j);
-            // velocityField[i][j] = glm::rotate(velocityField[i][j], (float) M_PI / 120.0f );
+            //uAdvected[i][j] = glm::rotate(velocityField[i][j], (float) M_PI / 120.0f );
         }
     }
 
@@ -71,10 +78,10 @@ glm::vec2 SmokeSimulation::advectedVelocityAt(int i, int j) {
 }
 
 glm::vec2 SmokeSimulation::traceParticle(float x, float y, float timeStep) {
-    return glm::vec2(x, y) + (timeStep * getVelocity(x, y));
-//    glm::vec2 cellPosition = glm::vec2(x, y);
-//    glm::vec2 rkPos = cellPosition + timeStep / 2 * getVelocity(x, y);
-//    return cellPosition + (timeStep * getVelocity(rkPos.x, rkPos.y));
+//    return glm::vec2(x, y) - (timeStep * getVelocity(x, y));
+    glm::vec2 v = getVelocity(x, y);
+    v = getVelocity(x + 0.5f * timeStep * v.x, y + 0.5f * timeStep * v.y);
+    return glm::vec2(x, y) - (timeStep * v);
 
     // Euler method:         y = x + ∆t * u(x)
     // Ranga kutta 2 method: y = x + ∆t * u(x + ∆t / 2 * u(x))
@@ -114,6 +121,23 @@ glm::vec2 SmokeSimulation::getCellVelocity(int i, int j) {
     return velocityField[i][j];
 }
 
+void SmokeSimulation::addPulse(glm::vec2 position) {
+    position -= glm::vec2(gridSpacing / 2.0f, gridSpacing / 2.0f);
+
+    glm::vec2 force = glm::normalize(glm::vec2(myRandom() * 2.0f - 1.0f, myRandom() * 2.0f - 1.0f)); // gridPosition - position
+
+    for (int i = 0; i < GRID_SIZE; i++) {
+        for (int j = 0; j < GRID_SIZE; j++) {
+            float x = i * gridSpacing;
+            float y = j * gridSpacing;
+            glm::vec2 gridPosition = glm::vec2(x, y);
+            if (glm::distance(position, gridPosition) < PULSE_RANGE) {
+                velocityField[i][j] =  5.0f * glm::vec2(force); // gridPosition - position
+            }
+        }
+    }
+}
+
 void SmokeSimulation::render(glm::mat4 transform, glm::vec2 mousePosition) {
     for (int i = 0; i < GRID_SIZE; i++) {
         for (int j = 0; j < GRID_SIZE; j++) {
@@ -123,16 +147,24 @@ void SmokeSimulation::render(glm::mat4 transform, glm::vec2 mousePosition) {
 
             float squareColor[] = { 0.5f, 0.5f, 0.5f, 0.0f };
             setColor(squareColor);
-//            drawSquare(transform * translate);
+            //drawSquare(transform * translate);
 
             translate *= glm::translate(glm::vec3(gridSpacing / 2.0f, gridSpacing / 2.0f, 0.0f));
 
-            glm::vec2 velocity = velocityField[i][j];
-            glm::mat4 rotate = glm::orientation(glm::vec3(velocity.x+ 0.0000000000001f, velocity.y + 0.0000000000001f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+            glm::vec3 velocity = glm::vec3(velocityField[i][j].x, velocityField[i][j].y, 0.0f);
+
+            float magnitude = min(glm::length(velocity), 2.0f);
+
+            if (i == 0 && j == 0) {
+                //std::cout << velocity.x << ", " << velocity.y << " : " << magnitude << std::endl;
+            }
+
+            glm::mat4 scale = glm::scale(glm::vec3(magnitude, magnitude, 1.0f));
+            glm::mat4 rotate = glm::orientation(glm::normalize(velocity), glm::vec3(0.0f, 1.0f, 0.0f));
 
             float velocityColor[] = { 0.0f, 0.0f, 0.0f, 0.0f };
             setColor(velocityColor);
-            drawLine(transform * translate * rotate);
+            drawLine(transform * translate * scale * rotate);
         }
     }
 
@@ -140,11 +172,14 @@ void SmokeSimulation::render(glm::mat4 transform, glm::vec2 mousePosition) {
     glm::mat4 translate = glm::translate(glm::vec3(mousePosition, 0.0f));
 
     glm::vec2 velocity = getVelocity(mousePosition.x - gridSpacing / 2.0f, mousePosition.y - gridSpacing / 2.0f);
-    glm::mat4 rotate = glm::orientation(glm::vec3(velocity, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+
+    float magnitude = min(glm::length(velocity), 2.0f);
+    glm::mat4 scale = glm::scale(glm::vec3(magnitude, magnitude, 1.0f));
+    glm::mat4 rotate = glm::orientation(glm::vec3(glm::normalize(velocity), 0.0f), glm::vec3(0.0f, 1.0f, 0.0f));
 
     float mouseColor[] = { 1.0f, 0.0f, 0.0f, 0.0f };
     setColor(mouseColor);
-    drawLine(transform * translate * rotate);
+    drawLine(transform * translate * scale * rotate);
 }
 
 void SmokeSimulation::drawSquare(glm::mat4 transform) {
@@ -181,7 +216,7 @@ void SmokeSimulation::drawLine(glm::mat4 transform) {
             (void*)0   // array buffer offset
     );
 
-    glDrawArrays(GL_LINE_STRIP, 0, 2);
+    glDrawArrays(GL_TRIANGLE_FAN, 0, 4);
     glDisableVertexAttribArray(0);
 }
 

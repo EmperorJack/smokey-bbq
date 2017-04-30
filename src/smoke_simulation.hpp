@@ -16,6 +16,8 @@ class SmokeSimulation {
         float getInterpolatedValue(float, float, int);
         glm::vec2 getCellVelocity(int, int);
 
+        void addPulse(glm::vec2);
+
         void render(glm::mat4, glm::vec2);
         void drawSquare(glm::mat4);
         void drawLine(glm::mat4);

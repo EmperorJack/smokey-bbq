@@ -6,14 +6,21 @@
 
 SmokeSimulation* smokeSimulation = nullptr;
 
-int screenWidth = 800;
-int screenHeight = 800;
+const int SCREEN_WIDTH = 1000;
+const int SCREEN_HEIGHT= 1000;
 
 glm::vec2 mousePosition;
 
 // Mouse Position callback
 void mouseMovedCallback(GLFWwindow* win, double xPos, double yPos) {
     mousePosition = glm::vec2(xPos, yPos);
+}
+
+// Mouse Button callback
+void mouseButtonCallback(GLFWwindow *win, int button, int action, int mods) {
+    if (button == GLFW_MOUSE_BUTTON_LEFT && action == GLFW_PRESS) {
+        smokeSimulation->addPulse(mousePosition);
+    }
 }
 
 // Keyboard callback
@@ -39,7 +46,7 @@ int main(int argc, char **argv) {
 
     // Open a window and create its OpenGL context
     GLFWwindow* window;
-    window = glfwCreateWindow(screenWidth, screenHeight, "Window", NULL, NULL);
+    window = glfwCreateWindow(SCREEN_WIDTH, SCREEN_HEIGHT, "Window", NULL, NULL);
     if( window == NULL ){
         fprintf( stderr, "Failed to open GLFW window. If you have an Intel GPU, they are not 3.3 compatible. Try the 2.1 version of the tutorials.\n" );
         glfwTerminate();
@@ -59,6 +66,7 @@ int main(int argc, char **argv) {
 
     // Input callbacks
     glfwSetCursorPosCallback(window, mouseMovedCallback);
+    glfwSetMouseButtonCallback(window, mouseButtonCallback);
     glfwSetKeyCallback(window, keyCallback);
 
     // Create and compile our GLSL program from the shaders
@@ -70,7 +78,7 @@ int main(int argc, char **argv) {
     glBindVertexArray(VertexArrayID);
 
     int frameCount = 0;
-    smokeSimulation = new SmokeSimulation(screenWidth);
+    smokeSimulation = new SmokeSimulation(SCREEN_WIDTH);
 
     // Check if the ESC key was pressed or the window was closed
     while(glfwGetKey(window, GLFW_KEY_ESCAPE) != GLFW_PRESS && glfwWindowShouldClose(window) == 0) {
@@ -83,8 +91,8 @@ int main(int argc, char **argv) {
         // Use our shader
         glUseProgram(programID);
 
-        glm::mat4 projection = glm::ortho(0.0f, (float) screenWidth, (float) screenHeight, 0.0f);
-        glm::mat4 view = glm::translate(glm::vec3(0.0f, 0.0f, 0.0f)); // screenWidth / 2, screenHeight / 2
+        glm::mat4 projection = glm::ortho(0.0f, (float) SCREEN_WIDTH, (float) SCREEN_HEIGHT, 0.0f);
+        glm::mat4 view = glm::translate(glm::vec3(0.0f, 0.0f, 0.0f)); // SCREEN_WIDTH / 2, SCREEN_HEIGHT/ 2
 
         glm::mat4 mvp = projection * view;
 
