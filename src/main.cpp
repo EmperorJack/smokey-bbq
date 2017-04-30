@@ -26,7 +26,7 @@ void mouseButtonCallback(GLFWwindow *win, int button, int action, int mods) {
 // Keyboard callback
 void keyCallback(GLFWwindow *win, int key, int scancode, int action, int mods) {
     if (key == ' ') {
-        smokeSimulation->setupVelocityField();
+        smokeSimulation->setupFields();
     }
 }
 
@@ -85,7 +85,7 @@ int main(int argc, char **argv) {
 
         smokeSimulation->update();
 
-        glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
+        glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
         // Use our shader
