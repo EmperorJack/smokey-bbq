@@ -27,6 +27,10 @@ void mouseButtonCallback(GLFWwindow *win, int button, int action, int mods) {
 void keyCallback(GLFWwindow *win, int key, int scancode, int action, int mods) {
     if (key == ' ') {
         smokeSimulation->setupFields();
+    } else if (key == 'V' && action == GLFW_PRESS) {
+        smokeSimulation->toggleVectorDisplay();
+    } else if (key == 'S' && action == GLFW_PRESS) {
+        smokeSimulation->toggleDensityDisplay();
     }
 }
 

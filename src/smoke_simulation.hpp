@@ -22,6 +22,8 @@ class SmokeSimulation {
         glm::vec2 getCellVelocity(int, int);
 
         void addPulse(glm::vec2);
+        void toggleVectorDisplay();
+        void toggleDensityDisplay();
 
         void render(glm::mat4, glm::vec2);
         void drawSquare(glm::mat4, bool);

@@ -8,11 +8,13 @@ const bool WRAP_BORDERS = true;
 const float STROKE_WEIGHT = 2.0f;
 const float PULSE_RANGE = 200.0f;
 
+bool displayVectors = false;
+bool displayDensity = true;
+
 glm::vec2 velocityField[GRID_SIZE][GRID_SIZE];
 float densityField[GRID_SIZE][GRID_SIZE];
 GLuint squareVBO;
 GLuint velocityVBO;
-
 float gridSpacing;
 
 SmokeSimulation::SmokeSimulation(float gridWorldSize) {
@@ -188,6 +190,14 @@ void SmokeSimulation::addPulse(glm::vec2 position) {
     }
 }
 
+void SmokeSimulation::toggleVectorDisplay() {
+    displayVectors = !displayVectors;
+}
+
+void SmokeSimulation::toggleDensityDisplay() {
+    displayDensity = !displayDensity;
+}
+
 void SmokeSimulation::render(glm::mat4 transform, glm::vec2 mousePosition) {
     for (int i = 0; i < GRID_SIZE; i++) {
         for (int j = 0; j < GRID_SIZE; j++) {
@@ -196,7 +206,7 @@ void SmokeSimulation::render(glm::mat4 transform, glm::vec2 mousePosition) {
             glm::mat4 translate = glm::translate(glm::vec3(x, y, 0.0f));
 
             float density = densityField[i][j];
-            if (density > 0.01f) {
+            if (displayDensity && density > 0.01f) {
                 float squareColor[] = {density, density, density, 0.0f};
                 setColor(squareColor);
                 drawSquare(transform * translate, true);
@@ -217,7 +227,7 @@ void SmokeSimulation::render(glm::mat4 transform, glm::vec2 mousePosition) {
 
             float velocityColor[] = { 0.0f, 0.0f, 1.0f, 0.0f };
             setColor(velocityColor);
-            //drawLine(transform * translate * scale * rotate);
+            if (displayVectors) drawLine(transform * translate * scale * rotate);
         }
     }
 
