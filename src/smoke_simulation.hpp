@@ -4,11 +4,13 @@
 class SmokeSimulation {
 
     public:
-        static constexpr int GRID_SIZE = 50;
-        static constexpr float TIME_STEP = 1.0f;
-        static constexpr bool WRAP_BORDERS = true;
+        static constexpr int GRID_SIZE = 60;
+        static constexpr float TIME_STEP = 5.0f;
+        static constexpr bool WRAP_BORDERS = false;
         static constexpr float STROKE_WEIGHT = 2.0f;
         static constexpr float PULSE_RANGE = 200.0f;
+        static constexpr float PULSE_FORCE = 3.0f;
+        static constexpr float DENSITY_DISSAPATION = 0.94;
 
         SmokeSimulation(float);
 
