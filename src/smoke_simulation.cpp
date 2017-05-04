@@ -2,17 +2,11 @@
 #include <smoke_simulation.hpp>
 #include <iostream>
 
-const int GRID_SIZE = 50;
-const float TIME_STEP = 10.0f;
-const bool WRAP_BORDERS = true;
-const float STROKE_WEIGHT = 2.0f;
-const float PULSE_RANGE = 200.0f;
-
 bool displayVectors = false;
 bool displayDensity = true;
 
-glm::vec2 velocityField[GRID_SIZE][GRID_SIZE];
-float densityField[GRID_SIZE][GRID_SIZE];
+glm::vec2 velocityField[SmokeSimulation::GRID_SIZE][SmokeSimulation::GRID_SIZE];
+glm::vec2 densityField[SmokeSimulation::GRID_SIZE][SmokeSimulation::GRID_SIZE];
 GLuint squareVBO;
 GLuint velocityVBO;
 float gridSpacing;
@@ -49,10 +43,13 @@ void SmokeSimulation::setupFields() {
         for (int j = 0; j < GRID_SIZE; j++) {
             float x = i * gridSpacing + gridSpacing / 2.0f;
             float y = j * gridSpacing + gridSpacing / 2.0f;
-            velocityField[i][j] = glm::normalize(glm::vec2(
+            velocityField[i][j] =
+                    glm::normalize
+            (glm::vec2(
                     //sin(2 * M_PI * y), sin(2 * M_PI * x)
-                    y, x
-                    //myRandom() * 2.0f - 1.0f, myRandom() * 2.0f - 1.0f
+                    //y, x
+                    //0.01f, 0.01f
+                    myRandom() * 2.0f - 1.0f, myRandom() * 2.0f - 1.0f
                     //0.01f, 0.01f
                     //1.0f, sin(2 * M_PI * y)
             ));
@@ -62,19 +59,19 @@ void SmokeSimulation::setupFields() {
     // Setup density field
     for (int i = 0; i < GRID_SIZE; i++) {
         for (int j = 0; j < GRID_SIZE; j++) {
-            densityField[i][j] = myRandom();//0.0f;
+            densityField[i][j] = glm::vec2(myRandom(), 0.0f);//0.0f;
         }
     }
 }
 
 void SmokeSimulation::update() {
     glm::vec2 advectedVelocityField[GRID_SIZE][GRID_SIZE];
-    float advectedDensityField[GRID_SIZE][GRID_SIZE];
+    glm::vec2 advectedDensityField[GRID_SIZE][GRID_SIZE];
 
     for (int i = 0; i < GRID_SIZE; i++) {
         for (int j = 0; j < GRID_SIZE; j++) {
             advectedVelocityField[i][j] = advectedVelocityAt(i, j);
-            advectedDensityField[i][j] = advectedDensityAt(i, j) * 0.985f;
+            advectedDensityField[i][j] = glm::vec2(advectedDensityAt(i, j) * 0.985f, 0.0f);
             //advectedVelocityField[i][j] = glm::rotate(velocityField[i][j], (float) M_PI / 120.0f );
         }
     }
@@ -84,15 +81,13 @@ void SmokeSimulation::update() {
 }
 
 glm::vec2 SmokeSimulation::advectedVelocityAt(int i, int j) {
-    glm::vec2 cellPosition = glm::vec2(i * gridSpacing, j * gridSpacing);
-    glm::vec2 tracePosition = traceParticle(cellPosition.x, cellPosition.y, TIME_STEP);
+    glm::vec2 tracePosition = traceParticle(i * gridSpacing, j * gridSpacing, TIME_STEP);
 
     return getVelocity(tracePosition.x, tracePosition.y);
 }
 
 float SmokeSimulation::advectedDensityAt(int i, int j) {
-    glm::vec2 cellPosition = glm::vec2(i * gridSpacing, j * gridSpacing);
-    glm::vec2 tracePosition = traceParticle(cellPosition.x, cellPosition.y, TIME_STEP);
+    glm::vec2 tracePosition = traceParticle(i * gridSpacing, j * gridSpacing, TIME_STEP);
 
     return getDensity(tracePosition.x, tracePosition.y);
 }
@@ -113,8 +108,8 @@ glm::vec2 SmokeSimulation::getVelocity(float x, float y) {
     float normY = y / gridSpacing;
 
     glm::vec2 v = glm::vec2();
-    v.x = getInterpolatedValue(normX, normY, 0);
-    v.y = getInterpolatedValue(normX, normY, 1);
+    v.x = getInterpolatedValue(velocityField, normX, normY, 0);
+    v.y = getInterpolatedValue(velocityField, normX, normY, 1);
 
     return v;
 }
@@ -123,30 +118,22 @@ float SmokeSimulation::getDensity(float x, float y) {
     float normX = x / gridSpacing;
     float normY = y / gridSpacing;
 
-    return getInterpolatedValueDensity(normX, normY);
+    return getInterpolatedValue(densityField, normX, normY, 0);
 }
 
-float SmokeSimulation::getInterpolatedValue(float x, float y, int index) {
+float SmokeSimulation::getInterpolatedValue(glm::vec2 field[GRID_SIZE][GRID_SIZE], float x, float y, int index) {
     int i = (int) floor(x);
     int j = (int) floor(y);
 
-    return (i+1-x) * (j+1-y) * getCellVelocity(i, j)[index] +
-           (x-i) * (j+1-y)   * getCellVelocity(i+1, j)[index] +
-           (i+1-x) * (y-j)   * getCellVelocity(i, j+1)[index] +
-           (x-i) * (y-j)     * getCellVelocity(i+1, j+1)[index];
+    float totalWeight = (i+1-x) * (j+1-y) + (x-i) * (j+1-y) + (i+1-x) * (y-j) + (x-i) * (y-j);
+
+    return ((i+1-x) * (j+1-y) * getGridValue(field, i, j)[index] +
+           (x-i) * (j+1-y)   * getGridValue(field, i+1, j)[index] +
+           (i+1-x) * (y-j)   * getGridValue(field, i, j+1)[index] +
+           (x-i) * (y-j)     * getGridValue(field, i+1, j+1)[index]) / totalWeight;
 }
 
-float SmokeSimulation::getInterpolatedValueDensity(float x, float y) {
-    int i = (int) floor(x);
-    int j = (int) floor(y);
-
-    return (i+1-x) * (j+1-y) * getCellDensity(i, j) +
-           (x-i) * (j+1-y)   * getCellDensity(i+1, j) +
-           (i+1-x) * (y-j)   * getCellDensity(i, j+1) +
-           (x-i) * (y-j)     * getCellDensity(i+1, j+1);
-}
-
-glm::vec2 SmokeSimulation::getCellVelocity(int i, int j) {
+glm::vec2 SmokeSimulation::getGridValue(glm::vec2 field[GRID_SIZE][GRID_SIZE], int i, int j) {
     if (WRAP_BORDERS) {
         if (i < 0) i = GRID_SIZE - 1;
         else if (i >= GRID_SIZE) i = 0;
@@ -156,20 +143,10 @@ glm::vec2 SmokeSimulation::getCellVelocity(int i, int j) {
         i = max(i, 0); i = min(i, GRID_SIZE - 1);
         j = max(j, 0); j = min(j, GRID_SIZE - 1);
     }
-    return velocityField[i][j];
-}
 
-float SmokeSimulation::getCellDensity(int i, int j) {
-    if (WRAP_BORDERS) {
-        if (i < 0) i = GRID_SIZE - 1;
-        else if (i >= GRID_SIZE) i = 0;
-        if (j < 0) j = GRID_SIZE - 1;
-        else if (j >= GRID_SIZE) j = 0;
-    } else {
-        i = max(i, 0); i = min(i, GRID_SIZE - 1);
-        j = max(j, 0); j = min(j, GRID_SIZE - 1);
-    }
-    return densityField[i][j];
+    if (field[i][j] != field[i][j]) std::cout << "YO NAN" << std::endl;
+
+    return field[i][j];
 }
 
 void SmokeSimulation::addPulse(glm::vec2 position) {
@@ -205,7 +182,7 @@ void SmokeSimulation::render(glm::mat4 transform, glm::vec2 mousePosition) {
             float y = j * gridSpacing;
             glm::mat4 translate = glm::translate(glm::vec3(x, y, 0.0f));
 
-            float density = densityField[i][j];
+            float density = densityField[i][j][0];
             if (displayDensity && density > 0.01f) {
                 float squareColor[] = {density, density, density, 0.0f};
                 setColor(squareColor);
@@ -216,7 +193,7 @@ void SmokeSimulation::render(glm::mat4 transform, glm::vec2 mousePosition) {
 
             glm::vec3 velocity = glm::vec3(velocityField[i][j].x, velocityField[i][j].y, 0.0f);
 
-            float magnitude = min(glm::length(velocity), 2.0f);
+            float magnitude = max(min(glm::length(velocity), 2.0f), 0.5f);
 
             if (i == 0 && j == 0) {
                 //std::cout << velocity.x << ", " << velocity.y << " : " << magnitude << std::endl;
@@ -236,7 +213,7 @@ void SmokeSimulation::render(glm::mat4 transform, glm::vec2 mousePosition) {
 
     glm::vec2 velocity = getVelocity(mousePosition.x - gridSpacing / 2.0f, mousePosition.y - gridSpacing / 2.0f);
 
-    float magnitude = min(glm::length(velocity), 2.0f);
+    float magnitude = min(glm::length(velocity), 2.0f) * 5.0f;
     glm::mat4 scale = glm::scale(glm::vec3(magnitude, magnitude, 1.0f));
     glm::mat4 rotate = glm::orientation(glm::vec3(glm::normalize(velocity), 0.0f), glm::vec3(0.0f, 1.0f, 0.0f));
 
