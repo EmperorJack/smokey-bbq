@@ -4,14 +4,21 @@
 
 bool displayVectors = false;
 bool displayDensity = true;
+bool enableEmitter = false;
 
 glm::vec2 velocityField[SmokeSimulation::GRID_SIZE][SmokeSimulation::GRID_SIZE];
 glm::vec2 densityField[SmokeSimulation::GRID_SIZE][SmokeSimulation::GRID_SIZE];
+
 GLuint squareVBO;
 GLuint velocityVBO;
+GLuint densityVBO;
+GLuint densityUVVBO;
+
+float gridWorldSize;
 float gridSpacing;
 
-SmokeSimulation::SmokeSimulation(float gridWorldSize) {
+SmokeSimulation::SmokeSimulation(float _gridWorldSize) {
+    gridWorldSize = _gridWorldSize;
     gridSpacing = gridWorldSize / GRID_SIZE;
     setupFields();
 
@@ -35,6 +42,35 @@ SmokeSimulation::SmokeSimulation(float gridWorldSize) {
     glGenBuffers(1, &velocityVBO);
     glBindBuffer(GL_ARRAY_BUFFER, velocityVBO);
     glBufferData(GL_ARRAY_BUFFER, sizeof(vectorVertices), vectorVertices, GL_STATIC_DRAW);
+
+    float densityVertices[] = {
+            -gridWorldSize / 2.0f, -gridWorldSize / 2.0f,
+            -gridWorldSize / 2.0f, gridWorldSize / 2.0f,
+            gridWorldSize / 2.0f, gridWorldSize / 2.0f,
+            gridWorldSize / 2.0f, -gridWorldSize / 2.0f,
+    };
+    glGenBuffers(1, &densityVBO);
+    glBindBuffer(GL_ARRAY_BUFFER, densityVBO);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(densityVertices), densityVertices, GL_STATIC_DRAW);
+
+    float densityUVs[] = {
+            0.0f, 0.0f,
+            0.0f, 1.0f,
+            1.0f, 1.0f,
+            1.0f, 0.0f,
+    };
+    glGenBuffers(1, &densityUVVBO);
+    glBindBuffer(GL_ARRAY_BUFFER, densityUVVBO);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(densityUVs), densityUVs, GL_STATIC_DRAW);
+
+    // Setup density texture
+    GLuint textureID;
+    glGenTextures(1, &textureID);
+
+    glBindTexture(GL_TEXTURE_2D, textureID);
+
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
 }
 
 void SmokeSimulation::setupFields() {
@@ -71,14 +107,16 @@ void SmokeSimulation::update() {
     glm::vec2 target = glm::vec2(GRID_SIZE / 2 * gridSpacing, GRID_SIZE * gridSpacing);
 
     // Smoke emitter
-    for (int i = 0; i < GRID_SIZE; i++) {
-        for (int j = 0; j < GRID_SIZE; j++) {
-            float x = i * gridSpacing;
-            float y = j * gridSpacing;
-            glm::vec2 gridPosition = glm::vec2(x, y);
-            if (glm::distance(target, gridPosition) < PULSE_RANGE / 3.0f) {
-                velocityField[i][j] = glm::vec2(myRandom() * 4.0f - 2.0f, -PULSE_FORCE);
-                densityField[i][j] += 0.3f;
+    if (enableEmitter) {
+        for (int i = 0; i < GRID_SIZE; i++) {
+            for (int j = 0; j < GRID_SIZE; j++) {
+                float x = i * gridSpacing;
+                float y = j * gridSpacing;
+                glm::vec2 gridPosition = glm::vec2(x, y);
+                if (glm::distance(target, gridPosition) < PULSE_RANGE / 3.0f) {
+                    velocityField[i][j] = glm::vec2(myRandom() * 4.0f - 2.0f, -PULSE_FORCE);
+                    densityField[i][j] += 0.3f;
+                }
             }
         }
     }
@@ -86,12 +124,17 @@ void SmokeSimulation::update() {
     for (int i = 0; i < GRID_SIZE; i++) {
         for (int j = 0; j < GRID_SIZE; j++) {
             advectedVelocityField[i][j] = advectedVelocityAt(i, j);
-            advectedDensityField[i][j] = glm::vec2(advectedDensityAt(i, j) * DENSITY_DISSAPATION, 0.0f);
-            //advectedVelocityField[i][j] = glm::rotate(velocityField[i][j], (float) M_PI / 120.0f );
         }
     }
 
     std::copy(&advectedVelocityField[0][0], &advectedVelocityField[0][0] + GRID_SIZE * GRID_SIZE, &velocityField[0][0]);
+
+    for (int i = 0; i < GRID_SIZE; i++) {
+        for (int j = 0; j < GRID_SIZE; j++) {
+            advectedDensityField[i][j] = glm::vec2(advectedDensityAt(i, j) * DENSITY_DISSAPATION, 0.0f);
+        }
+    }
+
     std::copy(&advectedDensityField[0][0], &advectedDensityField[0][0] + GRID_SIZE * GRID_SIZE, &densityField[0][0]);
 }
 
@@ -123,8 +166,6 @@ glm::vec2 SmokeSimulation::getVelocity(float x, float y) {
     float normY = y / gridSpacing;
 
     glm::vec2 v = glm::vec2();
-    //v.x = getInterpolatedValue(velocityField, normX, normY - 0.5f, 0);
-    //v.y = getInterpolatedValue(velocityField, normX - 0.5f, normY, 1);
 
     // Evaluating staggered grid velocities using central differences
     v.x = (getInterpolatedValue(velocityField, normX - 0.5f, normY, 0) +
@@ -182,33 +223,31 @@ void SmokeSimulation::addPulse(glm::vec2 position) {
             glm::vec2 gridPosition = glm::vec2(x, y);
             if (glm::distance(position, gridPosition) < PULSE_RANGE) {
                 velocityField[i][j] = PULSE_FORCE * glm::normalize(glm::vec2(force)); // gridPosition - position // 0.0f, -1.0f
-                //densityField[i][j] += 0.5f / (glm::distance(position, gridPosition) / PULSE_RANGE);
+                densityField[i][j] += 0.5f / (glm::distance(position, gridPosition) / PULSE_RANGE);
             }
         }
     }
 }
 
-void SmokeSimulation::toggleVectorDisplay() {
-    displayVectors = !displayVectors;
-}
-
-void SmokeSimulation::toggleDensityDisplay() {
-    displayDensity = !displayDensity;
-}
-
 void SmokeSimulation::render(glm::mat4 transform, glm::vec2 mousePosition) {
+    if (displayDensity) {
+        glm::mat4 densityTransform = glm::mat4(transform);
+        densityTransform = glm::translate(densityTransform, glm::vec3(gridWorldSize / 2.0f, gridWorldSize / 2.0f, 0.0f));
+        densityTransform = glm::scale(densityTransform, glm::vec3(-1.0f, 1.0f, 1.0f));
+        densityTransform = glm::rotate(densityTransform, (float) M_PI / 2.0f, glm::vec3(0.0f, 0.0f, 1.0f));
+        drawDensity(densityTransform);
+    }
+
+    if (!displayVectors) return;
+
+    float velocityColor[] = {0.0f, 0.0f, 1.0f, 0.0f};
+    setColor(velocityColor);
+
     for (int i = 0; i < GRID_SIZE; i++) {
         for (int j = 0; j < GRID_SIZE; j++) {
             float x = i * gridSpacing;
             float y = j * gridSpacing;
             glm::mat4 translate = glm::translate(glm::vec3(x, y, 0.0f));
-
-            float density = densityField[i][j][0];
-            if (displayDensity && density > 0.01f) {
-                float squareColor[] = {density, density, density, 0.0f};
-                setColor(squareColor);
-                drawSquare(transform * translate, true);
-            }
 
             translate *= glm::translate(glm::vec3(gridSpacing / 2.0f, gridSpacing / 2.0f, 0.0f));
 
@@ -216,16 +255,10 @@ void SmokeSimulation::render(glm::mat4 transform, glm::vec2 mousePosition) {
 
             float magnitude = max(min(glm::length(velocity), 2.0f), 0.5f);
 
-            if (i == 0 && j == 0) {
-                //std::cout << velocity.x << ", " << velocity.y << " : " << magnitude << std::endl;
-            }
-
             glm::mat4 scale = glm::scale(glm::vec3(magnitude, magnitude, 1.0f));
             glm::mat4 rotate = glm::orientation(glm::normalize(velocity), glm::vec3(0.0f, 1.0f, 0.0f));
 
-            float velocityColor[] = { 0.0f, 0.0f, 1.0f, 0.0f };
-            setColor(velocityColor);
-            if (displayVectors) drawLine(transform * translate * scale * rotate);
+            drawLine(transform * translate * scale * rotate);
         }
     }
 
@@ -241,6 +274,45 @@ void SmokeSimulation::render(glm::mat4 transform, glm::vec2 mousePosition) {
     float mouseColor[] = { 1.0f, 0.0f, 0.0f, 0.0f };
     setColor(mouseColor);
     drawLine(transform * translate * scale * rotate);
+}
+
+void SmokeSimulation::drawDensity(glm::mat4 transform) {
+    GLint useFillColorLocation = glGetUniformLocation(3, "useFillColor");
+    glUniform1i(useFillColorLocation, false);
+
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RG, GRID_SIZE, GRID_SIZE, 0, GL_RG, GL_FLOAT, &densityField[0][0]);
+
+    GLint transformID = glGetUniformLocation(3, "MVP");
+    glUniformMatrix4fv(transformID, 1, GL_FALSE, &transform[0][0]);
+
+    // Bind vertices
+    glEnableVertexAttribArray(0);
+    glBindBuffer(GL_ARRAY_BUFFER, densityVBO);
+    glVertexAttribPointer(
+            0,         // shader layout attribute
+            2,         // size
+            GL_FLOAT,  // type
+            GL_FALSE,  // normalized?
+            0,         // stride
+            (void*)0   // array buffer offset
+    );
+
+    // Bind uvs
+    glEnableVertexAttribArray(1);
+    glBindBuffer(GL_ARRAY_BUFFER, densityUVVBO);
+    glVertexAttribPointer(
+            1,         // shader layout attribute
+            2,         // size
+            GL_FLOAT,  // type
+            GL_FALSE,  // normalized?
+            0,         // stride
+            (void*)0   // array buffer offset
+    );
+
+    glDrawArrays(GL_TRIANGLE_FAN, 0, 4);
+
+    glDisableVertexAttribArray(0);
+    glDisableVertexAttribArray(1);
 }
 
 void SmokeSimulation::drawSquare(glm::mat4 transform, bool fill) {
@@ -287,4 +359,16 @@ void SmokeSimulation::drawLine(glm::mat4 transform) {
 
 float SmokeSimulation::myRandom() {
     return std::rand() % 100 / 100.0f;
+}
+
+void SmokeSimulation::toggleVectorDisplay() {
+    displayVectors = !displayVectors;
+}
+
+void SmokeSimulation::toggleDensityDisplay() {
+    displayDensity = !displayDensity;
+}
+
+void SmokeSimulation::toggleEnableEmitter() {
+    enableEmitter = !enableEmitter;
 }

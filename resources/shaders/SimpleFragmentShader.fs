@@ -1,8 +1,21 @@
 #version 330 core
-out vec4 color;
 
+in vec2 UV;
+
+out vec3 color;
+
+uniform sampler2D uTexture;
+
+uniform bool useFillColor = false;
 uniform vec4 fillColor = vec4(0.0, 0.0, 0.0, 0.0);
 
+uniform sampler2D myTextureSampler;
+
 void main() {
-  color = fillColor;
+  if (useFillColor) {
+    color = fillColor.rgb;
+  } else {
+    float density = texture(myTextureSampler, UV).r;
+    color = vec3(density, density, density);
+  }
 }

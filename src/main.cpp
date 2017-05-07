@@ -31,6 +31,8 @@ void keyCallback(GLFWwindow *win, int key, int scancode, int action, int mods) {
         smokeSimulation->toggleVectorDisplay();
     } else if (key == 'S' && action == GLFW_PRESS) {
         smokeSimulation->toggleDensityDisplay();
+    } else if (key == 'E' && action == GLFW_PRESS) {
+        smokeSimulation->toggleEnableEmitter();
     }
 }
 
