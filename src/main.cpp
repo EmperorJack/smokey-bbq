@@ -83,11 +83,23 @@ int main(int argc, char **argv) {
     glGenVertexArrays(1, &VertexArrayID);
     glBindVertexArray(VertexArrayID);
 
-    int frameCount = 0;
     smokeSimulation = new SmokeSimulation(SCREEN_WIDTH);
+
+    double lastTime = glfwGetTime();
+    int frameCount = 0;
 
     // Check if the ESC key was pressed or the window was closed
     while(glfwGetKey(window, GLFW_KEY_ESCAPE) != GLFW_PRESS && glfwWindowShouldClose(window) == 0) {
+
+        // Measure speed
+        double currentTime = glfwGetTime();
+        frameCount++;
+        if (currentTime - lastTime >= 1.0){ // If last prinf() was more than 1 sec ago
+            // printf and reset timer
+            printf("%f ms/frame\n", 1000.0 / (double) frameCount);
+            frameCount = 0;
+            lastTime += 1.0;
+        }
 
         smokeSimulation->update();
 
@@ -107,8 +119,6 @@ int main(int argc, char **argv) {
         // Swap buffers
         glfwSwapBuffers(window);
         glfwPollEvents();
-
-        frameCount++;
     }
 
     glfwTerminate();
