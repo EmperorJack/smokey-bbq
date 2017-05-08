@@ -7,12 +7,14 @@ bool displayDensity = true;
 bool enableEmitter = false;
 
 glm::vec2 velocityField[SmokeSimulation::GRID_SIZE][SmokeSimulation::GRID_SIZE];
+float divergenceField[SmokeSimulation::GRID_SIZE][SmokeSimulation::GRID_SIZE];
 glm::vec2 densityField[SmokeSimulation::GRID_SIZE][SmokeSimulation::GRID_SIZE];
 
 GLuint squareVBO;
 GLuint velocityVBO;
 GLuint densityVBO;
 GLuint densityUVVBO;
+GLuint densityTextureID;
 
 float gridWorldSize;
 float gridSpacing;
@@ -64,10 +66,9 @@ SmokeSimulation::SmokeSimulation(float _gridWorldSize) {
     glBufferData(GL_ARRAY_BUFFER, sizeof(densityUVs), densityUVs, GL_STATIC_DRAW);
 
     // Setup density texture
-    GLuint textureID;
-    glGenTextures(1, &textureID);
+    glGenTextures(1, &densityTextureID);
 
-    glBindTexture(GL_TEXTURE_2D, textureID);
+    glBindTexture(GL_TEXTURE_2D, densityTextureID);
 
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
@@ -121,6 +122,7 @@ void SmokeSimulation::update() {
         }
     }
 
+    // Advect velocity through velocity
     for (int i = 0; i < GRID_SIZE; i++) {
         for (int j = 0; j < GRID_SIZE; j++) {
             advectedVelocityField[i][j] = advectedVelocityAt(i, j);
@@ -129,6 +131,16 @@ void SmokeSimulation::update() {
 
     std::copy(&advectedVelocityField[0][0], &advectedVelocityField[0][0] + GRID_SIZE * GRID_SIZE, &velocityField[0][0]);
 
+    // Compute divergence
+    for (int i = 0; i < GRID_SIZE; i++) {
+        for (int j = 0; j < GRID_SIZE; j++) {
+            divergenceField[i][j] = divergenceAt(i, j);
+        }
+    }
+
+    std::cout << divergenceField[0][0] << std::endl;
+
+    // Advect density through velocity
     for (int i = 0; i < GRID_SIZE; i++) {
         for (int j = 0; j < GRID_SIZE; j++) {
             advectedDensityField[i][j] = glm::vec2(advectedDensityAt(i, j) * DENSITY_DISSAPATION, 0.0f);
@@ -139,26 +151,36 @@ void SmokeSimulation::update() {
 }
 
 glm::vec2 SmokeSimulation::advectedVelocityAt(int i, int j) {
-    glm::vec2 tracePosition = traceParticle(i * gridSpacing, j * gridSpacing, TIME_STEP);
+    glm::vec2 tracePosition = traceParticle(i * gridSpacing, j * gridSpacing);
 
     return getVelocity(tracePosition.x, tracePosition.y);
 }
 
 float SmokeSimulation::advectedDensityAt(int i, int j) {
-    glm::vec2 tracePosition = traceParticle(i * gridSpacing, j * gridSpacing, TIME_STEP);
+    glm::vec2 tracePosition = traceParticle(i * gridSpacing, j * gridSpacing);
 
     return getDensity(tracePosition.x, tracePosition.y);
 }
 
-
-glm::vec2 SmokeSimulation::traceParticle(float x, float y, float timeStep) {
-    //return glm::vec2(x, y) - (timeStep * getVelocity(x, y));
+glm::vec2 SmokeSimulation::traceParticle(float x, float y) {
+    //return glm::vec2(x, y) - (TIME_STEP * getVelocity(x, y));
     glm::vec2 v = getVelocity(x, y);
-    v = getVelocity(x + 0.5f * timeStep * v.x, y + 0.5f * timeStep * v.y);
-    return glm::vec2(x, y) - (timeStep * v);
+    v = getVelocity(x + 0.5f * TIME_STEP * v.x, y + 0.5f * TIME_STEP * v.y);
+    return glm::vec2(x, y) - (TIME_STEP * v);
 
     // Euler method:         y = x + ∆t * u(x)
-    // Ranga kutta 2 method: y = x + ∆t * u(x + ∆t / 2 * u(x))
+    // Runge kutta 2 method: y = x + ∆t * u(x + ∆t / 2 * u(x))
+}
+
+float SmokeSimulation::divergenceAt(int i, int j) {
+    float a = -(2 * gridSpacing * FLUID_DENSITY / TIME_STEP);
+
+    float b = getVelocity((i + 1) * gridSpacing, j * gridSpacing).x -
+              getVelocity((i - 1) * gridSpacing, j * gridSpacing).x +
+              getVelocity(i * gridSpacing, (j + 1) * gridSpacing).y -
+              getVelocity(i * gridSpacing, (j - 1) * gridSpacing).y;
+
+    return a * b;
 }
 
 glm::vec2 SmokeSimulation::getVelocity(float x, float y) {
@@ -355,10 +377,6 @@ void SmokeSimulation::drawLine(glm::mat4 transform) {
 
     glDrawArrays(GL_TRIANGLE_FAN, 0, 4);
     glDisableVertexAttribArray(0);
-}
-
-float SmokeSimulation::myRandom() {
-    return std::rand() % 100 / 100.0f;
 }
 
 void SmokeSimulation::toggleVectorDisplay() {

@@ -4,8 +4,9 @@
 class SmokeSimulation {
 
     public:
-        static constexpr int GRID_SIZE = 128;
+        static constexpr int GRID_SIZE = 64;
         static constexpr float TIME_STEP = 5.0f;
+        static constexpr float FLUID_DENSITY = 1.0f;
         static constexpr bool WRAP_BORDERS = false;
         static constexpr float STROKE_WEIGHT = 2.0f;
         static constexpr float PULSE_RANGE = 200.0f;
@@ -23,7 +24,9 @@ class SmokeSimulation {
         glm::vec2 advectedVelocityAt(int i, int j);
         float advectedDensityAt(int i, int j);
 
-        glm::vec2 traceParticle(float x, float y, float timeStep);
+        glm::vec2 traceParticle(float x, float y);
+
+        float divergenceAt(int i, int j);
 
         float getInterpolatedValue(glm::vec2 field[GRID_SIZE][GRID_SIZE], float x, float y, int);
         glm::vec2 getGridValue(glm::vec2 field[GRID_SIZE][GRID_SIZE], int i, int j);
@@ -37,8 +40,15 @@ class SmokeSimulation {
         void drawDensity(glm::mat4);
         void drawSquare(glm::mat4, bool);
         void drawLine(glm::mat4);
-
-        float myRandom();
 };
+
+static inline float myRandom() {
+    return std::rand() % 100 / 100.0f;
+}
+
+static inline int intFloor(float x) {
+    int i = (int) x; /* truncate */
+    return i - (i > x); /* convert trunc to floor */
+}
 
 #endif
