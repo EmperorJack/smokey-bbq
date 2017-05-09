@@ -6,10 +6,11 @@
 
 SmokeSimulation* smokeSimulation = nullptr;
 
-const int SCREEN_WIDTH = 1000;
-const int SCREEN_HEIGHT= 1000;
+const int SCREEN_WIDTH = 800;
+const int SCREEN_HEIGHT= 800;
 
 glm::vec2 mousePosition;
+bool mousePressed = false;
 
 // Mouse Position callback
 void mouseMovedCallback(GLFWwindow* win, double xPos, double yPos) {
@@ -18,8 +19,9 @@ void mouseMovedCallback(GLFWwindow* win, double xPos, double yPos) {
 
 // Mouse Button callback
 void mouseButtonCallback(GLFWwindow *win, int button, int action, int mods) {
-    if (button == GLFW_MOUSE_BUTTON_LEFT && action == GLFW_PRESS) {
-        smokeSimulation->addPulse(mousePosition);
+    if (button == GLFW_MOUSE_BUTTON_LEFT) {
+        if (action == GLFW_PRESS) mousePressed = true;
+        else if (action == GLFW_RELEASE) mousePressed = false;
     }
 }
 
@@ -101,6 +103,10 @@ int main(int argc, char **argv) {
             printf("%f ms/frame\n", 1000.0 / (double) frameCount);
             frameCount = 0;
             lastTime += 1.0;
+        }
+
+        if (mousePressed) {
+            smokeSimulation->addPulse(mousePosition);
         }
 
         smokeSimulation->update();

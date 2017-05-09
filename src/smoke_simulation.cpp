@@ -21,6 +21,15 @@ GLuint densityTextureID;
 float gridWorldSize;
 float gridSpacing;
 
+static inline float myRandom() {
+    return std::rand() % 100 / 100.0f;
+}
+
+static inline int intFloor(float x) {
+    int i = (int) x; /* truncate */
+    return i - (i > x); /* convert trunc to floor */
+}
+
 SmokeSimulation::SmokeSimulation(float _gridWorldSize) {
     gridWorldSize = _gridWorldSize;
     gridSpacing = gridWorldSize / GRID_SIZE;
