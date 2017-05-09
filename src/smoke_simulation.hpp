@@ -10,8 +10,9 @@ class SmokeSimulation {
         static constexpr bool WRAP_BORDERS = false;
         static constexpr float STROKE_WEIGHT = 2.0f;
         static constexpr float PULSE_RANGE = 200.0f;
-        static constexpr float PULSE_FORCE = 3.0f;
+        static constexpr float PULSE_FORCE = 5.0f;
         static constexpr float DENSITY_DISSAPATION = 0.94;
+        static constexpr int JACOBI_ITERATIONS = 10;
 
         SmokeSimulation(float);
 
@@ -27,6 +28,9 @@ class SmokeSimulation {
         glm::vec2 traceParticle(float x, float y);
 
         float divergenceAt(int i, int j);
+        void solvePressureField();
+        float pressureAt(int i, int j);
+        void applyPressure();
 
         float getInterpolatedValue(glm::vec2 field[GRID_SIZE][GRID_SIZE], float x, float y, int);
         glm::vec2 getGridValue(glm::vec2 field[GRID_SIZE][GRID_SIZE], int i, int j);
@@ -35,6 +39,7 @@ class SmokeSimulation {
         void toggleVectorDisplay();
         void toggleDensityDisplay();
         void toggleEnableEmitter();
+        void togglePressureSolve();
 
         void render(glm::mat4, glm::vec2);
         void drawDensity(glm::mat4);

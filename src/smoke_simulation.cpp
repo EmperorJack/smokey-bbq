@@ -5,9 +5,11 @@
 bool displayVectors = false;
 bool displayDensity = true;
 bool enableEmitter = false;
+bool enablePressureSolve = true;
 
 glm::vec2 velocityField[SmokeSimulation::GRID_SIZE][SmokeSimulation::GRID_SIZE];
 float divergenceField[SmokeSimulation::GRID_SIZE][SmokeSimulation::GRID_SIZE];
+float pressureField[SmokeSimulation::GRID_SIZE][SmokeSimulation::GRID_SIZE];
 glm::vec2 densityField[SmokeSimulation::GRID_SIZE][SmokeSimulation::GRID_SIZE];
 
 GLuint squareVBO;
@@ -138,7 +140,9 @@ void SmokeSimulation::update() {
         }
     }
 
-    std::cout << divergenceField[0][0] << std::endl;
+    // Solve and apply pressure
+    solvePressureField();
+    if (enablePressureSolve) applyPressure();
 
     // Advect density through velocity
     for (int i = 0; i < GRID_SIZE; i++) {
@@ -173,7 +177,7 @@ glm::vec2 SmokeSimulation::traceParticle(float x, float y) {
 }
 
 float SmokeSimulation::divergenceAt(int i, int j) {
-    float a = -(2 * gridSpacing * FLUID_DENSITY / TIME_STEP);
+    float a = -((2 * gridSpacing * FLUID_DENSITY) / TIME_STEP);
 
     float b = getVelocity((i + 1) * gridSpacing, j * gridSpacing).x -
               getVelocity((i - 1) * gridSpacing, j * gridSpacing).x +
@@ -181,6 +185,51 @@ float SmokeSimulation::divergenceAt(int i, int j) {
               getVelocity(i * gridSpacing, (j - 1) * gridSpacing).y;
 
     return a * b;
+}
+
+void SmokeSimulation::solvePressureField() {
+    // Reset the pressure field
+    for (int i = 0; i < GRID_SIZE; i++) {
+        for (int j = 0; j < GRID_SIZE; j++) {
+            pressureField[i][j] = 0.0f;
+        }
+    }
+
+    // Iteratively solve the new pressure field
+    for (int iteration = 0; iteration < JACOBI_ITERATIONS; iteration++) {
+        float nextPressureField[GRID_SIZE][GRID_SIZE];
+
+        for (int i = 0; i < GRID_SIZE; i++) {
+            for (int j = 0; j < GRID_SIZE; j++) {
+                nextPressureField[i][j] = pressureAt(i, j);
+            }
+        }
+
+        std::copy(&nextPressureField[0][0], &nextPressureField[0][0] + GRID_SIZE * GRID_SIZE, &pressureField[0][0]);
+    }
+}
+
+float SmokeSimulation::pressureAt(int i, int j) {
+    float d = divergenceField[i][j];
+    float p = pressureField[i + 2][j] +
+              pressureField[i - 2][j] +
+              pressureField[i][j + 2] +
+              pressureField[i][j - 2];
+    return (d + p) / 4.0f;
+}
+
+void SmokeSimulation::applyPressure() {
+    float a = -(TIME_STEP / (2 * FLUID_DENSITY * gridSpacing));
+
+    for (int i = 0; i < GRID_SIZE; i++) {
+        for (int j = 0; j < GRID_SIZE; j++) {
+            float xChange = pressureField[i + 1][j] - pressureField[i - 1][j];
+            float yChange = pressureField[i][j + 1] - pressureField[i][j - 1];
+
+            velocityField[i][j].x += a * xChange;
+            velocityField[i][j].y += a * yChange;
+        }
+    }
 }
 
 glm::vec2 SmokeSimulation::getVelocity(float x, float y) {
@@ -389,4 +438,8 @@ void SmokeSimulation::toggleDensityDisplay() {
 
 void SmokeSimulation::toggleEnableEmitter() {
     enableEmitter = !enableEmitter;
+}
+
+void SmokeSimulation::togglePressureSolve() {
+    enablePressureSolve = !enablePressureSolve;
 }

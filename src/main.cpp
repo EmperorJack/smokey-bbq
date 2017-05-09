@@ -33,6 +33,8 @@ void keyCallback(GLFWwindow *win, int key, int scancode, int action, int mods) {
         smokeSimulation->toggleDensityDisplay();
     } else if (key == 'E' && action == GLFW_PRESS) {
         smokeSimulation->toggleEnableEmitter();
+    } else if (key == 'P' && action == GLFW_PRESS) {
+        smokeSimulation->togglePressureSolve();
     }
 }
 
