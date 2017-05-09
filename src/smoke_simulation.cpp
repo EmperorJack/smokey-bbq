@@ -107,23 +107,6 @@ void SmokeSimulation::update() {
     glm::vec2 advectedVelocityField[GRID_SIZE][GRID_SIZE];
     glm::vec2 advectedDensityField[GRID_SIZE][GRID_SIZE];
 
-    glm::vec2 target = glm::vec2(GRID_SIZE / 2 * gridSpacing, GRID_SIZE * gridSpacing);
-
-    // Smoke emitter
-    if (enableEmitter) {
-        for (int i = 0; i < GRID_SIZE; i++) {
-            for (int j = 0; j < GRID_SIZE; j++) {
-                float x = i * gridSpacing;
-                float y = j * gridSpacing;
-                glm::vec2 gridPosition = glm::vec2(x, y);
-                if (glm::distance(target, gridPosition) < PULSE_RANGE / 3.0f) {
-                    velocityField[i][j] = glm::vec2(myRandom() * 4.0f - 2.0f, -PULSE_FORCE);
-                    densityField[i][j] += 0.3f;
-                }
-            }
-        }
-    }
-
     // Advect velocity through velocity
     for (int i = 0; i < GRID_SIZE; i++) {
         for (int j = 0; j < GRID_SIZE; j++) {
@@ -132,6 +115,24 @@ void SmokeSimulation::update() {
     }
 
     std::copy(&advectedVelocityField[0][0], &advectedVelocityField[0][0] + GRID_SIZE * GRID_SIZE, &velocityField[0][0]);
+
+    // Smoke emitter
+    if (enableEmitter) {
+        glm::vec2 target = glm::vec2(GRID_SIZE / 2 * gridSpacing, GRID_SIZE * gridSpacing - 2);
+
+        for (int i = 0; i < GRID_SIZE; i++) {
+            for (int j = 0; j < GRID_SIZE; j++) {
+                float x = i * gridSpacing;
+                float y = j * gridSpacing;
+                glm::vec2 gridPosition = glm::vec2(x, y);
+                if (glm::distance(target, gridPosition) < PULSE_RANGE / 3.0f) {
+                    float horizontalForce = PULSE_FORCE * 50;
+                    velocityField[i][j] = glm::vec2(myRandom() * PULSE_FORCE - PULSE_FORCE / 2.0f, -PULSE_FORCE);
+                    densityField[i][j] += 0.2f;
+                }
+            }
+        }
+    }
 
     // Compute divergence
     for (int i = 0; i < GRID_SIZE; i++) {
@@ -211,10 +212,10 @@ void SmokeSimulation::solvePressureField() {
 
 float SmokeSimulation::pressureAt(int i, int j) {
     float d = divergenceField[i][j];
-    float p = pressureField[i + 2][j] +
-              pressureField[i - 2][j] +
-              pressureField[i][j + 2] +
-              pressureField[i][j - 2];
+    float p = pressureField[iClamp(i + 2)][j] +
+              pressureField[iClamp(i - 2)][j] +
+              pressureField[i][jClamp(j + 2)] +
+              pressureField[i][jClamp(j - 2)];
     return (d + p) / 4.0f;
 }
 
@@ -223,8 +224,9 @@ void SmokeSimulation::applyPressure() {
 
     for (int i = 0; i < GRID_SIZE; i++) {
         for (int j = 0; j < GRID_SIZE; j++) {
-            float xChange = pressureField[i + 1][j] - pressureField[i - 1][j];
-            float yChange = pressureField[i][j + 1] - pressureField[i][j - 1];
+
+            float xChange = pressureField[iClamp(i + 1)][j] - pressureField[iClamp(i - 1)][j];
+            float yChange = pressureField[i][jClamp(j + 1)] - pressureField[i][jClamp(j - 1)];
 
             velocityField[i][j].x += a * xChange;
             velocityField[i][j].y += a * yChange;
@@ -267,19 +269,29 @@ float SmokeSimulation::getInterpolatedValue(glm::vec2 field[GRID_SIZE][GRID_SIZE
 }
 
 glm::vec2 SmokeSimulation::getGridValue(glm::vec2 field[GRID_SIZE][GRID_SIZE], int i, int j) {
+    return field[iClamp(i)][jClamp(j)];
+}
+
+int SmokeSimulation::iClamp(int i) {
     if (WRAP_BORDERS) {
-        if (i < 0) i = GRID_SIZE - 1;
-        else if (i >= GRID_SIZE) i = 0;
-        if (j < 0) j = GRID_SIZE - 1;
-        else if (j >= GRID_SIZE) j = 0;
+        if (i < 0) i = GRID_SIZE + (i % GRID_SIZE);
+        else i = i % GRID_SIZE;
     } else {
         i = max(i, 0); i = min(i, GRID_SIZE - 1);
-        j = max(j, 0); j = min(j, GRID_SIZE - 1);
     }
 
-    //if (field[i][j] != field[i][j]) std::cout << "YO NAN" << std::endl;
+    return i;
+}
 
-    return field[i][j];
+int SmokeSimulation::jClamp(int j) {
+    if (WRAP_BORDERS) {
+        if (j < 0) j = GRID_SIZE + (j % GRID_SIZE);
+        else j = j % GRID_SIZE;
+    } else {
+        j = max(j, 0); j = min(j, GRID_SIZE - 1);
+    }
+    if (j < 0) std::cout << "WHAT THE FUCK" << std::endl;
+    return j;
 }
 
 void SmokeSimulation::addPulse(glm::vec2 position) {
@@ -294,7 +306,7 @@ void SmokeSimulation::addPulse(glm::vec2 position) {
             glm::vec2 gridPosition = glm::vec2(x, y);
             if (glm::distance(position, gridPosition) < PULSE_RANGE) {
                 velocityField[i][j] = PULSE_FORCE * glm::normalize(glm::vec2(force)); // gridPosition - position // 0.0f, -1.0f
-                densityField[i][j] += 0.5f / (glm::distance(position, gridPosition) / PULSE_RANGE);
+                densityField[i][j] += 0.5f * (1 - glm::distance(position, gridPosition) / PULSE_RANGE);
             }
         }
     }
@@ -324,7 +336,7 @@ void SmokeSimulation::render(glm::mat4 transform, glm::vec2 mousePosition) {
 
             glm::vec3 velocity = glm::vec3(velocityField[i][j].x, velocityField[i][j].y, 0.0f);
 
-            float magnitude = max(min(glm::length(velocity), 2.0f), 0.5f);
+            float magnitude = max(min(glm::length(velocity) / PULSE_FORCE * 1.5f, 2.0f), 0.5f);
 
             glm::mat4 scale = glm::scale(glm::vec3(magnitude, magnitude, 1.0f));
             glm::mat4 rotate = glm::orientation(glm::normalize(velocity), glm::vec3(0.0f, 1.0f, 0.0f));
