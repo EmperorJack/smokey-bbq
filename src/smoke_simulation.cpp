@@ -22,11 +22,6 @@ static inline float myRandom() {
     return std::rand() % 100 / 100.0f;
 }
 
-static inline int intFloor(float x) {
-    int i = (int) x; /* truncate */
-    return i - (i > x); /* convert trunc to floor */
-}
-
 SmokeSimulation::SmokeSimulation(float _gridWorldSize) {
     gridWorldSize = _gridWorldSize;
     gridSpacing = gridWorldSize / GRID_SIZE;
@@ -229,7 +224,7 @@ float SmokeSimulation::pressureAt(int i, int j) {
               grid[clampIndex(i - 2)][j].pressure +
               grid[i][clampIndex(j + 2)].pressure +
               grid[i][clampIndex(j - 2)].pressure;
-    return (d + p) / 4.0f;
+    return (d + p) * 0.25f; // / 4.0f
 }
 
 void SmokeSimulation::applyPressure() {
@@ -254,9 +249,9 @@ glm::vec2 SmokeSimulation::getVelocity(float x, float y) {
 
     // Evaluating staggered grid velocities using central differences
     v.x = (getInterpolatedVelocity(normX - 0.5f, normY, 0) +
-           getInterpolatedVelocity(normX + 0.5f, normY, 0)) / 2.0f;
+           getInterpolatedVelocity(normX + 0.5f, normY, 0)) * 0.5f;
     v.y = (getInterpolatedVelocity(normX, normY - 0.5f, 1) +
-           getInterpolatedVelocity(normX, normY + 0.5f, 1)) / 2.0f;
+           getInterpolatedVelocity(normX, normY + 0.5f, 1)) * 0.5f;
 
     //if (v.x == 0.0f && v.y == 0.0f) std::cout << "YO NAN " << std::endl;
 
@@ -271,8 +266,8 @@ float SmokeSimulation::getDensity(float x, float y) {
 }
 
 float SmokeSimulation::getInterpolatedVelocity(float x, float y, int index) {
-    int i = (int) floor(x);
-    int j = (int) floor(y);
+    int i = ((int) (x + GRID_SIZE)) - GRID_SIZE;
+    int j = ((int) (y + GRID_SIZE)) - GRID_SIZE;
 
     return (i+1-x) * (j+1-y) * getGridVelocity(i, j)[index] +
            (x-i) * (j+1-y)   * getGridVelocity(i+1, j)[index] +
@@ -285,8 +280,8 @@ glm::vec2 SmokeSimulation::getGridVelocity(int i, int j) {
 }
 
 float SmokeSimulation::getInterpolatedDensity(float x, float y) {
-    int i = (int) floor(x);
-    int j = (int) floor(y);
+    int i = ((int) (x + GRID_SIZE)) - GRID_SIZE;
+    int j = ((int) (y + GRID_SIZE)) - GRID_SIZE;
 
     return (i+1-x) * (j+1-y) * getGridDensity(i, j) +
            (x-i) * (j+1-y)   * getGridDensity(i+1, j) +
@@ -301,9 +296,10 @@ float SmokeSimulation::getGridDensity(int i, int j) {
 int SmokeSimulation::clampIndex(int i) {
     if (WRAP_BORDERS) {
         if (i < 0) i = GRID_SIZE + (i % GRID_SIZE);
-        else i = i % GRID_SIZE;
+        else i = i >= GRID_SIZE ? i % GRID_SIZE : i;
     } else {
-        i = max(i, 0); i = min(i, GRID_SIZE - 1);
+        if (i < 0) i = 0;
+        else if (i >= GRID_SIZE) i = GRID_SIZE - 1;
     }
 
     return i;
@@ -312,7 +308,10 @@ int SmokeSimulation::clampIndex(int i) {
 void SmokeSimulation::addPulse(glm::vec2 position) {
     position -= glm::vec2(gridSpacing / 2.0f, gridSpacing / 2.0f);
 
-    glm::vec2 force = glm::vec2(myRandom() * 2.0f - 1.0f, myRandom() * 2.0f - 1.0f);
+    glm::vec2 force = glm::vec2(0.0f, 0.0f);
+    while (force.x == 0.0f && force.y == 0.0f) {
+        force = glm::vec2(myRandom() * 2.0f - 1.0f, myRandom() * 2.0f - 1.0f);
+    }
 
     for (int i = 0; i < GRID_SIZE; i++) {
         for (int j = 0; j < GRID_SIZE; j++) {
