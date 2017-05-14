@@ -16,7 +16,7 @@ GLuint densityTextureID;
 float gridWorldSize;
 float gridSpacing;
 
-SmokeSimulation::gridCell grid[SmokeSimulation::GRID_SIZE][SmokeSimulation::GRID_SIZE];
+SmokeSimulation::gridCell grid[SmokeSimulation::GRID_SIZE * SmokeSimulation::GRID_SIZE];
 
 static inline float myRandom() {
     return std::rand() % 100 / 100.0f;
@@ -25,6 +25,23 @@ static inline float myRandom() {
 static inline int intFloor(float x) {
     int i = (int) x; /* truncate */
     return i - (i > x); /* convert trunc to floor */
+}
+
+static inline int clampIndex(int i) {
+    if (SmokeSimulation::WRAP_BORDERS) {
+        if (i < 0) i = SmokeSimulation::GRID_SIZE + (i % SmokeSimulation::GRID_SIZE);
+        else i = i % SmokeSimulation::GRID_SIZE;
+    } else {
+        i = max(i, 0); i = min(i, SmokeSimulation::GRID_SIZE - 1);
+    }
+
+    return i;
+}
+
+static inline int getGridIndex(int i, int j) {
+    i = clampIndex(i);
+    j = clampIndex(j);
+    return SmokeSimulation::GRID_SIZE * i + j;
 }
 
 SmokeSimulation::SmokeSimulation(float _gridWorldSize) {
@@ -104,7 +121,7 @@ void SmokeSimulation::setupFields() {
             // Setup density
             g.density = 0.0f;
 
-            grid[i][j] = g;
+            grid[getGridIndex(i, j)] = g;
         }
     }
 }
@@ -113,13 +130,13 @@ void SmokeSimulation::update() {
     // Advect velocity through velocity
     for (int i = 0; i < GRID_SIZE; i++) {
         for (int j = 0; j < GRID_SIZE; j++) {
-            grid[i][j].advectedVelocity = advectedVelocityAt(i, j);
+            grid[getGridIndex(i, j)].advectedVelocity = advectedVelocityAt(i, j);
         }
     }
 
     for (int i = 0; i < GRID_SIZE; i++) {
         for (int j = 0; j < GRID_SIZE; j++) {
-            grid[i][j].velocity = grid[i][j].advectedVelocity;
+            grid[getGridIndex(i, j)].velocity = grid[getGridIndex(i, j)].advectedVelocity;
         }
     }
 
@@ -134,8 +151,8 @@ void SmokeSimulation::update() {
                 glm::vec2 gridPosition = glm::vec2(x, y);
                 if (glm::distance(target, gridPosition) < PULSE_RANGE / 3.0f) {
                     float horizontalForce = PULSE_FORCE * 50;
-                    grid[i][j].velocity = glm::vec2(myRandom() * PULSE_FORCE - PULSE_FORCE / 2.0f, -PULSE_FORCE);
-                    grid[i][j].density += 0.2f;
+                    grid[getGridIndex(i, j)].velocity = glm::vec2(myRandom() * PULSE_FORCE - PULSE_FORCE / 2.0f, -PULSE_FORCE);
+                    grid[getGridIndex(i, j)].density += 0.2f;
                 }
             }
         }
@@ -144,7 +161,7 @@ void SmokeSimulation::update() {
     // Compute divergence
     for (int i = 0; i < GRID_SIZE; i++) {
         for (int j = 0; j < GRID_SIZE; j++) {
-            grid[i][j].divergence = divergenceAt(i, j);
+            grid[getGridIndex(i, j)].divergence = divergenceAt(i, j);
         }
     }
 
@@ -155,13 +172,13 @@ void SmokeSimulation::update() {
     // Advect density through velocity
     for (int i = 0; i < GRID_SIZE; i++) {
         for (int j = 0; j < GRID_SIZE; j++) {
-            grid[i][j].advectedDensity = advectedDensityAt(i, j) * DENSITY_DISSAPATION;
+            grid[getGridIndex(i, j)].advectedDensity = advectedDensityAt(i, j) * DENSITY_DISSAPATION;
         }
     }
 
     for (int i = 0; i < GRID_SIZE; i++) {
         for (int j = 0; j < GRID_SIZE; j++) {
-            grid[i][j].density = grid[i][j].advectedDensity;
+            grid[getGridIndex(i, j)].density = grid[getGridIndex(i, j)].advectedDensity;
         }
     }
 }
@@ -203,7 +220,7 @@ void SmokeSimulation::solvePressureField() {
     // Reset the pressure field
     for (int i = 0; i < GRID_SIZE; i++) {
         for (int j = 0; j < GRID_SIZE; j++) {
-            grid[i][j].pressure = 0.0f;
+            grid[getGridIndex(i, j)].pressure = 0.0f;
         }
     }
 
@@ -211,24 +228,24 @@ void SmokeSimulation::solvePressureField() {
     for (int iteration = 0; iteration < JACOBI_ITERATIONS; iteration++) {
         for (int i = 0; i < GRID_SIZE; i++) {
             for (int j = 0; j < GRID_SIZE; j++) {
-                grid[i][j].newPressure = pressureAt(i, j);
+                grid[getGridIndex(i, j)].newPressure = pressureAt(i, j);
             }
         }
 
         for (int i = 0; i < GRID_SIZE; i++) {
             for (int j = 0; j < GRID_SIZE; j++) {
-                grid[i][j].pressure = grid[i][j].newPressure;
+                grid[getGridIndex(i, j)].pressure = grid[getGridIndex(i, j)].newPressure;
             }
         }
     }
 }
 
 float SmokeSimulation::pressureAt(int i, int j) {
-    float d = grid[i][j].divergence;
-    float p = grid[clampIndex(i + 2)][j].pressure +
-              grid[clampIndex(i - 2)][j].pressure +
-              grid[i][clampIndex(j + 2)].pressure +
-              grid[i][clampIndex(j - 2)].pressure;
+    float d = grid[getGridIndex(i, j)].divergence;
+    float p = grid[getGridIndex(i+2, j)].pressure +
+              grid[getGridIndex(i-2, j)].pressure +
+              grid[getGridIndex(i, j+2)].pressure +
+              grid[getGridIndex(i, j-2)].pressure;
     return (d + p) / 4.0f;
 }
 
@@ -237,11 +254,11 @@ void SmokeSimulation::applyPressure() {
 
     for (int i = 0; i < GRID_SIZE; i++) {
         for (int j = 0; j < GRID_SIZE; j++) {
-            float xChange = grid[clampIndex(i + 1)][j].pressure - grid[clampIndex(i - 1)][j].pressure;
-            float yChange = grid[i][clampIndex(j + 1)].pressure - grid[i][clampIndex(j - 1)].pressure;
+            float xChange = grid[getGridIndex(i+1, j)].pressure - grid[getGridIndex(i-1, j)].pressure;
+            float yChange = grid[getGridIndex(i, j+1)].pressure - grid[getGridIndex(i, j-1)].pressure;
 
-            grid[i][j].velocity.x += a * xChange;
-            grid[i][j].velocity.y += a * yChange;
+            grid[getGridIndex(i, j)].velocity.x += a * xChange;
+            grid[getGridIndex(i, j)].velocity.y += a * yChange;
         }
     }
 }
@@ -281,7 +298,7 @@ float SmokeSimulation::getInterpolatedVelocity(float x, float y, int index) {
 }
 
 glm::vec2 SmokeSimulation::getGridVelocity(int i, int j) {
-    return grid[clampIndex(i)][clampIndex(j)].velocity;
+    return grid[getGridIndex(i, j)].velocity;
 }
 
 float SmokeSimulation::getInterpolatedDensity(float x, float y) {
@@ -295,18 +312,7 @@ float SmokeSimulation::getInterpolatedDensity(float x, float y) {
 }
 
 float SmokeSimulation::getGridDensity(int i, int j) {
-    return grid[clampIndex(i)][clampIndex(j)].density;
-}
-
-int SmokeSimulation::clampIndex(int i) {
-    if (WRAP_BORDERS) {
-        if (i < 0) i = GRID_SIZE + (i % GRID_SIZE);
-        else i = i % GRID_SIZE;
-    } else {
-        i = max(i, 0); i = min(i, GRID_SIZE - 1);
-    }
-
-    return i;
+    return grid[getGridIndex(i, j)].density;
 }
 
 void SmokeSimulation::addPulse(glm::vec2 position) {
@@ -320,8 +326,8 @@ void SmokeSimulation::addPulse(glm::vec2 position) {
             float y = j * gridSpacing;
             glm::vec2 gridPosition = glm::vec2(x, y);
             if (glm::distance(position, gridPosition) < PULSE_RANGE) {
-                grid[i][j].velocity = PULSE_FORCE * glm::normalize(glm::vec2(force)); // gridPosition - position // 0.0f, -1.0f
-                grid[i][j].density += 0.5f * (1 - glm::distance(position, gridPosition) / PULSE_RANGE);
+                grid[getGridIndex(i, j)].velocity = PULSE_FORCE * glm::normalize(glm::vec2(force)); // gridPosition - position // 0.0f, -1.0f
+                grid[getGridIndex(i, j)].density += 0.5f * (1 - glm::distance(position, gridPosition) / PULSE_RANGE);
             }
         }
     }
@@ -349,7 +355,7 @@ void SmokeSimulation::render(glm::mat4 transform, glm::vec2 mousePosition) {
 
             translate *= glm::translate(glm::vec3(gridSpacing / 2.0f, gridSpacing / 2.0f, 0.0f));
 
-            glm::vec3 velocity = glm::vec3(grid[i][j].velocity.x, grid[i][j].velocity.y, 0.0f);
+            glm::vec3 velocity = glm::vec3(grid[getGridIndex(i, j)].velocity.x, grid[getGridIndex(i, j)].velocity.y, 0.0f);
 
             float magnitude = max(min(glm::length(velocity) / PULSE_FORCE * 1.5f, 2.0f), 0.5f);
 
@@ -378,14 +384,14 @@ void SmokeSimulation::drawDensity(glm::mat4 transform) {
     GLint useFillColorLocation = glGetUniformLocation(3, "useFillColor");
     glUniform1i(useFillColorLocation, false);
 
-    float densityField[SmokeSimulation::GRID_SIZE][SmokeSimulation::GRID_SIZE];
+    float densityField[SmokeSimulation::GRID_SIZE * SmokeSimulation::GRID_SIZE];
     for (int i = 0; i < GRID_SIZE; i++) {
         for (int j = 0; j < GRID_SIZE; j++) {
-            densityField[i][j] = grid[i][j].density;
+            densityField[getGridIndex(i, j)] = grid[getGridIndex(i, j)].density;
         }
     }
-    
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RED, GRID_SIZE, GRID_SIZE, 0, GL_RED, GL_FLOAT, &densityField[0][0]);
+
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RED, GRID_SIZE, GRID_SIZE, 0, GL_RED, GL_FLOAT, &densityField[0]);
 
     GLint transformID = glGetUniformLocation(3, "MVP");
     glUniformMatrix4fv(transformID, 1, GL_FALSE, &transform[0][0]);

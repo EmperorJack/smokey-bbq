@@ -42,8 +42,6 @@ class SmokeSimulation {
         float pressureAt(int i, int j);
         void applyPressure();
 
-        int clampIndex(int i);
-
         float getInterpolatedVelocity(float x, float y, int index);
         glm::vec2 getGridVelocity(int i, int j);
 
