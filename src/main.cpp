@@ -37,6 +37,8 @@ void keyCallback(GLFWwindow *win, int key, int scancode, int action, int mods) {
         smokeSimulation->toggleEnableEmitter();
     } else if (key == 'P' && action == GLFW_PRESS) {
         smokeSimulation->togglePressureSolve();
+    } else if (key == 'R' && action == GLFW_PRESS) {
+        smokeSimulation->togglePulseType();
     }
 }
 

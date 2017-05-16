@@ -6,6 +6,7 @@ bool displayVectors = false;
 bool displayDensity = true;
 bool enableEmitter = false;
 bool enablePressureSolve = true;
+bool randomPulseAngle = false;
 
 GLuint squareVBO;
 GLuint velocityVBO;
@@ -127,7 +128,7 @@ void SmokeSimulation::update() {
                 float x = i * gridSpacing;
                 float y = j * gridSpacing;
                 glm::vec2 gridPosition = glm::vec2(x, y);
-                if (glm::distance(target, gridPosition) < PULSE_RANGE / 3.0f) {
+                if (glm::distance(target, gridPosition) < EMITTER_RANGE) {
                     float horizontalForce = PULSE_FORCE * 50;
                     grid[i][j].velocity = glm::vec2(myRandom() * PULSE_FORCE - PULSE_FORCE / 2.0f, -PULSE_FORCE);
                     grid[i][j].density += 0.2f;
@@ -309,8 +310,10 @@ void SmokeSimulation::addPulse(glm::vec2 position) {
     position -= glm::vec2(gridSpacing / 2.0f, gridSpacing / 2.0f);
 
     glm::vec2 force = glm::vec2(0.0f, 0.0f);
-    while (force.x == 0.0f && force.y == 0.0f) {
-        force = glm::vec2(myRandom() * 2.0f - 1.0f, myRandom() * 2.0f - 1.0f);
+    if (randomPulseAngle) {
+        while (force.x == 0.0f && force.y == 0.0f) {
+            force = glm::vec2(myRandom() * 2.0f - 1.0f, myRandom() * 2.0f - 1.0f);
+        }
     }
 
     for (int i = 0; i < GRID_SIZE; i++) {
@@ -319,7 +322,7 @@ void SmokeSimulation::addPulse(glm::vec2 position) {
             float y = j * gridSpacing;
             glm::vec2 gridPosition = glm::vec2(x, y);
             if (glm::distance(position, gridPosition) < PULSE_RANGE) {
-                grid[i][j].velocity = PULSE_FORCE * glm::normalize(glm::vec2(force)); // gridPosition - position // 0.0f, -1.0f
+                grid[i][j].velocity = PULSE_FORCE * (randomPulseAngle ? glm::normalize(force) : glm::normalize(gridPosition - position));
                 grid[i][j].density += 0.5f * (1 - glm::distance(position, gridPosition) / PULSE_RANGE);
             }
         }
@@ -475,4 +478,8 @@ void SmokeSimulation::toggleEnableEmitter() {
 
 void SmokeSimulation::togglePressureSolve() {
     enablePressureSolve = !enablePressureSolve;
+}
+
+void SmokeSimulation::togglePulseType() {
+    randomPulseAngle = !randomPulseAngle;
 }
