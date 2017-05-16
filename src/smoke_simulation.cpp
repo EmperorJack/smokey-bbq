@@ -248,10 +248,10 @@ glm::vec2 SmokeSimulation::getVelocity(float x, float y) {
     glm::vec2 v = glm::vec2();
 
     // Evaluating staggered grid velocities using central differences
-    v.x = (getInterpolatedVelocity(normX - 0.5f, normY, 0) +
-           getInterpolatedVelocity(normX + 0.5f, normY, 0)) * 0.5f;
-    v.y = (getInterpolatedVelocity(normX, normY - 0.5f, 1) +
-           getInterpolatedVelocity(normX, normY + 0.5f, 1)) * 0.5f;
+    v.x = (getInterpolatedVelocity(normX - 0.5f, normY, true) +
+           getInterpolatedVelocity(normX + 0.5f, normY, true)) * 0.5f;
+    v.y = (getInterpolatedVelocity(normX, normY - 0.5f, false) +
+           getInterpolatedVelocity(normX, normY + 0.5f, false)) * 0.5f;
 
     //if (v.x == 0.0f && v.y == 0.0f) std::cout << "YO NAN " << std::endl;
 
@@ -265,14 +265,14 @@ float SmokeSimulation::getDensity(float x, float y) {
     return getInterpolatedDensity(normX, normY);
 }
 
-float SmokeSimulation::getInterpolatedVelocity(float x, float y, int index) {
+float SmokeSimulation::getInterpolatedVelocity(float x, float y, bool xAxis) {
     int i = ((int) (x + GRID_SIZE)) - GRID_SIZE;
     int j = ((int) (y + GRID_SIZE)) - GRID_SIZE;
 
-    return (i+1-x) * (j+1-y) * getGridVelocity(i, j)[index] +
-           (x-i) * (j+1-y)   * getGridVelocity(i+1, j)[index] +
-           (i+1-x) * (y-j)   * getGridVelocity(i, j+1)[index] +
-           (x-i) * (y-j)     * getGridVelocity(i+1, j+1)[index];
+    return (i+1-x) * (j+1-y) * (xAxis ? getGridVelocity(i, j).x : getGridVelocity(i, j).y) +
+           (x-i) * (j+1-y)   * (xAxis ? getGridVelocity(i+1, j).x : getGridVelocity(i+1, j).y) +
+           (i+1-x) * (y-j)   * (xAxis ? getGridVelocity(i, j+1).x : getGridVelocity(i, j+1).y) +
+           (x-i) * (y-j)     * (xAxis ? getGridVelocity(i+1, j+1).x : getGridVelocity(i+1, j+1).y);
 }
 
 glm::vec2 SmokeSimulation::getGridVelocity(int i, int j) {

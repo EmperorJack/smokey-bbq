@@ -4,7 +4,7 @@
 class SmokeSimulation {
 
     public:
-        static constexpr int GRID_SIZE = 96;
+        static constexpr int GRID_SIZE = 128;
         static constexpr float TIME_STEP = 0.1f;
         static constexpr float FLUID_DENSITY = 1.0f;
         static constexpr bool WRAP_BORDERS = true;
@@ -44,7 +44,7 @@ class SmokeSimulation {
 
         int clampIndex(int i);
 
-        float getInterpolatedVelocity(float x, float y, int index);
+        float getInterpolatedVelocity(float x, float y, bool xAxis);
         glm::vec2 getGridVelocity(int i, int j);
 
         float getInterpolatedDensity(float x, float y);
