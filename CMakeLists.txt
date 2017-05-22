@@ -45,15 +45,15 @@ ENDIF()
 include_directories(${PROJECT_SOURCE_DIR}/lib/glfw/include)
 add_subdirectory(${PROJECT_SOURCE_DIR}/lib/glfw)
 
-# Include and make glm subproject
-include_directories(${PROJECT_SOURCE_DIR}/lib/glm/include)
-add_subdirectory(${PROJECT_SOURCE_DIR}/lib/glm)
+# Include and add glm header library
+include_directories(${PROJECT_SOURCE_DIR}/lib/glm)
+file(GLOB EXTERNAL lib/glm/glm/glm.hpp)
 
 # Create the executable
-add_executable(${PROJECT_NAME} ${SOURCES} ${COMMON})
+add_executable(${PROJECT_NAME} ${SOURCES} ${COMMON} ${EXTERNAL})
 
 # Link the external libraries
-target_link_libraries(${PROJECT_NAME} glfw glm ${GLEW_LIBRARY} ${OPENGL_LIBRARIES})
+target_link_libraries(${PROJECT_NAME} glfw ${GLEW_LIBRARY} ${OPENGL_LIBRARIES})
 
 # Copy shaders to the build directory
 set(SHADER_SUBDIRECTORY resources/shaders)
