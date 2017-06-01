@@ -7,6 +7,7 @@ bool displayDensity = true;
 bool enableEmitter = false;
 bool enablePressureSolve = true;
 bool randomPulseAngle = false;
+bool wrapBorders = true;
 
 GLuint squareVBO;
 GLuint velocityVBO;
@@ -295,7 +296,7 @@ float SmokeSimulation::getGridDensity(int i, int j) {
 }
 
 int SmokeSimulation::clampIndex(int i) {
-    if (WRAP_BORDERS) {
+    if (wrapBorders) {
         if (i < 0) i = GRID_SIZE + (i % GRID_SIZE);
         else i = i >= GRID_SIZE ? i % GRID_SIZE : i;
     } else {
@@ -482,4 +483,8 @@ void SmokeSimulation::togglePressureSolve() {
 
 void SmokeSimulation::togglePulseType() {
     randomPulseAngle = !randomPulseAngle;
+}
+
+void SmokeSimulation::toggleWrapBorders() {
+    wrapBorders = !wrapBorders;
 }
