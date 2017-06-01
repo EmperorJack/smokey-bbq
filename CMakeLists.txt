@@ -31,8 +31,9 @@ file(GLOB SOURCES
     src/*.cpp
 )
 
-# Include glew
-include_directories("${PROJECT_SOURCE_DIR}/lib/glew/include")
+# Include and make glew subproject
+include_directories(${PROJECT_SOURCE_DIR}/lib/glew/include)
+add_subdirectory(${PROJECT_SOURCE_DIR}/lib/glew)
 
 # Include glew librarys
 IF (WIN32)
@@ -53,7 +54,7 @@ file(GLOB EXTERNAL lib/glm/glm/glm.hpp)
 add_executable(${PROJECT_NAME} ${SOURCES} ${COMMON} ${EXTERNAL})
 
 # Link the external libraries
-target_link_libraries(${PROJECT_NAME} glfw ${GLEW_LIBRARY} ${OPENGL_LIBRARIES})
+target_link_libraries(${PROJECT_NAME} glfw glew ${GLEW_LIBRARY} ${OPENGL_LIBRARIES})
 
 # Copy shaders to the build directory
 set(SHADER_SUBDIRECTORY resources/shaders)
