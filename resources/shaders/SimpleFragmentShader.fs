@@ -16,6 +16,6 @@ void main() {
     color = fillColor.rgb;
   } else {
     float density = texture(myTextureSampler, UV).r;
-    color = vec3(density, density, density);
+    color = vec3(0.0f, density, density);
   }
 }

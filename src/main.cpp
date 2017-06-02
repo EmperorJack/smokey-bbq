@@ -12,6 +12,8 @@ const int SCREEN_HEIGHT= 800;
 glm::vec2 mousePosition;
 bool mousePressed = false;
 
+bool updateSimulation = true;
+
 // Mouse Position callback
 void mouseMovedCallback(GLFWwindow* win, double xPos, double yPos) {
     mousePosition = glm::vec2(xPos, yPos);
@@ -37,6 +39,12 @@ void keyCallback(GLFWwindow *win, int key, int scancode, int action, int mods) {
         smokeSimulation->toggleEnableEmitter();
     } else if (key == 'P' && action == GLFW_PRESS) {
         smokeSimulation->togglePressureSolve();
+    } else if (key == 'R' && action == GLFW_PRESS) {
+        smokeSimulation->togglePulseType();
+    } else if (key == 'W' && action == GLFW_PRESS) {
+        smokeSimulation->toggleWrapBorders();
+    } else if (key == 'U' && action == GLFW_PRESS) {
+        updateSimulation = !updateSimulation;
     }
 }
 
@@ -105,11 +113,9 @@ int main(int argc, char **argv) {
             lastTime += 1.0;
         }
 
-        if (mousePressed) {
-            smokeSimulation->addPulse(mousePosition);
-        }
+        if (mousePressed) smokeSimulation->addPulse(mousePosition);
 
-        smokeSimulation->update();
+        if (updateSimulation) smokeSimulation->update();
 
         glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);

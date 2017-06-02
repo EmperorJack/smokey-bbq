@@ -4,15 +4,25 @@
 class SmokeSimulation {
 
     public:
-        static constexpr int GRID_SIZE = 96;
+        static constexpr int GRID_SIZE = 192;
         static constexpr float TIME_STEP = 0.1f;
         static constexpr float FLUID_DENSITY = 1.0f;
-        static constexpr bool WRAP_BORDERS = true;
         static constexpr float STROKE_WEIGHT = 2.0f;
-        static constexpr float PULSE_RANGE = 200.0f;
+        static constexpr float PULSE_RANGE = 50.0f;
+        static constexpr float EMITTER_RANGE = 80.0f;
         static constexpr float PULSE_FORCE = 150.0f;
-        static constexpr float DENSITY_DISSAPATION = 0.95;
+        static constexpr float DENSITY_DISSAPATION = 0.987;
         static constexpr int JACOBI_ITERATIONS = 40;
+
+        struct gridCell {
+            glm::vec2 velocity;
+            glm::vec2 advectedVelocity;
+            float divergence;
+            float pressure;
+            float newPressure;
+            float density;
+            float advectedDensity;
+        };
 
         SmokeSimulation(float);
 
@@ -32,17 +42,21 @@ class SmokeSimulation {
         float pressureAt(int i, int j);
         void applyPressure();
 
-        int iClamp(int i);
-        int jClamp(int j);
+        int clampIndex(int i);
 
-        float getInterpolatedValue(glm::vec2 field[GRID_SIZE][GRID_SIZE], float x, float y, int);
-        glm::vec2 getGridValue(glm::vec2 field[GRID_SIZE][GRID_SIZE], int i, int j);
+        float getInterpolatedVelocity(float x, float y, bool xAxis);
+        glm::vec2 getGridVelocity(int i, int j);
+
+        float getInterpolatedDensity(float x, float y);
+        float getGridDensity(int i, int j);
 
         void addPulse(glm::vec2);
         void toggleVectorDisplay();
         void toggleDensityDisplay();
         void toggleEnableEmitter();
         void togglePressureSolve();
+        void togglePulseType();
+        void toggleWrapBorders();
 
         void render(glm::mat4, glm::vec2);
         void drawDensity(glm::mat4);
