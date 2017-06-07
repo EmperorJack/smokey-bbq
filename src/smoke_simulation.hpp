@@ -51,16 +51,18 @@ class SmokeSimulation {
 
         glm::vec2 buoyancyAt(int i, int j);
 
-        int clampIndex(int i);
-
         float getInterpolatedVelocity(float x, float y, bool xAxis);
-        glm::vec2 getGridVelocity(int i, int j);
-
         float getInterpolatedDensity(float x, float y);
-        float getGridDensity(int i, int j);
-
         float getInterpolatedTemperature(float x, float y);
+
+        glm::vec2 getGridVelocity(int i, int j);
+        float getGridDensity(int i, int j);
         float getGridTemperature(int i, int j);
+        float getGridPressure(int i, int j);
+
+        int wrapIndex(int i);
+        int clampIndex(int i);
+        bool clampBoundary(int &i);
 
         void addPulse(glm::vec2);
         void toggleVectorDisplay();
@@ -68,6 +70,7 @@ class SmokeSimulation {
         void toggleEnableEmitter();
         void togglePressureSolve();
         void togglePulseType();
+        void toggleBuoyancy();
         void toggleWrapBorders();
 
         void render(glm::mat4, glm::vec2);

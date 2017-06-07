@@ -9,6 +9,7 @@ bool displayDensity = true;
 bool enableEmitter = false;
 bool enablePressureSolve = true;
 bool randomPulseAngle = false;
+bool enableBuoyancy = true;
 bool wrapBorders = true;
 
 // VBOs
@@ -134,9 +135,11 @@ void SmokeSimulation::update() {
     }
 
     // Buoyancy
-    for (int i = 0; i < GRID_SIZE; i++) {
-        for (int j = 0; j < GRID_SIZE; j++) {
-            grid[i][j].velocity += buoyancyAt(i, j);
+    if (enableBuoyancy) {
+        for (int i = 0; i < GRID_SIZE; i++) {
+            for (int j = 0; j < GRID_SIZE; j++) {
+                grid[i][j].velocity += buoyancyAt(i, j);
+            }
         }
     }
 
@@ -249,10 +252,10 @@ void SmokeSimulation::solvePressureField() {
 
 float SmokeSimulation::pressureAt(int i, int j) {
     float d = grid[i][j].divergence;
-    float p = grid[clampIndex(i + 2)][j].pressure +
-              grid[clampIndex(i - 2)][j].pressure +
-              grid[i][clampIndex(j + 2)].pressure +
-              grid[i][clampIndex(j - 2)].pressure;
+    float p = getGridPressure(clampIndex(i + 2), j) +
+              getGridPressure(clampIndex(i - 2), j) +
+              getGridPressure(i, clampIndex(j + 2)) +
+              getGridPressure(i, clampIndex(j - 2));
     return (d + p) * 0.25f;
 }
 
@@ -261,8 +264,8 @@ void SmokeSimulation::applyPressure() {
 
     for (int i = 0; i < GRID_SIZE; i++) {
         for (int j = 0; j < GRID_SIZE; j++) {
-            float xChange = grid[clampIndex(i + 1)][j].pressure - grid[clampIndex(i - 1)][j].pressure;
-            float yChange = grid[i][clampIndex(j + 1)].pressure - grid[i][clampIndex(j - 1)].pressure;
+            float xChange = getGridPressure(clampIndex(i + 1),j) - getGridPressure(clampIndex(i - 1),j);
+            float yChange = getGridPressure(i, clampIndex(j + 1)) - getGridPressure(i ,clampIndex(j - 1));
 
             grid[i][j].velocity.x += a * xChange;
             grid[i][j].velocity.y += a * yChange;
@@ -311,10 +314,6 @@ float SmokeSimulation::getInterpolatedVelocity(float x, float y, bool xAxis) {
            (x-i) * (y-j)     * (xAxis ? getGridVelocity(i+1, j+1).x : getGridVelocity(i+1, j+1).y);
 }
 
-glm::vec2 SmokeSimulation::getGridVelocity(int i, int j) {
-    return grid[clampIndex(i)][clampIndex(j)].velocity;
-}
-
 float SmokeSimulation::getInterpolatedDensity(float x, float y) {
     int i = ((int) (x + GRID_SIZE)) - GRID_SIZE;
     int j = ((int) (y + GRID_SIZE)) - GRID_SIZE;
@@ -323,10 +322,6 @@ float SmokeSimulation::getInterpolatedDensity(float x, float y) {
            (x-i) * (j+1-y)   * getGridDensity(i+1, j) +
            (i+1-x) * (y-j)   * getGridDensity(i, j+1) +
            (x-i) * (y-j)     * getGridDensity(i+1, j+1);
-}
-
-float SmokeSimulation::getGridDensity(int i, int j) {
-    return grid[clampIndex(i)][clampIndex(j)].density;
 }
 
 float SmokeSimulation::getInterpolatedTemperature(float x, float y) {
@@ -339,20 +334,66 @@ float SmokeSimulation::getInterpolatedTemperature(float x, float y) {
            (x-i) * (y-j)     * getGridTemperature(i+1, j+1);
 }
 
+glm::vec2 SmokeSimulation::getGridVelocity(int i, int j) {
+    if (wrapBorders) {
+        return grid[wrapIndex(i)][wrapIndex(j)].velocity;
+    } else {
+        bool boundary = clampBoundary(i) || clampBoundary(j);
+        return grid[i][j].velocity * (boundary ? 0.0f : 1.0f);
+    }
+}
+
+float SmokeSimulation::getGridDensity(int i, int j) {
+    if (wrapBorders) {
+        return grid[wrapIndex(i)][wrapIndex(j)].density;
+    } else {
+        bool boundary = clampBoundary(i) || clampBoundary(j);
+        return grid[i][j].density * (boundary ? 0.0f : 1.0f);
+    }
+}
+
 float SmokeSimulation::getGridTemperature(int i, int j) {
-    return grid[clampIndex(i)][clampIndex(j)].temperature;
+    if (wrapBorders) {
+        return grid[wrapIndex(i)][wrapIndex(j)].temperature;
+    } else {
+        bool boundary = clampBoundary(i) || clampBoundary(j);
+        return grid[i][j].temperature * (boundary ? 0.0f : 1.0f);
+    }
+}
+
+float SmokeSimulation::getGridPressure(int i, int j) {
+    if (wrapBorders) {
+        return grid[wrapIndex(i)][wrapIndex(j)].pressure;
+    } else {
+        bool boundary = clampBoundary(i) || clampBoundary(j);
+        return grid[i][j].pressure * (boundary ? 0.0f : 1.0f);
+    }
+}
+
+int SmokeSimulation::wrapIndex(int i) {
+    if (i < 0) i = GRID_SIZE + (i % GRID_SIZE);
+    else i = i >= GRID_SIZE ? i % GRID_SIZE : i;
+
+    return i;
 }
 
 int SmokeSimulation::clampIndex(int i) {
-    if (wrapBorders) {
-        if (i < 0) i = GRID_SIZE + (i % GRID_SIZE);
-        else i = i >= GRID_SIZE ? i % GRID_SIZE : i;
-    } else {
-        if (i < 0) i = 0;
-        else if (i >= GRID_SIZE) i = GRID_SIZE - 1;
-    }
+    if (i < 0) i = 0;
+    else if (i >= GRID_SIZE) i = GRID_SIZE - 1;
 
     return i;
+}
+
+bool SmokeSimulation::clampBoundary(int &i) {
+    if (i < 0) {
+        i = 0;
+        return true;
+    }  else if (i >= GRID_SIZE) {
+        i = GRID_SIZE - 1;
+        return true;
+    }
+
+    return false;
 }
 
 void SmokeSimulation::render(glm::mat4 transform, glm::vec2 mousePosition) {
@@ -488,6 +529,10 @@ void SmokeSimulation::togglePressureSolve() {
 
 void SmokeSimulation::togglePulseType() {
     randomPulseAngle = !randomPulseAngle;
+}
+
+void SmokeSimulation::toggleBuoyancy() {
+    enableBuoyancy = !enableBuoyancy;
 }
 
 void SmokeSimulation::toggleWrapBorders() {

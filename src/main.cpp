@@ -41,6 +41,8 @@ void keyCallback(GLFWwindow *win, int key, int scancode, int action, int mods) {
         smokeSimulation->togglePulseType();
     } else if (key == 'W' && action == GLFW_PRESS) {
         smokeSimulation->toggleWrapBorders();
+    } else if (key == 'B' && action == GLFW_PRESS) {
+        smokeSimulation->toggleBuoyancy();
     } else if (key == 'U' && action == GLFW_PRESS) {
         updateSimulation = !updateSimulation;
     }
