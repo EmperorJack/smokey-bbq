@@ -94,7 +94,7 @@ void SmokeSimulation::setupFields() {
             g.density = 0.0f;
             g.advectedDensity = 0.0f;
             g.temperature = ATMOSPHERE_TEMPERATURE;
-            g.advectedTemperatue;
+            g.advectedTemperatue = ATMOSPHERE_TEMPERATURE;
             g.tracePosition = glm::vec2(0.0f, 0.0f);
             grid[i][j] = g;
         }
