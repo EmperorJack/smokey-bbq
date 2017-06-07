@@ -8,5 +8,6 @@ uniform sampler2D densityTexture;
 
 void main() {
     float density = texture(densityTexture, UV).r;
-    color = vec3(0.0f, density, density);
+    float temperature = texture(densityTexture, UV).g;
+    color = vec3(temperature, density, density);
 }
