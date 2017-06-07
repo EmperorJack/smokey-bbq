@@ -51,10 +51,13 @@ SmokeSimulation::SmokeSimulation(float _gridWorldSize) {
     glBufferData(GL_ARRAY_BUFFER, sizeof(vectorVertices), vectorVertices, GL_STATIC_DRAW);
 
     float densityVertices[] = {
-            -gridWorldSize / 2.0f, -gridWorldSize / 2.0f,
-            -gridWorldSize / 2.0f, gridWorldSize / 2.0f,
-            gridWorldSize / 2.0f, gridWorldSize / 2.0f,
-            gridWorldSize / 2.0f, -gridWorldSize / 2.0f,
+//            -gridWorldSize / 2.0f, -gridWorldSize / 2.0f,
+//            -gridWorldSize / 2.0f, gridWorldSize / 2.0f,
+//            gridWorldSize / 2.0f, gridWorldSize / 2.0f,
+//            gridWorldSize / 2.0f, -gridWorldSize / 2.0f,
+        -1.0f, -1.0f, 0.0f, 1.0f,
+        -1.0f, 3.0, 0.0, 1.0,
+        3.0, -1.0, 0.0, 1.0
     };
     glGenBuffers(1, &densityVBO);
     glBindBuffer(GL_ARRAY_BUFFER, densityVBO);
@@ -75,8 +78,8 @@ SmokeSimulation::SmokeSimulation(float _gridWorldSize) {
 
     glBindTexture(GL_TEXTURE_2D, densityTextureID);
 
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 }
 
 void SmokeSimulation::setupFields() {
@@ -384,10 +387,10 @@ void SmokeSimulation::drawDensity(glm::mat4 transform) {
     float densityField[SmokeSimulation::GRID_SIZE][SmokeSimulation::GRID_SIZE];
     for (int i = 0; i < GRID_SIZE; i++) {
         for (int j = 0; j < GRID_SIZE; j++) {
-            densityField[i][j] = grid[i][j].density;
+            densityField[i][j] = grid[j][i].density;
         }
     }
-    
+
     glTexImage2D(GL_TEXTURE_2D, 0, GL_RED, GRID_SIZE, GRID_SIZE, 0, GL_RED, GL_FLOAT, &densityField[0][0]);
 
     GLint transformID = glGetUniformLocation(3, "MVP");
@@ -398,26 +401,14 @@ void SmokeSimulation::drawDensity(glm::mat4 transform) {
     glBindBuffer(GL_ARRAY_BUFFER, densityVBO);
     glVertexAttribPointer(
             0,         // shader layout attribute
-            2,         // size
+            4,         // size
             GL_FLOAT,  // type
             GL_FALSE,  // normalized?
             0,         // stride
             (void*)0   // array buffer offset
     );
 
-    // Bind uvs
-    glEnableVertexAttribArray(1);
-    glBindBuffer(GL_ARRAY_BUFFER, densityUVVBO);
-    glVertexAttribPointer(
-            1,         // shader layout attribute
-            2,         // size
-            GL_FLOAT,  // type
-            GL_FALSE,  // normalized?
-            0,         // stride
-            (void*)0   // array buffer offset
-    );
-
-    glDrawArrays(GL_TRIANGLE_FAN, 0, 4);
+    glDrawArrays(GL_TRIANGLES, 0, 3);
 
     glDisableVertexAttribArray(0);
     glDisableVertexAttribArray(1);
