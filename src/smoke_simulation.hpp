@@ -13,12 +13,12 @@ class SmokeSimulation {
         static constexpr float PULSE_FORCE = 150.0f;
         static constexpr float VELOCITY_DISSAPATION = 0.98;
         static constexpr float DENSITY_DISSAPATION = 0.987;
-        static constexpr float TEMPERATURE_DISSAPATION = 0.95f;
+        static constexpr float TEMPERATURE_DISSAPATION = 0.96f;
         static constexpr int JACOBI_ITERATIONS = 40;
-        static constexpr float gravity = 0.0981f;
-        static constexpr float riseForce = 1.0f;
-        static constexpr float fallForce = 1.0f;
-        static constexpr float atmosphereTemperature = 0.0f;
+        static constexpr float GRAVITY = 0.0981f;
+        static constexpr float RISE_FORCE = 1.0f;
+        static constexpr float FALL_FORCE = 1.0f;
+        static constexpr float ATMOSPHERE_TEMPERATURE = 0.0f;
 
         struct gridCell {
             glm::vec2 velocity;

@@ -93,8 +93,8 @@ void SmokeSimulation::setupFields() {
             g.newPressure = 0.0f;
             g.density = 0.0f;
             g.advectedDensity = 0.0f;
-            g.temperature = atmosphereTemperature;
-            g.advectedTemperatue;
+            g.temperature = ATMOSPHERE_TEMPERATURE;
+            g.advectedTemperatue = ATMOSPHERE_TEMPERATURE;
             g.tracePosition = glm::vec2(0.0f, 0.0f);
             grid[i][j] = g;
         }
@@ -223,7 +223,7 @@ float SmokeSimulation::divergenceAt(int i, int j) {
 }
 
 glm::vec2 SmokeSimulation::buoyancyAt(int i, int j) {
-    return (fallForce * grid[i][j].density - riseForce * (grid[i][j].temperature - atmosphereTemperature)) * glm::vec2(0.0f, gravity / abs(gravity));
+    return (FALL_FORCE * grid[i][j].density - RISE_FORCE * (grid[i][j].temperature - ATMOSPHERE_TEMPERATURE)) * glm::vec2(0.0f, GRAVITY / abs(GRAVITY));
 }
 
 void SmokeSimulation::solvePressureField() {
@@ -442,14 +442,15 @@ void SmokeSimulation::render(glm::mat4 transform, glm::vec2 mousePosition) {
 void SmokeSimulation::drawDensity() {
     glUseProgram(densityShader);
 
-    float densityField[SmokeSimulation::GRID_SIZE][SmokeSimulation::GRID_SIZE];
+    float densityField[SmokeSimulation::GRID_SIZE][SmokeSimulation::GRID_SIZE][2];
     for (int i = 0; i < GRID_SIZE; i++) {
         for (int j = 0; j < GRID_SIZE; j++) {
-            densityField[i][j] = grid[j][i].density;
+            densityField[i][j][0] = grid[j][i].density; // grid[j][i].pressure / 1000.0f;
+            densityField[i][j][1] = grid[j][i].temperature; // grid[j][i].divergence / 1000.0f;
         }
     }
 
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RED, GRID_SIZE, GRID_SIZE, 0, GL_RED, GL_FLOAT, &densityField[0][0]);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RG, GRID_SIZE, GRID_SIZE, 0, GL_RG, GL_FLOAT, &densityField[0][0][0]);
 
     // Bind vertices
     glEnableVertexAttribArray(0);
