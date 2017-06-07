@@ -1,7 +1,9 @@
+#include <iostream>
 #include <opengl.hpp>
 #include <smoke_simulation.hpp>
-#include <iostream>
+#include <shaderLoader.hpp>
 
+// Toggles
 bool displayVectors = false;
 bool displayDensity = true;
 bool enableEmitter = false;
@@ -9,12 +11,19 @@ bool enablePressureSolve = true;
 bool randomPulseAngle = false;
 bool wrapBorders = true;
 
+// VBOs
 GLuint squareVBO;
 GLuint velocityVBO;
 GLuint densityVBO;
-GLuint densityUVVBO;
-GLuint densityTextureID;
 
+// Textures
+GLuint densityTexture;
+
+// Shaders
+GLuint simpleShader;
+GLuint densityShader;
+
+// Instance variables
 float gridWorldSize;
 float gridSpacing;
 
@@ -51,10 +60,6 @@ SmokeSimulation::SmokeSimulation(float _gridWorldSize) {
     glBufferData(GL_ARRAY_BUFFER, sizeof(vectorVertices), vectorVertices, GL_STATIC_DRAW);
 
     float densityVertices[] = {
-//            -gridWorldSize / 2.0f, -gridWorldSize / 2.0f,
-//            -gridWorldSize / 2.0f, gridWorldSize / 2.0f,
-//            gridWorldSize / 2.0f, gridWorldSize / 2.0f,
-//            gridWorldSize / 2.0f, -gridWorldSize / 2.0f,
         -1.0f, -1.0f, 0.0f, 1.0f,
         -1.0f, 3.0, 0.0, 1.0,
         3.0, -1.0, 0.0, 1.0
@@ -63,23 +68,17 @@ SmokeSimulation::SmokeSimulation(float _gridWorldSize) {
     glBindBuffer(GL_ARRAY_BUFFER, densityVBO);
     glBufferData(GL_ARRAY_BUFFER, sizeof(densityVertices), densityVertices, GL_STATIC_DRAW);
 
-    float densityUVs[] = {
-            0.0f, 0.0f,
-            0.0f, 1.0f,
-            1.0f, 1.0f,
-            1.0f, 0.0f,
-    };
-    glGenBuffers(1, &densityUVVBO);
-    glBindBuffer(GL_ARRAY_BUFFER, densityUVVBO);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(densityUVs), densityUVs, GL_STATIC_DRAW);
-
     // Setup density texture
-    glGenTextures(1, &densityTextureID);
+    glGenTextures(1, &densityTexture);
 
-    glBindTexture(GL_TEXTURE_2D, densityTextureID);
+    glBindTexture(GL_TEXTURE_2D, densityTexture);
 
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+
+    // Setup shaders
+    simpleShader = loadShaders("resources/shaders/SimpleVertexShader.glsl", "resources/shaders/SimpleFragmentShader.glsl");
+    densityShader = loadShaders("resources/shaders/DensityVertexShader.glsl", "resources/shaders/DensityFragmentShader.glsl");
 }
 
 void SmokeSimulation::setupFields() {
@@ -334,15 +333,11 @@ void SmokeSimulation::addPulse(glm::vec2 position) {
 }
 
 void SmokeSimulation::render(glm::mat4 transform, glm::vec2 mousePosition) {
-    if (displayDensity) {
-        glm::mat4 densityTransform = glm::mat4(transform);
-        densityTransform = glm::translate(densityTransform, glm::vec3(gridWorldSize / 2.0f, gridWorldSize / 2.0f, 0.0f));
-        densityTransform = glm::scale(densityTransform, glm::vec3(-1.0f, 1.0f, 1.0f));
-        densityTransform = glm::rotate(densityTransform, (float) M_PI / 2.0f, glm::vec3(0.0f, 0.0f, 1.0f));
-        drawDensity(densityTransform);
-    }
+    if (displayDensity) drawDensity();
 
     if (!displayVectors) return;
+
+    glUseProgram(simpleShader);
 
     float velocityColor[] = {0.0f, 0.0f, 1.0f, 0.0f};
     setColor(velocityColor);
@@ -380,9 +375,8 @@ void SmokeSimulation::render(glm::mat4 transform, glm::vec2 mousePosition) {
     drawLine(transform * translate * scale * rotate);
 }
 
-void SmokeSimulation::drawDensity(glm::mat4 transform) {
-    GLint useFillColorLocation = glGetUniformLocation(3, "useFillColor");
-    glUniform1i(useFillColorLocation, false);
+void SmokeSimulation::drawDensity() {
+    glUseProgram(densityShader);
 
     float densityField[SmokeSimulation::GRID_SIZE][SmokeSimulation::GRID_SIZE];
     for (int i = 0; i < GRID_SIZE; i++) {
@@ -392,9 +386,6 @@ void SmokeSimulation::drawDensity(glm::mat4 transform) {
     }
 
     glTexImage2D(GL_TEXTURE_2D, 0, GL_RED, GRID_SIZE, GRID_SIZE, 0, GL_RED, GL_FLOAT, &densityField[0][0]);
-
-    GLint transformID = glGetUniformLocation(3, "MVP");
-    glUniformMatrix4fv(transformID, 1, GL_FALSE, &transform[0][0]);
 
     // Bind vertices
     glEnableVertexAttribArray(0);

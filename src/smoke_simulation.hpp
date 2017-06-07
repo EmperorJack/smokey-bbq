@@ -4,7 +4,7 @@
 class SmokeSimulation {
 
     public:
-        static constexpr int GRID_SIZE = 128;
+        static constexpr int GRID_SIZE = 192;
         static constexpr float TIME_STEP = 0.1f;
         static constexpr float FLUID_DENSITY = 1.0f;
         static constexpr float STROKE_WEIGHT = 2.0f;
@@ -59,7 +59,7 @@ class SmokeSimulation {
         void toggleWrapBorders();
 
         void render(glm::mat4, glm::vec2);
-        void drawDensity(glm::mat4);
+        void drawDensity();
         void drawSquare(glm::mat4, bool);
         void drawLine(glm::mat4);
 };

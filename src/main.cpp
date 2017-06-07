@@ -1,7 +1,5 @@
 #include <iostream>
-
 #include <opengl.hpp>
-#include <shaderLoader.hpp>
 #include <smoke_simulation.hpp>
 
 SmokeSimulation* smokeSimulation = nullptr;
@@ -87,9 +85,6 @@ int main(int argc, char **argv) {
     glfwSetMouseButtonCallback(window, mouseButtonCallback);
     glfwSetKeyCallback(window, keyCallback);
 
-    // Create and compile our GLSL program from the shaders
-    GLuint programID = loadShaders("resources/shaders/SimpleVertexShader.vs", "resources/shaders/SimpleFragmentShader.fs");
-
     // Setup the Vertex Array Object
     GLuint VertexArrayID;
     glGenVertexArrays(1, &VertexArrayID);
@@ -119,9 +114,6 @@ int main(int argc, char **argv) {
 
         glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
-        // Use our shader
-        glUseProgram(programID);
 
         glm::mat4 projection = glm::ortho(0.0f, (float) SCREEN_WIDTH, (float) SCREEN_HEIGHT, 0.0f);
         glm::mat4 view = glm::translate(glm::vec3(0.0f, 0.0f, 0.0f)); // SCREEN_WIDTH / 2, SCREEN_HEIGHT/ 2
