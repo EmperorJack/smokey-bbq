@@ -2,6 +2,7 @@
 #include <opengl.hpp>
 #include <smoke_simulation.hpp>
 #include <shaderLoader.hpp>
+#include <vector>
 
 // Toggles
 bool displayVectors = false;
@@ -27,6 +28,10 @@ GLuint densityShader;
 // Instance variables
 float gridWorldSize;
 float gridSpacing;
+
+// Smoke emitters
+std::vector<glm::vec2> targets;
+std::vector<glm::vec2> forces;
 
 SmokeSimulation::gridCell grid[SmokeSimulation::GRID_SIZE][SmokeSimulation::GRID_SIZE];
 
@@ -63,7 +68,7 @@ SmokeSimulation::SmokeSimulation(float _gridWorldSize) {
     float densityVertices[] = {
         -1.0f, -1.0f, 0.0f, 1.0f,
         -1.0f, 3.0, 0.0, 1.0,
-        3.0, -1.0, 0.0, 1.0
+        3.0, -1.0, 0.0, 1.0,
     };
     glGenBuffers(1, &densityVBO);
     glBindBuffer(GL_ARRAY_BUFFER, densityVBO);
@@ -80,6 +85,21 @@ SmokeSimulation::SmokeSimulation(float _gridWorldSize) {
     // Setup shaders
     simpleShader = loadShaders("resources/shaders/SimpleVertexShader.glsl", "resources/shaders/SimpleFragmentShader.glsl");
     densityShader = loadShaders("resources/shaders/DensityVertexShader.glsl", "resources/shaders/DensityFragmentShader.glsl");
+
+    // Setup smoke emitters
+    targets = {
+            glm::vec2(GRID_SIZE / 2 * gridSpacing, GRID_SIZE * gridSpacing - 2),
+//            glm::vec2(GRID_SIZE * gridSpacing, GRID_SIZE / 2 * gridSpacing - 2),
+//            glm::vec2(GRID_SIZE / 2 * gridSpacing, 0.0f),
+//            glm::vec2(0.0f, GRID_SIZE / 2 * gridSpacing - 2),
+    };
+
+    forces = {
+            glm::vec2(0.0f, -PULSE_FORCE),
+//            glm::vec2(-PULSE_FORCE, 0.0f),
+//            glm::vec2(0.0f, PULSE_FORCE),
+//            glm::vec2(PULSE_FORCE, 0.0f),
+    };
 }
 
 void SmokeSimulation::setupFields() {
@@ -117,18 +137,18 @@ void SmokeSimulation::update() {
 
     // Smoke emitter
     if (enableEmitter) {
-        glm::vec2 target = glm::vec2(GRID_SIZE / 2 * gridSpacing, GRID_SIZE * gridSpacing - 2);
-
         for (int i = 0; i < GRID_SIZE; i++) {
             for (int j = 0; j < GRID_SIZE; j++) {
                 float x = i * gridSpacing;
                 float y = j * gridSpacing;
                 glm::vec2 gridPosition = glm::vec2(x, y);
-                if (glm::distance(target, gridPosition) < EMITTER_RANGE) {
-                    float horizontalForce = PULSE_FORCE * 50;
-                    grid[i][j].velocity = glm::vec2(myRandom() * PULSE_FORCE - PULSE_FORCE / 2.0f, -PULSE_FORCE);
-                    grid[i][j].density += 0.2f;
-                    grid[i][j].temperature += 1.0f;
+
+                for (int t = 0; t < targets.size(); t++) {
+                    if (glm::distance(targets[t], gridPosition) < EMITTER_RANGE) {
+                        grid[i][j].velocity = forces[t]; // * (myRandom() * PULSE_FORCE - PULSE_FORCE / 2.0f);
+                        grid[i][j].density += 0.2f;
+                        grid[i][j].temperature += 1.0f;
+                    }
                 }
             }
         }

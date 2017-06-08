@@ -9,7 +9,7 @@ class SmokeSimulation {
         static constexpr float FLUID_DENSITY = 1.0f;
         static constexpr float STROKE_WEIGHT = 2.0f;
         static constexpr float PULSE_RANGE = 50.0f;
-        static constexpr float EMITTER_RANGE = 80.0f;
+        static constexpr float EMITTER_RANGE = 60.0f;
         static constexpr float PULSE_FORCE = 150.0f;
         static constexpr float VELOCITY_DISSAPATION = 0.98;
         static constexpr float DENSITY_DISSAPATION = 0.987;
