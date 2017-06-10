@@ -450,7 +450,7 @@ void SmokeSimulation::drawDensity() {
         }
     }
 
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RG, GRID_SIZE, GRID_SIZE, 0, GL_RG, GL_FLOAT, &densityField[0][0][0]);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA32F, GRID_SIZE, GRID_SIZE, 0, GL_RG, GL_FLOAT, &densityField[0][0][0]);
 
     // Bind vertices
     glEnableVertexAttribArray(0);
