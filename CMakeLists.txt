@@ -1,7 +1,11 @@
 cmake_minimum_required(VERSION 3.7)
 set(CMAKE_MODULE_PATH /home/user/Libs/cmake)
 set(CMAKE_CXX_STANDARD 11)
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -pthread -fpermissive")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -pthread -fpermissive -lmingw32 ")
+
+# Set sdl flags
+#set(SDL2_FLAGS "-mwindows -Wl,--no-undefined -static-libgcc")
+#set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${SDL2_FLAGS}")
 
 # Profiling
 set(PROFILING_ENABLED FALSE)
@@ -43,11 +47,29 @@ add_subdirectory(${PROJECT_SOURCE_DIR}/lib/glfw)
 include_directories(${PROJECT_SOURCE_DIR}/lib/glm)
 file(GLOB EXTERNAL lib/glm/glm/glm.hpp)
 
+# Include and make sdl2 subproject
+#set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${PROJECT_SOURCE_DIR}/lib/sdl2/cmake")
+#set(SDL2_PATH "C:/Users/Playtech/Documents/Developer-Work/Programmin/C++/Libraries/SDL2-devel-2.0.5-mingw/SDL2-2.0.5/x86_64-w64-mingw32")
+#find_package(SDL REQUIRED)
+#include_directories(${SDL2_INCLUDE_DIR})
+include_directories(${PROJECT_SOURCE_DIR}/lib/sdl2/include)
+link_directories(${PROJECT_SOURCE_DIR}/lib/sdl2/lib)
+#add_subdirectory(${PROJECT_SOURCE_DIR}/lib/sdl2)
+
+#add_library(SDL2     STATIC IMPORTED)
+#add_library(SDL2main STATIC IMPORTED)
+#set_property(TARGET SDL2 PROPERTY IMPORTED_LOCATION "lib/sdl2/lib/libSDL2.a")
+#set_property(TARGET SDL2main PROPERTY IMPORTED_LOCATION "lib/sdl2/lib/libSDL2main.a")
+#set(SDL2 ${PROJECT_SOURCE_DIR}/lib/sdl2/lib/libSDL2.a)
+#set(SDL2main ${PROJECT_SOURCE_DIR}/lib/sdl2/lib/libSDL2main.a)
+
+#set(SDL_LIBRARIES "${SDL2} ${SDL2main}")
+
 # Create the executable
 add_executable(${PROJECT_NAME} ${SOURCES} ${COMMON} ${EXTERNAL})
 
 # Link the external libraries
-target_link_libraries(${PROJECT_NAME} glfw glew ${OPENGL_LIBRARIES})
+target_link_libraries(${PROJECT_NAME} glfw glew SDL2main SDL2 ${OPENGL_LIBRARIES})
 
 # Copy shaders to the build directory
 set(SHADER_SUBDIRECTORY resources/shaders)

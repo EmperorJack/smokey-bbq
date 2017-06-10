@@ -1,8 +1,10 @@
 #include <iostream>
 #include <opengl.hpp>
 #include <smoke_simulation.hpp>
+#include <audio_analyzer.hpp>
 
 SmokeSimulation* smokeSimulation = nullptr;
+AudioAnalyzer* audioAnalyzer = nullptr;
 
 const int SCREEN_WIDTH = 800;
 const int SCREEN_HEIGHT= 800;
@@ -48,7 +50,8 @@ void keyCallback(GLFWwindow *win, int key, int scancode, int action, int mods) {
     }
 }
 
-int main(int argc, char **argv) {
+//int main(int argc, char **argv) {
+int main(int argc, char* argv[]) {
 
     // Initialise GLFW
     if(!glfwInit()) {
@@ -93,6 +96,7 @@ int main(int argc, char **argv) {
     glBindVertexArray(VertexArrayID);
 
     smokeSimulation = new SmokeSimulation(SCREEN_WIDTH);
+    audioAnalyzer = new AudioAnalyzer();
 
     double lastTime = glfwGetTime();
     int frameCount = 0;
@@ -112,7 +116,7 @@ int main(int argc, char **argv) {
 
         if (mousePressed) smokeSimulation->addPulse(mousePosition);
 
-        if (updateSimulation) smokeSimulation->update();
+        //if (updateSimulation) smokeSimulation->update();
 
         glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -122,7 +126,7 @@ int main(int argc, char **argv) {
 
         glm::mat4 mvp = projection * view;
 
-        smokeSimulation->render(mvp, mousePosition);
+        //smokeSimulation->render(mvp, mousePosition);
 
         // Swap buffers
         glfwSwapBuffers(window);
