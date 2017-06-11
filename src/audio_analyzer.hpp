@@ -7,8 +7,10 @@ class AudioAnalyzer {
 
     AudioAnalyzer();
 
-    void play();
-//    void fillAudio(void *udata, Uint8 *stream, int len);
+    void togglePlay();
+    void checkEnded();
+    void render(glm::mat4);
+    void drawSquare(glm::mat4, bool);
 
 };
 

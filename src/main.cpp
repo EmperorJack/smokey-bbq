@@ -25,6 +25,8 @@ void mouseButtonCallback(GLFWwindow *win, int button, int action, int mods) {
         if (action == GLFW_PRESS) mousePressed = true;
         else if (action == GLFW_RELEASE) mousePressed = false;
     }
+
+    if (button == GLFW_MOUSE_BUTTON_LEFT && action == GLFW_PRESS) audioAnalyzer->togglePlay();
 }
 
 // Keyboard callback
@@ -98,6 +100,10 @@ int main(int argc, char* argv[]) {
     smokeSimulation = new SmokeSimulation(SCREEN_WIDTH);
     audioAnalyzer = new AudioAnalyzer();
 
+    std::cout << std::endl;
+
+//    audioAnalyzer->play();
+
     double lastTime = glfwGetTime();
     int frameCount = 0;
 
@@ -109,14 +115,14 @@ int main(int argc, char* argv[]) {
         frameCount++;
         if (currentTime - lastTime >= 1.0){ // If last prinf() was more than 1 sec ago
             // printf and reset timer
-            printf("%f ms/frame\n", 1000.0 / (double) frameCount);
+//            printf("%f ms/frame\n", 1000.0 / (double) frameCount);
             frameCount = 0;
             lastTime += 1.0;
         }
 
         if (mousePressed) smokeSimulation->addPulse(mousePosition);
 
-        //if (updateSimulation) smokeSimulation->update();
+//        if (updateSimulation) smokeSimulation->update();
 
         glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -126,7 +132,10 @@ int main(int argc, char* argv[]) {
 
         glm::mat4 mvp = projection * view;
 
-        //smokeSimulation->render(mvp, mousePosition);
+//        smokeSimulation->render(mvp, mousePosition);
+
+        audioAnalyzer->checkEnded();
+        audioAnalyzer->render(mvp);
 
         // Swap buffers
         glfwSwapBuffers(window);
