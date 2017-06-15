@@ -16,6 +16,9 @@ static Uint32 audio_len; // remaining length of the sample we have to play
 
 static Uint8 *wav_buffer; // buffer containing our audio file
 
+SDL_AudioDeviceID dev;
+SDL_AudioSpec want, have;
+
 int avgVal = 0;
 
 bool paused = true;
@@ -46,34 +49,69 @@ AudioAnalyzer::AudioAnalyzer() {
         return;
     }
 
+    int devcount = SDL_GetNumAudioDevices(SDL_TRUE);
+    for (int i = 0; i < devcount; i++) {
+        SDL_Log(" Capture device #%d: '%s'\n", i, SDL_GetAudioDeviceName(i, SDL_TRUE));
+    }
+    std::cout << "~~~~~" << std::endl << devcount << std::endl;
+
     // local variables
-    static Uint32 wav_length; // length of our sample
-    static SDL_AudioSpec wav_spec; // the specs of our piece of music
+//    static Uint32 wav_length; // length of our sample
+//    static SDL_AudioSpec wav_spec; // the specs of our piece of music
+//
+//
+//    /* Load the WAV */
+//    // the specs, length and buffer of our wav are filled
+//    if( SDL_LoadWAV(MUS_PATH, &wav_spec, &wav_buffer, &wav_length) == NULL ){
+//        std::cout << "Failed to load wav file" << std::endl;
+//        return;
+//    }
+//    // set the callback function
+//    wav_spec.callback = my_audio_callback;
+//    wav_spec.userdata = NULL;
+//    wav_spec.samples = 512;
+////    wav_spec.format = AUDIO_F32;
+//    // set our global static variables
+//    audio_pos = wav_buffer; // copy sound buffer
+//    audio_len = wav_length; // copy file length
+//
+//    /* Open the audio device */
+//    if ( SDL_OpenAudio(&wav_spec, NULL) < 0 ){
+//        fprintf(stderr, "Couldn't open audio: %s\n", SDL_GetError());
+//        exit(-1);
+//    }
+//
+//    /* Start playing */
+//    togglePlay();
 
+    SDL_zero(want);
+    want.freq = 44100;
+    want.format = AUDIO_S16SYS;
+    want.channels = 1;
+    want.samples = 1024;
+    want.callback = my_audio_callback;
+    dev = SDL_OpenAudioDevice(NULL, SDL_TRUE, &want, &have, 0); //SDL_GetAudioDeviceName(0, 1)
 
-    /* Load the WAV */
-    // the specs, length and buffer of our wav are filled
-    if( SDL_LoadWAV(MUS_PATH, &wav_spec, &wav_buffer, &wav_length) == NULL ){
-        std::cout << "Failed to load wav file" << std::endl;
+    if (have.format != want.format) {
+        SDL_Log("We didn't get the wanted format.");
+        std::cout << "Wanted: " << want.format << std::endl;
+        std::cout << "Got: " << have.format << std::endl;
+        //return;
+    }
+
+    std::cout << "Got a device with state: " << dev << std::endl;
+
+//    SDL_PauseAudioDevice(dev, 0);
+
+    if (dev == 0) {
+        SDL_Log("Failed to open audio: %s", SDL_GetError());
         return;
     }
-    // set the callback function
-    wav_spec.callback = my_audio_callback;
-    wav_spec.userdata = NULL;
-    wav_spec.samples = 512;
-//    wav_spec.format = AUDIO_F32;
-    // set our global static variables
-    audio_pos = wav_buffer; // copy sound buffer
-    audio_len = wav_length; // copy file length
 
-    /* Open the audio device */
-    if ( SDL_OpenAudio(&wav_spec, NULL) < 0 ){
-        fprintf(stderr, "Couldn't open audio: %s\n", SDL_GetError());
-        exit(-1);
-    }
+    printf("Started at %u\n", SDL_GetTicks());
+    //SDL_Delay(5000);
 
-    /* Start playing */
-    togglePlay();
+    //SDL_CloseAudioDevice(dev);
 }
 
 void AudioAnalyzer::togglePlay() {
@@ -104,32 +142,37 @@ void AudioAnalyzer::checkEnded() {
 // requesting audio buffer (stream)
 // you should only copy as much as the requested length (len)
 void my_audio_callback(void *userdata, Uint8 *stream, int len) {
+//    printf("Callback at %u\n", SDL_GetTicks());
 
-    if (audio_len ==0)
-        return;
-
-    len = ( len > audio_len ? audio_len : len );
-    SDL_memcpy (stream, audio_pos, len); 					// simply copy from one buffer into the other
-//    SDL_MixAudio(stream, audio_pos, len, SDL_MIX_MAXVOLUME);// mix from one buffer into another
-
-//    int lastAvgVal = avgVal;
+    std::cout << ((int) *stream) << std::endl;
 //
-//    avgVal = 0;
-//    for (int i = 0; i < len; i++) {
-//        avgVal += (int) *audio_pos;
-//    }
-//    avgVal /= len;
+//    if (audio_len == 0)
+//        return;
 //
-//    avgVal = (avgVal + lastAvgVal) / 2;
-
-    audio_pos += len;
-    audio_len -= len;
+//    len = ( len > audio_len ? audio_len : len );
+//    SDL_memcpy (stream, audio_pos, len); 					// simply copy from one buffer into the other
+////    SDL_MixAudio(stream, audio_pos, len, SDL_MIX_MAXVOLUME);// mix from one buffer into another
+//
+////    int lastAvgVal = avgVal;
+////
+////    avgVal = 0;
+////    for (int i = 0; i < len; i++) {
+////        avgVal += (int) *audio_pos;
+////    }
+////    avgVal /= len;
+////
+////    avgVal = (avgVal + lastAvgVal) / 2;
+//
+//    audio_pos += len;
+//    audio_len -= len;
 }
 
 void AudioAnalyzer::render(glm::mat4 transform) {
 //    float val = (avgVal - 155) / 255.0f;
 //    float color[] = {val, 0.0f, 1.0f, 0.0f};
 //    setColor(color);
+
+    if (ended) return;
 
     glUseProgram(shader);
 
