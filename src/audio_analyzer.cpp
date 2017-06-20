@@ -3,6 +3,7 @@
 #include <portaudio.h>
 #include <audio_analyzer.hpp>
 #include <shaderLoader.hpp>
+#include <string.h>
 
 #define MUS_PATH "resources/shaders/kick.wav"
 
@@ -12,15 +13,11 @@ GLuint shader;
 bool successInit = false;
 
 #define SAMPLE_RATE (44100)
+#define fpb (1024)
 
-typedef struct
-{
-    float left_phase;
-    float right_phase;
-} paTestData;
-
-static paTestData data;
 PaStream *stream;
+PaStreamParameters outputParameters;
+PaStreamParameters inputParameters;
 
 /* This routine will be called by the PortAudio engine when audio is needed.
    It may called at interrupt level on some machines so don't do anything
@@ -33,7 +30,7 @@ static int patestCallback( const void *inputBuffer, void *outputBuffer,
                            void *userData );
 
 AudioAnalyzer::AudioAnalyzer() {
-    float spacing = 800 / 128.0f;
+    float spacing = 800 / ((float) fpb);
 
     // Setup VBOs
     float squareVertices[] = {
@@ -70,38 +67,56 @@ AudioAnalyzer::AudioAnalyzer() {
     for( int i=0; i<numDevices; i++ )
     {
         deviceInfo = Pa_GetDeviceInfo( i );
+        std::cout << "Device (" << i << "):" << std::endl;
         std::cout << "Name: " << deviceInfo->name << std::endl;
         std::cout << "Input channels: " << deviceInfo->maxInputChannels << std::endl;
         std::cout << "Output channels: " << deviceInfo->maxOutputChannels << std::endl;
         std::cout << "~~~" << std::endl;
     }
 
-    /* Open an audio I/O stream. */
-    err = Pa_OpenDefaultStream( &stream,
-                                0,          /* no input channels */
-                                2,          /* stereo output */
-                                paFloat32,  /* 32 bit floating point output */
-                                SAMPLE_RATE,
-                                256,        /* frames per buffer, i.e. the number
-                                                   of sample frames that PortAudio will
-                                                   request from the callback. Many apps
-                                                   may want to use
-                                                   paFramesPerBufferUnspecified, which
-                                                   tells PortAudio to pick the best,
-                                                   possibly changing, buffer size.*/
-                                patestCallback, /* this is your callback function */
-                                &data ); /*This is a pointer that will be passed to
-                                                   your callback*/
+    int inDevNum = 1;
+    int inChan = 2;
+
+    int outDevNum = 3;
+    int outChan = 2;
+
+    memset( &inputParameters, 0, sizeof( inputParameters ) ); //not necessary if you are filling in all the fields
+    inputParameters.channelCount = inChan;
+    inputParameters.device = inDevNum;
+    inputParameters.hostApiSpecificStreamInfo = NULL;
+    inputParameters.sampleFormat = paFloat32;
+    inputParameters.suggestedLatency = Pa_GetDeviceInfo(inDevNum)->defaultLowInputLatency ;
+    inputParameters.hostApiSpecificStreamInfo = NULL; //See you specific host's API docs for info on using this field
+
+    memset( &outputParameters, 0, sizeof( outputParameters ) ); //not necessary if you are filling in all the fields
+    outputParameters.channelCount = outChan;
+    outputParameters.device = outDevNum;
+    outputParameters.hostApiSpecificStreamInfo = NULL;
+    outputParameters.sampleFormat = paFloat32;
+    outputParameters.suggestedLatency = Pa_GetDeviceInfo(outDevNum)->defaultLowOutputLatency ;
+    outputParameters.hostApiSpecificStreamInfo = NULL; //See you specific host's API docs for info on using this field
+    err = Pa_OpenStream(
+            &stream,
+            &inputParameters,
+            &outputParameters,
+            SAMPLE_RATE,
+            fpb,
+            paNoFlag, //flags that can be used to define dither, clip settings and more
+            patestCallback, //your callback function
+            (void *)this
+    ); //data to be passed to callback. In C++, it is frequently (void *)this
+    //don't forget to check errors!
+
     if( err != paNoError ) {
         printf(  "PortAudio error: %s\n", Pa_GetErrorText( err ) );
         return;
     }
 
-//    err = Pa_StartStream( stream );
-//    if( err != paNoError ) {
-//        printf(  "PortAudio error: %s\n", Pa_GetErrorText( err ) );
-//        return;
-//    }
+    err = Pa_StartStream( stream );
+    if( err != paNoError ) {
+        printf(  "PortAudio error: %s\n", Pa_GetErrorText( err ) );
+        return;
+    }
 }
 
 void AudioAnalyzer::shutDown() {
@@ -124,6 +139,8 @@ void AudioAnalyzer::shutDown() {
         printf(  "PortAudio error: %s\n", Pa_GetErrorText( err ) );
 }
 
+float vals[fpb];
+
 static int patestCallback( const void *inputBuffer, void *outputBuffer,
                            unsigned long framesPerBuffer,
                            const PaStreamCallbackTimeInfo* timeInfo,
@@ -131,41 +148,32 @@ static int patestCallback( const void *inputBuffer, void *outputBuffer,
                            void *userData )
 {
     /* Cast data passed through stream to our structure. */
-    paTestData *data = (paTestData*)userData;
+    float *in = (float*) inputBuffer;
     float *out = (float*)outputBuffer;
     unsigned int i;
-    (void) inputBuffer; /* Prevent unused variable warning. */
 
     for( i=0; i<framesPerBuffer; i++ )
     {
-        *out++ = data->left_phase;  /* left */
-        *out++ = data->right_phase;  /* right */
-        /* Generate simple sawtooth phaser that ranges between -1.0 and 1.0. */
-        data->left_phase += 0.01f;
-        /* When signal reaches top, drop back down. */
-        if( data->left_phase >= 1.0f ) data->left_phase -= 2.0f;
-        /* higher pitch so we can distinguish left and right. */
-        data->right_phase += 0.003f;
-        if( data->right_phase >= 1.0f ) data->right_phase -= 2.0f;
+        vals[i] = *in++;
     }
+
     return 0;
 }
 
 void AudioAnalyzer::render(glm::mat4 transform) {
-//    float val = (avgVal - 155) / 255.0f;
-//    float color[] = {val, 0.0f, 1.0f, 0.0f};
-//    setColor(color);
-
     glUseProgram(shader);
 
-    for (int i = 0; i < 256; i++) {
-//        float val = ((int) *(audio_pos + i * 8)) / 255.0f;
-//        float val = 0.5f;
-        float val = data.left_phase;
-        float color[] = {val, 0.0f, 0.0f, 0.0f};
+    for (int i = 0; i < fpb; i++) {
+        float red = vals[i] * 15.0f;
+        float green = 0.0f;
+        float blue = 0.0f;
+        if (red > 0.0f) blue = red;
+        else if (red < 0.0f) green = abs(red);
+
+        float color[] = {red, green, blue, 0.0f};
         setColor(color);
 
-        glm::mat4 translate = glm::translate(glm::vec3(i * 4, 0, 0.0f));
+        glm::mat4 translate = glm::translate(glm::vec3(i * 1, 0, 0.0f));
         drawSquare(transform * translate, true);
     }
 }
