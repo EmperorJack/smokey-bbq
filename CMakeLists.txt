@@ -43,11 +43,15 @@ add_subdirectory(${PROJECT_SOURCE_DIR}/lib/glfw)
 include_directories(${PROJECT_SOURCE_DIR}/lib/glm)
 file(GLOB EXTERNAL lib/glm/glm/glm.hpp)
 
+# Include and add portaudio library
+include_directories(${PROJECT_SOURCE_DIR}/lib/portaudio/include)
+link_directories(${PROJECT_SOURCE_DIR}/lib/portaudio/libs)
+
 # Create the executable
 add_executable(${PROJECT_NAME} ${SOURCES} ${COMMON} ${EXTERNAL})
 
 # Link the external libraries
-target_link_libraries(${PROJECT_NAME} glfw glew ${OPENGL_LIBRARIES})
+target_link_libraries(${PROJECT_NAME} glfw glew portaudio ${OPENGL_LIBRARIES})
 
 # Copy shaders to the build directory
 set(SHADER_SUBDIRECTORY resources/shaders)
