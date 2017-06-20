@@ -5,38 +5,50 @@
 #include <shaderLoader.hpp>
 #include <string.h>
 
-#define MUS_PATH "resources/shaders/kick.wav"
-
+// GL variables
 GLuint sVBO;
 GLuint shader;
 
-bool successInit = false;
+// Instance variables
+float screenWidth, screenHeight;
+float spacing;
 
-#define SAMPLE_RATE (44100)
-#define fpb (1024)
-
+// Port audio variables
+bool paInitSuccessful = false;
 PaStream *stream;
 PaStreamParameters outputParameters;
 PaStreamParameters inputParameters;
 
-/* This routine will be called by the PortAudio engine when audio is needed.
-   It may called at interrupt level on some machines so don't do anything
-   that could mess up the system like calling malloc() or free().
-*/
-static int patestCallback( const void *inputBuffer, void *outputBuffer,
-                           unsigned long framesPerBuffer,
-                           const PaStreamCallbackTimeInfo* timeInfo,
-                           PaStreamCallbackFlags statusFlags,
-                           void *userData );
+// Audio data variables
+float rawAudio[AudioAnalyzer::SAMPLE_SIZE];
 
-AudioAnalyzer::AudioAnalyzer() {
-    float spacing = 800 / ((float) fpb);
+bool paErrorOccured(PaError error) {
+    if (error != paNoError) {
+        fprintf(stderr, "PortAudio error: %s\n", Pa_GetErrorText(error));
+        return true;
+    }
+
+    return false;
+}
+
+static int paCallback(const void *inputBuffer,
+                      void *outputBuffer,
+                      unsigned long framesPerBuffer,
+                      const PaStreamCallbackTimeInfo* timeInfo,
+                      PaStreamCallbackFlags statusFlags,
+                      void *userData);
+
+AudioAnalyzer::AudioAnalyzer(float _screenWidth, float _screenHeight) {
+    screenWidth = _screenWidth;
+    screenHeight = _screenHeight;
+
+    spacing = _screenWidth / ((float) SAMPLE_SIZE);
 
     // Setup VBOs
     float squareVertices[] = {
             0.0f, 0.0f,
-            0.0f, 800,
-            spacing, 800,
+            0.0f, spacing,
+            spacing, spacing,
             spacing, 0.0f,
     };
     glGenBuffers(1, &sVBO);
@@ -45,116 +57,103 @@ AudioAnalyzer::AudioAnalyzer() {
 
     shader = loadShaders("resources/shaders/SimpleVertexShader.glsl", "resources/shaders/SimpleFragmentShader.glsl");
 
+    // Initialize audio features
     PaError err = Pa_Initialize();
-    if( err != paNoError ) {
-        printf(  "PortAudio error: %s\n", Pa_GetErrorText( err ) );
+    if (paErrorOccured(err)) {
         return;
-    }
-
-    successInit = true;
-
-    int numDevices;
-    numDevices = Pa_GetDeviceCount();
-    if( numDevices < 0 )
-    {
-        printf( "ERROR: Pa_CountDevices returned 0x%x\n", numDevices );
-        err = numDevices;
-        printf(  "PortAudio error: %s\n", Pa_GetErrorText( err ) );
-        return;
-    }
-
-    const   PaDeviceInfo *deviceInfo;
-    for( int i=0; i<numDevices; i++ )
-    {
-        deviceInfo = Pa_GetDeviceInfo( i );
-        std::cout << "Device (" << i << "):" << std::endl;
-        std::cout << "Name: " << deviceInfo->name << std::endl;
-        std::cout << "Input channels: " << deviceInfo->maxInputChannels << std::endl;
-        std::cout << "Output channels: " << deviceInfo->maxOutputChannels << std::endl;
-        std::cout << "~~~" << std::endl;
+    } else {
+        paInitSuccessful = true;
     }
 
     int inDevNum = 1;
     int inChan = 2;
-
     int outDevNum = 3;
     int outChan = 2;
 
-    memset( &inputParameters, 0, sizeof( inputParameters ) ); //not necessary if you are filling in all the fields
+    memset(&inputParameters, 0, sizeof(inputParameters));
     inputParameters.channelCount = inChan;
     inputParameters.device = inDevNum;
     inputParameters.hostApiSpecificStreamInfo = NULL;
     inputParameters.sampleFormat = paFloat32;
     inputParameters.suggestedLatency = Pa_GetDeviceInfo(inDevNum)->defaultLowInputLatency ;
-    inputParameters.hostApiSpecificStreamInfo = NULL; //See you specific host's API docs for info on using this field
+    inputParameters.hostApiSpecificStreamInfo = NULL;
 
-    memset( &outputParameters, 0, sizeof( outputParameters ) ); //not necessary if you are filling in all the fields
+    memset(&outputParameters, 0, sizeof(outputParameters));
     outputParameters.channelCount = outChan;
     outputParameters.device = outDevNum;
     outputParameters.hostApiSpecificStreamInfo = NULL;
     outputParameters.sampleFormat = paFloat32;
     outputParameters.suggestedLatency = Pa_GetDeviceInfo(outDevNum)->defaultLowOutputLatency ;
-    outputParameters.hostApiSpecificStreamInfo = NULL; //See you specific host's API docs for info on using this field
+    outputParameters.hostApiSpecificStreamInfo = NULL;
     err = Pa_OpenStream(
             &stream,
             &inputParameters,
             &outputParameters,
             SAMPLE_RATE,
-            fpb,
-            paNoFlag, //flags that can be used to define dither, clip settings and more
-            patestCallback, //your callback function
-            (void *)this
-    ); //data to be passed to callback. In C++, it is frequently (void *)this
-    //don't forget to check errors!
+            SAMPLE_SIZE,
+            paNoFlag,
+            paCallback,
+            (void*) this
+    );
+    if (paErrorOccured(err)) return;
 
-    if( err != paNoError ) {
-        printf(  "PortAudio error: %s\n", Pa_GetErrorText( err ) );
-        return;
-    }
-
-    err = Pa_StartStream( stream );
-    if( err != paNoError ) {
-        printf(  "PortAudio error: %s\n", Pa_GetErrorText( err ) );
-        return;
-    }
+    err = Pa_StartStream(stream);
+    if (paErrorOccured(err)) return;
 }
+
 
 void AudioAnalyzer::shutDown() {
-    if (!successInit) return;
+    if (!paInitSuccessful) return;
 
     PaError err = Pa_StopStream( stream );
-    if( err != paNoError ) {
-        printf("PortAudio error: %s\n", Pa_GetErrorText(err));
-        return;
-    }
+    if (paErrorOccured(err)) return;
 
     err = Pa_CloseStream( stream );
-    if( err != paNoError ) {
-        printf("PortAudio error: %s\n", Pa_GetErrorText(err));
+    if (paErrorOccured(err)) return;
+
+    err = Pa_Terminate();
+    if (paErrorOccured(err)) return;
+}
+
+
+void AudioAnalyzer::printAudioDevices() {
+
+    // Get the number of devices
+    int numDevices;
+    numDevices = Pa_GetDeviceCount();
+    if (numDevices < 0) {
+        printf("ERROR: Pa_CountDevices returned 0x%x\n", numDevices);
+        PaError err = numDevices;
+        if (paErrorOccured(err)) return;
         return;
     }
 
-    err = Pa_Terminate();
-    if( err != paNoError )
-        printf(  "PortAudio error: %s\n", Pa_GetErrorText( err ) );
+    // Print out information for each device
+    const PaDeviceInfo *deviceInfo;
+    for(int i = 0; i < numDevices; i++) {
+        deviceInfo = Pa_GetDeviceInfo( i );
+        printf("--- Device (%x)\n", i);
+        printf("Name: %s\n", deviceInfo->name);
+        printf("Input channels: %x\n", deviceInfo->maxInputChannels);
+        printf("Output channels: %x\n", deviceInfo->maxOutputChannels);
+    }
+
+    printf("---\n");
 }
 
-float vals[fpb];
-
-static int patestCallback( const void *inputBuffer, void *outputBuffer,
-                           unsigned long framesPerBuffer,
-                           const PaStreamCallbackTimeInfo* timeInfo,
-                           PaStreamCallbackFlags statusFlags,
-                           void *userData )
+static int paCallback(const void *inputBuffer,
+                      void *outputBuffer,
+                      unsigned long framesPerBuffer,
+                      const PaStreamCallbackTimeInfo* timeInfo,
+                      PaStreamCallbackFlags statusFlags,
+                      void *userData)
 {
-    /* Cast data passed through stream to our structure. */
+    // Cast stream data to our structure
     float *in = (float*) inputBuffer;
-    float *out = (float*)outputBuffer;
-    unsigned int i;
+    float *out = (float*) outputBuffer;
 
-    for( i=0; i<framesPerBuffer; i++ )
-    {
-        vals[i] = *in++;
+    for(unsigned int i = 0; i < framesPerBuffer; i++) {
+        rawAudio[i] = *in++;
     }
 
     return 0;
@@ -163,18 +162,13 @@ static int patestCallback( const void *inputBuffer, void *outputBuffer,
 void AudioAnalyzer::render(glm::mat4 transform) {
     glUseProgram(shader);
 
-    for (int i = 0; i < fpb; i++) {
-        float red = vals[i] * 15.0f;
-        float green = 0.0f;
-        float blue = 0.0f;
-        if (red > 0.0f) blue = red;
-        else if (red < 0.0f) green = abs(red);
-
-        float color[] = {red, green, blue, 0.0f};
+    for (int i = 0; i < SAMPLE_SIZE; i++) {
+        float color[] = {1.0f, 0.0f, 0.0f, 0.0f};
         setColor(color);
 
-        glm::mat4 translate = glm::translate(glm::vec3(i * 1, 0, 0.0f));
-        drawSquare(transform * translate, true);
+        glm::mat4 translate = glm::translate(glm::vec3(i * spacing, rawAudio[i] * 250.0f + (screenHeight * 0.5f), 0.0f));
+        glm::mat4 scale = glm::scale(glm::vec3(2.0f, 2.0f, 2.0f));
+        drawSquare(transform * translate * scale, true);
     }
 }
 
