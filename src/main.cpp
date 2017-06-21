@@ -14,6 +14,7 @@ bool mousePressed = false;
 
 bool updateSmokeSimulation = false;
 bool displaySmokeSimulation = false;
+bool updateAudioData = true;
 bool displayAudioData = true;
 
 // Mouse Position callback
@@ -53,6 +54,8 @@ void keyCallback(GLFWwindow *win, int key, int scancode, int action, int mods) {
         updateSmokeSimulation = !updateSmokeSimulation;
     } else if (key == 'A' && action == GLFW_PRESS) {
         displayAudioData = !displayAudioData;
+    } else if (key == 'F' && action == GLFW_PRESS) {
+        updateAudioData = !updateAudioData;
     }
 }
 
@@ -143,7 +146,10 @@ int main(int argc, char **argv) {
 
         if (displaySmokeSimulation) smokeSimulation->render(mvp, mousePosition);
 
-        if (displayAudioData) audioAnalyzer->render(mvp);
+        if (updateAudioData) audioAnalyzer->performFFT();
+
+        if (displayAudioData) audioAnalyzer->renderWaveform(mvp);
+        if (displayAudioData) audioAnalyzer->renderSpectrum(mvp);
 
         // Swap buffers
         glfwSwapBuffers(window);

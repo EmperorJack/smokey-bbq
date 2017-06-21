@@ -1,13 +1,13 @@
 #include <iostream>
 #include <opengl.hpp>
 #include <portaudio.h>
+#include <kiss_fftr.h>
 #include <audio_analyzer.hpp>
 #include <shaderLoader.hpp>
-#include <string.h>
 
 // OS variables
-bool WIN = false;
-bool MAC = true;
+bool WIN = true;
+bool MAC = false;
 
 // GL variables
 GLuint sVBO;
@@ -25,6 +25,12 @@ PaStreamParameters inputParameters;
 
 // Audio data variables
 float rawAudio[AudioAnalyzer::SAMPLE_SIZE];
+float processedAudio[AudioAnalyzer::SAMPLE_SIZE];
+
+// FFT variables
+kiss_fftr_cfg cfg;
+kiss_fft_scalar fft_in[AudioAnalyzer::SAMPLE_SIZE];
+kiss_fft_cpx fft_out[AudioAnalyzer::SAMPLE_SIZE];
 
 bool paErrorOccured(PaError error) {
     if (error != paNoError) {
@@ -67,6 +73,21 @@ AudioAnalyzer::AudioAnalyzer(float _screenWidth, float _screenHeight) {
         return;
     } else {
         paInitSuccessful = true;
+    }
+
+    // Initialize kiss fft
+    cfg = kiss_fftr_alloc(AudioAnalyzer::FFT_SIZE, false, 0,0);
+    if (cfg == NULL) {
+        fprintf(stderr, "Failed to initialize kiss fft");
+        return;
+    }
+
+    for (int i = 0; i < SAMPLE_SIZE; i++) {
+        rawAudio[i] = 0.0f;
+        fft_in[i] = 0.0f;
+        fft_out[i].i = 0.0f;
+        fft_out[i].r = 0.0f;
+        processedAudio[i] = 0.0f;
     }
 
     int inDevNum = 0;
@@ -114,8 +135,9 @@ AudioAnalyzer::AudioAnalyzer(float _screenWidth, float _screenHeight) {
     if (paErrorOccured(err)) return;
 }
 
-
 void AudioAnalyzer::shutDown() {
+    free(cfg);
+
     if (!paInitSuccessful) return;
 
     PaError err = Pa_StopStream( stream );
@@ -127,7 +149,6 @@ void AudioAnalyzer::shutDown() {
     err = Pa_Terminate();
     if (paErrorOccured(err)) return;
 }
-
 
 void AudioAnalyzer::printAudioDevices() {
 
@@ -172,15 +193,40 @@ static int paCallback(const void *inputBuffer,
     return 0;
 }
 
-void AudioAnalyzer::render(glm::mat4 transform) {
+void AudioAnalyzer::performFFT() {
+    for (int i = 0; i < SAMPLE_SIZE; i++) {
+        fft_in[i] = rawAudio[i];
+    }
+
+    kiss_fftr(cfg, fft_in, fft_out);
+
+    for (int i = 0; i < SAMPLE_SIZE; i++) {
+        processedAudio[i] = fft_out[i].r;
+    }
+}
+
+void AudioAnalyzer::renderWaveform(glm::mat4 transform) {
     glUseProgram(shader);
 
     for (int i = 0; i < SAMPLE_SIZE; i++) {
         float color[] = {1.0f, 0.0f, 0.0f, 0.0f};
         setColor(color);
 
-        glm::mat4 translate = glm::translate(glm::vec3(i * spacing, rawAudio[i] * 250.0f + (screenHeight * 0.5f), 0.0f));
+        glm::mat4 translate = glm::translate(glm::vec3(i * spacing, rawAudio[i] * 350.0f + (screenHeight * 0.33f), 0.0f));
         glm::mat4 scale = glm::scale(glm::vec3(2.0f, 2.0f, 2.0f));
+        drawSquare(transform * translate * scale, true);
+    }
+}
+
+void AudioAnalyzer::renderSpectrum(glm::mat4 transform) {
+    glUseProgram(shader);
+
+    for (int i = 0; i < SAMPLE_SIZE; i++) {
+        float color[] = {0.0f, 1.0f, 0.0f, 0.0f};
+        setColor(color);
+
+        glm::mat4 translate = glm::translate(glm::vec3(i * spacing, (screenHeight * 0.66f), 0.0f));
+        glm::mat4 scale = glm::scale(glm::vec3(2.0f, processedAudio[i] * 350.0f , 2.0f));
         drawSquare(transform * translate * scale, true);
     }
 }
@@ -205,5 +251,5 @@ void AudioAnalyzer::drawSquare(glm::mat4 transform, bool fill) {
     } else {
         glDrawArrays(GL_LINE_LOOP, 0, 4);
     }
-    glDisableVertexAttribArray(0);
+//    glDisableVertexAttribArray(0);
 }
