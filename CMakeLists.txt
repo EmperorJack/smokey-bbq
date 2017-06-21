@@ -17,7 +17,7 @@ project(${PROJECT_NAME})
 # Include OpenGL
 find_package(OpenGL REQUIRED)
 
-# Include common
+# Include common files
 include_directories(${PROJECT_SOURCE_DIR}/common)
 file(GLOB COMMON
     common/*.h
@@ -39,15 +39,45 @@ add_subdirectory(${PROJECT_SOURCE_DIR}/lib/glew)
 include_directories(${PROJECT_SOURCE_DIR}/lib/glfw/include)
 add_subdirectory(${PROJECT_SOURCE_DIR}/lib/glfw)
 
-# Include and add glm header library
+# Include the glm header library
 include_directories(${PROJECT_SOURCE_DIR}/lib/glm)
-file(GLOB EXTERNAL lib/glm/glm/glm.hpp)
+
+# Include and add portaudio library
+include_directories(${PROJECT_SOURCE_DIR}/lib/portaudio/include)
+link_directories(${PROJECT_SOURCE_DIR}/lib/portaudio/libs)
+
+# Include the kiss fft library
+include_directories(${PROJECT_SOURCE_DIR}/lib/kissfft)
+
+# Include any external library files
+file(GLOB EXTERNAL
+    lib/glm/glm/glm.hpp
+    lib/kissfft/*.h
+    lib/kissfft/*.c
+)
+
+# Include required frameworks
+find_library(coreservices_lib CoreServices)
+find_library(corefoundation_lib CoreFoundation)
+find_library(audiounit_lib AudioUnit)
+find_library(audiotoolbox_lib AudioToolbox)
+find_library(coreaudio_lib CoreAudio)
+
+if (APPLE)
+    set(frameworks
+        ${coreservices_lib}
+        ${corefoundation_lib}
+        ${audiounit_lib}
+        ${audiotoolbox_lib}
+        ${coreaudio_lib}
+    )
+endif()
 
 # Create the executable
 add_executable(${PROJECT_NAME} ${SOURCES} ${COMMON} ${EXTERNAL})
 
 # Link the external libraries
-target_link_libraries(${PROJECT_NAME} glfw glew ${OPENGL_LIBRARIES})
+target_link_libraries(${PROJECT_NAME} glfw glew ${frameworks} portaudio ${OPENGL_LIBRARIES})
 
 # Copy shaders to the build directory
 set(SHADER_SUBDIRECTORY resources/shaders)
