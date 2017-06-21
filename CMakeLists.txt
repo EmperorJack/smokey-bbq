@@ -47,11 +47,26 @@ file(GLOB EXTERNAL lib/glm/glm/glm.hpp)
 include_directories(${PROJECT_SOURCE_DIR}/lib/portaudio/include)
 link_directories(${PROJECT_SOURCE_DIR}/lib/portaudio/libs)
 
+# Include required frameworks
+find_library(coreservices_lib CoreServices)
+find_library(corefoundation_lib CoreFoundation)
+find_library(audiounit_lib AudioUnit)
+find_library(audiotoolbox_lib AudioToolbox)
+find_library(coreaudio_lib CoreAudio)
+
+set(frameworks
+    ${coreservices_lib}
+    ${corefoundation_lib}
+    ${audiounit_lib}
+    ${audiotoolbox_lib}
+    ${coreaudio_lib}
+)
+
 # Create the executable
 add_executable(${PROJECT_NAME} ${SOURCES} ${COMMON} ${EXTERNAL})
 
 # Link the external libraries
-target_link_libraries(${PROJECT_NAME} glfw glew portaudio ${OPENGL_LIBRARIES})
+target_link_libraries(${PROJECT_NAME} glfw glew ${frameworks} portaudio ${OPENGL_LIBRARIES})
 
 # Copy shaders to the build directory
 set(SHADER_SUBDIRECTORY resources/shaders)

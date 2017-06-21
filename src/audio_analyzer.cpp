@@ -5,6 +5,10 @@
 #include <shaderLoader.hpp>
 #include <string.h>
 
+// OS variables
+bool WIN = false;
+bool MAC = true;
+
 // GL variables
 GLuint sVBO;
 GLuint shader;
@@ -65,9 +69,18 @@ AudioAnalyzer::AudioAnalyzer(float _screenWidth, float _screenHeight) {
         paInitSuccessful = true;
     }
 
-    int inDevNum = 1;
+    int inDevNum = 0;
+    int outDevNum = 0;
+
+    if (MAC) {
+        inDevNum = 4;
+        outDevNum = 4;
+    } else if (WIN) {
+        inDevNum = 1;
+        outDevNum = 3;
+    }
+
     int inChan = 2;
-    int outDevNum = 3;
     int outChan = 2;
 
     memset(&inputParameters, 0, sizeof(inputParameters));
