@@ -201,7 +201,13 @@ void AudioAnalyzer::performFFT() {
     kiss_fftr(cfg, fft_in, fft_out);
 
     for (int i = 0; i < SAMPLE_SIZE; i++) {
-        processedAudio[i] = fft_out[i].r;
+        float real = fft_out[i].r;
+        float imaginary = fft_out[i].i;
+        float magnitude = sqrt(real * real + imaginary * imaginary);
+
+        // processedAudio[i] = 20.0f * log10f(magnitude);
+        processedAudio[i] = magnitude;
+        // processedAudio[i] = fft_out[i].r;
     }
 }
 
@@ -221,12 +227,12 @@ void AudioAnalyzer::renderWaveform(glm::mat4 transform) {
 void AudioAnalyzer::renderSpectrum(glm::mat4 transform) {
     glUseProgram(shader);
 
-    for (int i = 0; i < SAMPLE_SIZE; i++) {
+    for (int i = 0; i < SAMPLE_SIZE / 4; i++) {
         float color[] = {0.0f, 1.0f, 0.0f, 0.0f};
         setColor(color);
 
-        glm::mat4 translate = glm::translate(glm::vec3(i * spacing, (screenHeight * 0.66f), 0.0f));
-        glm::mat4 scale = glm::scale(glm::vec3(2.0f, processedAudio[i] * 350.0f , 2.0f));
+        glm::mat4 translate = glm::translate(glm::vec3(i * spacing * 4, screenHeight * 0.66f, 0.0f));
+        glm::mat4 scale = glm::scale(glm::vec3(2.0f, processedAudio[i] * -50.0f , 2.0f));
         drawSquare(transform * translate * scale, true);
     }
 }
