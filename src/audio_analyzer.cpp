@@ -231,7 +231,7 @@ void AudioAnalyzer::renderSpectrum(glm::mat4 transform) {
         float color[] = {0.0f, 1.0f, 0.0f, 0.0f};
         setColor(color);
 
-        glm::mat4 translate = glm::translate(glm::vec3(i * spacing * 4, screenHeight * 0.66f, 0.0f));
+        glm::mat4 translate = glm::translate(glm::vec3(i * spacing * 4, screenHeight, 0.0f));
         glm::mat4 scale = glm::scale(glm::vec3(2.0f, processedAudio[i] * -50.0f , 2.0f));
         drawSquare(transform * translate * scale, true);
     }
