@@ -202,7 +202,7 @@ void AudioAnalyzer::renderWaveform(glm::mat4 transform) {
     glUseProgram(shader);
 
     float color[] = {1.0f, 0.0f, 0.0f, 0.0f};
-    setColor(color);
+    setColor(shader, color);
 
     for (int i = 0; i < SAMPLE_SIZE; i++) {
         glm::mat4 translate = glm::translate(glm::vec3(i * spacing, rawAudio[i] * 350.0f + (SCREEN_HEIGHT * 0.5f), 0.0f));
@@ -215,7 +215,7 @@ void AudioAnalyzer::renderSpectrum(glm::mat4 transform) {
     glUseProgram(shader);
 
     float color[] = {0.0f, 0.0f, 1.0f, 0.0f};
-    setColor(color);
+    setColor(shader, color);
 
     for (int i = 0; i < SAMPLE_SIZE / 4; i++) {
         glm::mat4 translate = glm::translate(glm::vec3(i * spacing * 4, 0.0f, 0.0f));
@@ -228,7 +228,7 @@ void AudioAnalyzer::renderFrequencyBands(glm::mat4 transform) {
     glUseProgram(shader);
 
     float color[] = {0.0f, 1.0f, 0.0f, 0.0f};
-    setColor(color);
+    setColor(shader, color);
 
     for (int i = 0; i < NUM_BANDS; i++) {
         glm::mat4 translate = glm::translate(glm::vec3(i * bandSpacing, SCREEN_HEIGHT, 0.0f));

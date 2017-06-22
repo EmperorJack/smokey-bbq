@@ -11,7 +11,7 @@ static const int SCREEN_WIDTH = 1280;
 static const int SCREEN_HEIGHT = 720;
 static const bool FULL_SCREEN = false;
 
-static float myRandom() {
+static inline float myRandom() {
     return std::rand() % 100 / 100.0f;
 }
 

@@ -389,6 +389,8 @@ bool SmokeSimulation::clampBoundary(int &i) {
 void SmokeSimulation::renderDensity() {
     glUseProgram(densityShader);
 
+    passScreenSize(densityShader);
+
     float densityField[SmokeSimulation::GRID_SIZE][SmokeSimulation::GRID_SIZE][2];
     for (int i = 0; i < GRID_SIZE; i++) {
         for (int j = 0; j < GRID_SIZE; j++) {
@@ -421,7 +423,7 @@ void SmokeSimulation::renderVelocityField(glm::mat4 transform, glm::vec2 mousePo
     glUseProgram(simpleShader);
 
     float velocityColor[] = {0.0f, 0.0f, 1.0f, 0.0f};
-    setColor(velocityColor);
+    setColor(simpleShader, velocityColor);
 
     float horizontalSpacing = ((float) SCREEN_WIDTH) / GRID_SIZE;
     float verticalSpacing = ((float) SCREEN_HEIGHT) / GRID_SIZE;
@@ -455,7 +457,7 @@ void SmokeSimulation::renderVelocityField(glm::mat4 transform, glm::vec2 mousePo
     glm::mat4 rotate = glm::orientation(glm::vec3(glm::normalize(velocity), 0.0f), glm::vec3(0.0f, 1.0f, 0.0f));
 
     float mouseColor[] = { 1.0f, 0.0f, 0.0f, 0.0f };
-    setColor(mouseColor);
+    setColor(simpleShader, mouseColor);
     drawLine(transform * translate * scale * rotate);
 }
 

@@ -137,7 +137,7 @@ int main(int argc, char **argv) {
         for (int i = 0; i < AudioAnalyzer::NUM_BANDS; i++) {
             float value = audioAnalyzer->getFrequencyBand(i);
 
-            if (value < 1.0f) continue;
+            if (value < 3.0f) continue;
 
             value = min(value, 15.0f);
 
