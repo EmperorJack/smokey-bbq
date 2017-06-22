@@ -14,7 +14,7 @@ class AudioAnalyzer {
 
     void printAudioDevices();
 
-    void performFFT(bool);
+    void performFFT();
     float hanningWindow(int n);
 
     void renderWaveform(glm::mat4);

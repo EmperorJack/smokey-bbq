@@ -146,7 +146,7 @@ int main(int argc, char **argv) {
 
         if (displaySmokeSimulation) smokeSimulation->render(mvp, mousePosition);
 
-        if (updateAudioData) audioAnalyzer->performFFT(displaySmokeSimulation);
+        if (updateAudioData) audioAnalyzer->performFFT();
 
         if (displayAudioData) audioAnalyzer->renderWaveform(mvp);
         if (displayAudioData) audioAnalyzer->renderSpectrum(mvp);

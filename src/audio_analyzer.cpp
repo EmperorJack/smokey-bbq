@@ -25,7 +25,7 @@ PaStreamParameters outputParameters;
 PaStreamParameters inputParameters;
 
 // Audio data variables
-float rawAudio[AudioAnalyzer::SAMPLE_SIZE * 2];
+float rawAudio[AudioAnalyzer::SAMPLE_SIZE];
 float processedAudio[AudioAnalyzer::SAMPLE_SIZE];
 
 // FFT variables
@@ -146,10 +146,10 @@ void AudioAnalyzer::shutDown() {
 
     if (!paInitSuccessful) return;
 
-    PaError err = Pa_StopStream( stream );
+    PaError err = Pa_StopStream(stream);
     if (paErrorOccured(err)) return;
 
-    err = Pa_CloseStream( stream );
+    err = Pa_CloseStream(stream);
     if (paErrorOccured(err)) return;
 
     err = Pa_Terminate();
@@ -171,7 +171,7 @@ void AudioAnalyzer::printAudioDevices() {
     // Print out information for each device
     const PaDeviceInfo *deviceInfo;
     for(int i = 0; i < numDevices; i++) {
-        deviceInfo = Pa_GetDeviceInfo( i );
+        deviceInfo = Pa_GetDeviceInfo(i);
         printf("--- Device (%x)\n", i);
         printf("Name: %s\n", deviceInfo->name);
         printf("Input channels: %x\n", deviceInfo->maxInputChannels);
@@ -193,21 +193,17 @@ static int paCallback(const void *inputBuffer,
     float *out = (float*) outputBuffer;
 
     for(unsigned int i = 0; i < framesPerBuffer; i++) {
-        // Input buffer interleaves left / right channels
-        rawAudio[i] = in[i*2];
-        rawAudio[i + framesPerBuffer] = in[i*2+1];
+        // Input buffer interleaves left and right channels
+        // Mixing left and right channels into one mono channel
+        rawAudio[i] = (in[i*2] + in[i*2+1]) / 2.0f;
     }
 
     return 0;
 }
 
-void AudioAnalyzer::performFFT(bool a) {
+void AudioAnalyzer::performFFT() {
     for (int i = 0; i < SAMPLE_SIZE; i++) {
-        rawAudio[i] = rawAudio[i] * (a ? hanningWindow(i) : 1.0f);
-        rawAudio[i + SAMPLE_SIZE] = rawAudio[i + SAMPLE_SIZE] * (a ? hanningWindow(i) : 1.0f);
-    }
-
-    for (int i = 0; i < SAMPLE_SIZE; i++) {
+        rawAudio[i] = rawAudio[i] * hanningWindow(i);
         fft_in[i] = rawAudio[i];
     }
 
@@ -218,26 +214,26 @@ void AudioAnalyzer::performFFT(bool a) {
         float imaginary = fft_out[i].i;
         float magnitude = sqrt(real * real + imaginary * imaginary);
 
-        processedAudio[i] = 20.0f * log10f(magnitude);
-        //processedAudio[i] = magnitude;
-        // processedAudio[i] = fft_out[i].r;
+        processedAudio[i] *= 0.92f;
+        processedAudio[i] = max(20.0f * log10f(magnitude), processedAudio[i]);
+        // processedAudio[i] = magnitude;
     }
 }
 
 float AudioAnalyzer::hanningWindow(int n) {
-    return (float) (1.0f * (1.0f - cos((2 * M_PI * n) / (SAMPLE_SIZE - 1))));
-//    float val = (float) sin((M_PI * n) / (SAMPLE_SIZE - 1));
-//    return val * val;
+    // return (float) (0.5f * (1.0f - cos((2 * M_PI * n) / (SAMPLE_SIZE - 1))));
+    float val = (float) sin((M_PI * n) / (SAMPLE_SIZE - 1));
+    return val * val;
 }
 
 void AudioAnalyzer::renderWaveform(glm::mat4 transform) {
     glUseProgram(shader);
 
-    for (int i = 0; i < SAMPLE_SIZE * 2; i++) {
+    for (int i = 0; i < SAMPLE_SIZE; i++) {
         float color[] = {1.0f, 0.0f, 0.0f, 0.0f};
         setColor(color);
 
-        glm::mat4 translate = glm::translate(glm::vec3(i * (spacing / 2.0f), rawAudio[i] * 350.0f + (screenHeight * 0.33f), 0.0f));
+        glm::mat4 translate = glm::translate(glm::vec3(i * spacing, rawAudio[i] * 350.0f + (screenHeight * 0.33f), 0.0f));
         glm::mat4 scale = glm::scale(glm::vec3(2.0f, 2.0f, 2.0f));
         drawSquare(transform * translate * scale, true);
     }
@@ -251,7 +247,7 @@ void AudioAnalyzer::renderSpectrum(glm::mat4 transform) {
         setColor(color);
 
         glm::mat4 translate = glm::translate(glm::vec3(i * spacing * 4, screenHeight, 0.0f));
-        glm::mat4 scale = glm::scale(glm::vec3(2.0f, (processedAudio[i] + 1.0f) * -10.0f, 2.0f));
+        glm::mat4 scale = glm::scale(glm::vec3(2.0f, (processedAudio[i]) * -10.0f, 2.0f));
         drawSquare(transform * translate * scale, true);
     }
 }
