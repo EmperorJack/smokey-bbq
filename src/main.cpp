@@ -13,10 +13,11 @@ glm::vec2 mousePosition;
 bool mousePressed = false;
 
 // Toggles
-bool updateSmokeSimulation = false;
-bool displaySmokeSimulation = false;
-bool updateAudioData = true;
-bool displayAudioData = true;
+bool updateSmokeSimulation = true;
+bool displayDensityField = true;
+bool displayVelocityField = false;
+bool updateAudioData = false;
+bool displayAudioData = false;
 
 // Mouse Position callback
 void mouseMovedCallback(GLFWwindow* win, double xPos, double yPos) {
@@ -35,22 +36,20 @@ void mouseButtonCallback(GLFWwindow *win, int button, int action, int mods) {
 void keyCallback(GLFWwindow *win, int key, int scancode, int action, int mods) {
     if (key == ' ') {
         smokeSimulation->resetFields();
-    } else if (key == 'V' && action == GLFW_PRESS) {
-        smokeSimulation->toggleVectorDisplay();
-    } else if (key == 'D' && action == GLFW_PRESS) {
-        smokeSimulation->toggleDensityDisplay();
     } else if (key == 'E' && action == GLFW_PRESS) {
-        smokeSimulation->toggleEnableEmitter();
+        smokeSimulation->enableEmitter = !smokeSimulation->enableEmitter;
     } else if (key == 'P' && action == GLFW_PRESS) {
-        smokeSimulation->togglePressureSolve();
+        smokeSimulation->enablePressureSolve = !smokeSimulation->enablePressureSolve;
     } else if (key == 'R' && action == GLFW_PRESS) {
-        smokeSimulation->togglePulseType();
+        smokeSimulation->randomPulseAngle = !smokeSimulation->randomPulseAngle;
     } else if (key == 'W' && action == GLFW_PRESS) {
-        smokeSimulation->toggleWrapBorders();
+        smokeSimulation->wrapBorders = !smokeSimulation->wrapBorders;
     } else if (key == 'B' && action == GLFW_PRESS) {
-        smokeSimulation->toggleBuoyancy();
+        smokeSimulation->enableBuoyancy = !smokeSimulation->enableBuoyancy;
     } else if (key == 'S' && action == GLFW_PRESS) {
-        displaySmokeSimulation = !displaySmokeSimulation;
+        displayDensityField = !displayDensityField;
+    } else if (key == 'V' && action == GLFW_PRESS) {
+        displayVelocityField = !displayVelocityField;
     } else if (key == 'U' && action == GLFW_PRESS) {
         updateSmokeSimulation = !updateSmokeSimulation;
     } else if (key == 'A' && action == GLFW_PRESS) {
@@ -76,7 +75,8 @@ int main(int argc, char **argv) {
 
     // Open a window and create its OpenGL context
     GLFWwindow* window;
-    window = glfwCreateWindow(SCREEN_WIDTH, SCREEN_HEIGHT, "Window", NULL, NULL);
+    glfwWindowHint(GLFW_RESIZABLE, GL_FALSE);
+    window = glfwCreateWindow(SCREEN_WIDTH, SCREEN_HEIGHT, "Window", (FULL_SCREEN ? glfwGetPrimaryMonitor() : NULL), NULL);
     if (window == NULL) {
         fprintf(stderr, "Failed to open GLFW window\n");
         glfwTerminate();
@@ -143,7 +143,8 @@ int main(int argc, char **argv) {
 
         glm::mat4 mvp = projection * view;
 
-        if (displaySmokeSimulation) smokeSimulation->render(mvp, mousePosition);
+        if (displayDensityField) smokeSimulation->renderDensity();
+        if (displayVelocityField) smokeSimulation->renderVelocityField(mvp, mousePosition);
 
         if (updateAudioData) audioAnalyzer->update();
 

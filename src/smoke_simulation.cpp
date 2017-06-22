@@ -5,7 +5,8 @@
 #include <shaderLoader.hpp>
 
 SmokeSimulation::SmokeSimulation() {
-    gridSpacing = ((float) SCREEN_WIDTH) / GRID_SIZE;
+    float size = (float) min(SCREEN_WIDTH, SCREEN_HEIGHT);
+    gridSpacing = size / GRID_SIZE;
     resetFields();
 
     // Setup VBOs
@@ -157,10 +158,13 @@ void SmokeSimulation::addPulse(glm::vec2 position) {
         }
     }
 
+    float horizontalSpacing = ((float) SCREEN_WIDTH) / GRID_SIZE;
+    float verticalSpacing = ((float) SCREEN_HEIGHT) / GRID_SIZE;
+
     for (int i = 0; i < GRID_SIZE; i++) {
         for (int j = 0; j < GRID_SIZE; j++) {
-            float x = i * gridSpacing;
-            float y = j * gridSpacing;
+            float x = i * horizontalSpacing;
+            float y = j * verticalSpacing;
             glm::vec2 gridPosition = glm::vec2(x, y);
             if (glm::distance(position, gridPosition) < PULSE_RANGE) {
                 grid[i][j].velocity = PULSE_FORCE * (randomPulseAngle ? glm::normalize(force) : glm::normalize(gridPosition - position));
@@ -254,8 +258,6 @@ glm::vec2 SmokeSimulation::getVelocity(float x, float y) {
            getInterpolatedVelocity(normX + 0.5f, normY, true)) * 0.5f;
     v.y = (getInterpolatedVelocity(normX, normY - 0.5f, false) +
            getInterpolatedVelocity(normX, normY + 0.5f, false)) * 0.5f;
-
-    //if (v.x == 0.0f && v.y == 0.0f) std::cout << "YO NAN " << std::endl;
 
     return v;
 }
@@ -366,50 +368,7 @@ bool SmokeSimulation::clampBoundary(int &i) {
     return false;
 }
 
-void SmokeSimulation::render(glm::mat4 transform, glm::vec2 mousePosition) {
-    if (displayDensity) drawDensity();
-
-    if (!displayVectors) return;
-
-    glUseProgram(simpleShader);
-
-    float velocityColor[] = {0.0f, 0.0f, 1.0f, 0.0f};
-    setColor(velocityColor);
-
-    for (int i = 0; i < GRID_SIZE; i++) {
-        for (int j = 0; j < GRID_SIZE; j++) {
-            float x = i * gridSpacing;
-            float y = j * gridSpacing;
-            glm::mat4 translate = glm::translate(glm::vec3(x, y, 0.0f));
-
-            translate *= glm::translate(glm::vec3(gridSpacing / 2.0f, gridSpacing / 2.0f, 0.0f));
-
-            glm::vec3 velocity = glm::vec3(grid[i][j].velocity.x, grid[i][j].velocity.y, 0.0f);
-
-            float magnitude = max(min(glm::length(velocity) / PULSE_FORCE * 1.5f, 2.0f), 0.5f);
-
-            glm::mat4 scale = glm::scale(glm::vec3(magnitude, magnitude, 1.0f));
-            glm::mat4 rotate = glm::orientation(glm::normalize(velocity), glm::vec3(0.0f, 1.0f, 0.0f));
-
-            drawLine(transform * translate * scale * rotate);
-        }
-    }
-
-    // Draw interpolated velocity and mouse position
-    glm::mat4 translate = glm::translate(glm::vec3(mousePosition, 0.0f));
-
-    glm::vec2 velocity = getVelocity(mousePosition.x - gridSpacing / 2.0f, mousePosition.y - gridSpacing / 2.0f);
-
-    float magnitude = min(glm::length(velocity), 2.0f);
-    glm::mat4 scale = glm::scale(glm::vec3(magnitude, magnitude, 1.0f));
-    glm::mat4 rotate = glm::orientation(glm::vec3(glm::normalize(velocity), 0.0f), glm::vec3(0.0f, 1.0f, 0.0f));
-
-    float mouseColor[] = { 1.0f, 0.0f, 0.0f, 0.0f };
-    setColor(mouseColor);
-    drawLine(transform * translate * scale * rotate);
-}
-
-void SmokeSimulation::drawDensity() {
+void SmokeSimulation::renderDensity() {
     glUseProgram(densityShader);
 
     float densityField[SmokeSimulation::GRID_SIZE][SmokeSimulation::GRID_SIZE][2];
@@ -440,6 +399,48 @@ void SmokeSimulation::drawDensity() {
     glDisableVertexAttribArray(1);
 }
 
+void SmokeSimulation::renderVelocityField(glm::mat4 transform, glm::vec2 mousePosition) {
+    glUseProgram(simpleShader);
+
+    float velocityColor[] = {0.0f, 0.0f, 1.0f, 0.0f};
+    setColor(velocityColor);
+
+    float horizontalSpacing = ((float) SCREEN_WIDTH) / GRID_SIZE;
+    float verticalSpacing = ((float) SCREEN_HEIGHT) / GRID_SIZE;
+
+    for (int i = 0; i < GRID_SIZE; i++) {
+        for (int j = 0; j < GRID_SIZE; j++) {
+            float x = i * horizontalSpacing;
+            float y = j * verticalSpacing;
+            glm::mat4 translate = glm::translate(glm::vec3(x, y, 0.0f));
+
+            translate *= glm::translate(glm::vec3(horizontalSpacing / 2.0f, verticalSpacing / 2.0f, 0.0f));
+
+            glm::vec3 velocity = glm::vec3(grid[i][j].velocity.x, grid[i][j].velocity.y, 0.0f);
+
+            float magnitude = max(min(glm::length(velocity) / PULSE_FORCE * 1.5f, 2.0f), 0.5f);
+
+            glm::mat4 scale = glm::scale(glm::vec3(magnitude, magnitude, 1.0f));
+            glm::mat4 rotate = glm::orientation(glm::normalize(velocity), glm::vec3(0.0f, 1.0f, 0.0f));
+
+            drawLine(transform * translate * scale * rotate);
+        }
+    }
+
+    // Draw interpolated velocity and mouse position
+    glm::mat4 translate = glm::translate(glm::vec3(mousePosition, 0.0f));
+
+    glm::vec2 velocity = getVelocity(mousePosition.x - horizontalSpacing / 2.0f, mousePosition.y - verticalSpacing / 2.0f);
+
+    float magnitude = min(glm::length(velocity), 2.0f);
+    glm::mat4 scale = glm::scale(glm::vec3(magnitude, magnitude, 1.0f));
+    glm::mat4 rotate = glm::orientation(glm::vec3(glm::normalize(velocity), 0.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+
+    float mouseColor[] = { 1.0f, 0.0f, 0.0f, 0.0f };
+    setColor(mouseColor);
+    drawLine(transform * translate * scale * rotate);
+}
+
 void SmokeSimulation::drawLine(glm::mat4 transform) {
     GLint transformID = glGetUniformLocation(3, "MVP");
     glUniformMatrix4fv(transformID, 1, GL_FALSE, &transform[0][0]);
@@ -457,32 +458,4 @@ void SmokeSimulation::drawLine(glm::mat4 transform) {
 
     glDrawArrays(GL_TRIANGLE_FAN, 0, 4);
     glDisableVertexAttribArray(0);
-}
-
-void SmokeSimulation::toggleVectorDisplay() {
-    displayVectors = !displayVectors;
-}
-
-void SmokeSimulation::toggleDensityDisplay() {
-    displayDensity = !displayDensity;
-}
-
-void SmokeSimulation::toggleEnableEmitter() {
-    enableEmitter = !enableEmitter;
-}
-
-void SmokeSimulation::togglePressureSolve() {
-    enablePressureSolve = !enablePressureSolve;
-}
-
-void SmokeSimulation::togglePulseType() {
-    randomPulseAngle = !randomPulseAngle;
-}
-
-void SmokeSimulation::toggleBuoyancy() {
-    enableBuoyancy = !enableBuoyancy;
-}
-
-void SmokeSimulation::toggleWrapBorders() {
-    wrapBorders = !wrapBorders;
 }

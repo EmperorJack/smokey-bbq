@@ -19,7 +19,7 @@ class AudioAnalyzer {
         AudioAnalyzer();
         void shutDown();
 
-        // Per frame
+        // Updating
         void update();
 
         // Rendering

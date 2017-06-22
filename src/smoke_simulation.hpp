@@ -26,21 +26,22 @@ class SmokeSimulation {
         SmokeSimulation();
         void resetFields();
 
-        // Per frame
+        // Updating
         void update();
-        void render(glm::mat4, glm::vec2);
+
+        // Rendering
+        void renderDensity();
+        void renderVelocityField(glm::mat4, glm::vec2);
 
         // Interactions
         void addPulse(glm::vec2);
 
-        // Toggles
-        void toggleVectorDisplay();
-        void toggleDensityDisplay();
-        void toggleEnableEmitter();
-        void togglePressureSolve();
-        void togglePulseType();
-        void toggleBuoyancy();
-        void toggleWrapBorders();
+        // Toggle variables
+        bool enableEmitter = false;
+        bool enablePressureSolve = true;
+        bool randomPulseAngle = false;
+        bool enableBuoyancy = true;
+        bool wrapBorders = false;
 
     private:
 
@@ -61,15 +62,6 @@ class SmokeSimulation {
         // Instance variables
         SmokeSimulation::gridCell grid[SmokeSimulation::GRID_SIZE][SmokeSimulation::GRID_SIZE];
         float gridSpacing;
-
-        // Toggle variables
-        bool displayVectors = false;
-        bool displayDensity = true;
-        bool enableEmitter = false;
-        bool enablePressureSolve = true;
-        bool randomPulseAngle = false;
-        bool enableBuoyancy = true;
-        bool wrapBorders = true;
 
         // VBOs
         GLuint squareVBO;
@@ -112,7 +104,6 @@ class SmokeSimulation {
         bool clampBoundary(int &i);
 
         // Rendering
-        void drawDensity();
         void drawLine(glm::mat4);
 };
 

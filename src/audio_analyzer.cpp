@@ -46,6 +46,9 @@ AudioAnalyzer::AudioAnalyzer() {
         return;
     }
 
+    // Precompute the hanning window
+    computeHanningWindow();
+
     // Reset all buffers
     for (int i = 0; i < SAMPLE_SIZE; i++) {
         rawAudio[i] = 0.0f;
@@ -59,9 +62,6 @@ AudioAnalyzer::AudioAnalyzer() {
     for (int i = 0; i < NUM_BANDS; i++) {
         frequencyBands[i] = 0.0f;
     }
-
-    // Precompute the hanning window
-    computeHanningWindow();
 
     printAudioDevices();
 
@@ -88,7 +88,6 @@ AudioAnalyzer::AudioAnalyzer() {
     inputParameters.hostApiSpecificStreamInfo = NULL;
     inputParameters.sampleFormat = paFloat32;
     inputParameters.suggestedLatency = Pa_GetDeviceInfo(inDevNum)->defaultLowInputLatency ;
-    inputParameters.hostApiSpecificStreamInfo = NULL;
 
     memset(&outputParameters, 0, sizeof(outputParameters));
     outputParameters.channelCount = outChan;
@@ -96,7 +95,6 @@ AudioAnalyzer::AudioAnalyzer() {
     outputParameters.hostApiSpecificStreamInfo = NULL;
     outputParameters.sampleFormat = paFloat32;
     outputParameters.suggestedLatency = Pa_GetDeviceInfo(outDevNum)->defaultLowOutputLatency ;
-    outputParameters.hostApiSpecificStreamInfo = NULL;
     err = Pa_OpenStream(
             &stream,
             &inputParameters,
