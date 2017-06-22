@@ -150,6 +150,7 @@ int main(int argc, char **argv) {
 
         if (displayAudioData) audioAnalyzer->renderWaveform(mvp);
         if (displayAudioData) audioAnalyzer->renderSpectrum(mvp);
+        if (displayAudioData) audioAnalyzer->renderFrequencyBands(mvp);
 
         // Swap buffers
         glfwSwapBuffers(window);

@@ -8,6 +8,7 @@ class AudioAnalyzer {
     static constexpr int SAMPLE_RATE = 44100;
     static constexpr int SAMPLE_SIZE = 1024;
     static constexpr int FFT_SIZE = 1024;
+    static constexpr int NUM_BANDS = 32;
 
     AudioAnalyzer(float screenWidth, float screenHeight);
     void shutDown();

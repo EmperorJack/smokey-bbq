@@ -17,6 +17,7 @@ GLuint shader;
 // Instance variables
 float screenWidth, screenHeight;
 float spacing;
+float bandSpacing;
 
 // Port audio variables
 bool paInitSuccessful = false;
@@ -27,6 +28,7 @@ PaStreamParameters inputParameters;
 // Audio data variables
 float rawAudio[AudioAnalyzer::SAMPLE_SIZE];
 float processedAudio[AudioAnalyzer::SAMPLE_SIZE];
+float frequencyBands[AudioAnalyzer::NUM_BANDS];
 float hanningWindow[AudioAnalyzer::SAMPLE_SIZE];
 
 // FFT variables
@@ -54,7 +56,8 @@ AudioAnalyzer::AudioAnalyzer(float _screenWidth, float _screenHeight) {
     screenWidth = _screenWidth;
     screenHeight = _screenHeight;
 
-    spacing = _screenWidth / ((float) SAMPLE_SIZE);
+    spacing = screenWidth / ((float) SAMPLE_SIZE);
+    bandSpacing = screenWidth / ((float) NUM_BANDS);
 
     // Setup VBOs
     float squareVertices[] = {
@@ -91,6 +94,9 @@ AudioAnalyzer::AudioAnalyzer(float _screenWidth, float _screenHeight) {
         fft_out[i].i = 0.0f;
         fft_out[i].r = 0.0f;
         processedAudio[i] = 0.0f;
+    }
+    for (int i = 0; i < NUM_BANDS; i++) {
+        frequencyBands[i] = 0.0f;
     }
 
     // Precompute the hanning window
@@ -235,6 +241,22 @@ void AudioAnalyzer::update() {
         processedAudio[i] = max(20.0f * log10f(magnitude), processedAudio[i]);
         // processedAudio[i] = magnitude;
     }
+
+    // Bin similar frequencies into discrete bands
+    float samplesPerBand = SAMPLE_SIZE / NUM_BANDS;
+    for (int n = 0; n < NUM_BANDS; n++) {
+        float value = 0.0f;
+
+        for (int i = 0; i < samplesPerBand; i++) {
+            //std::cout << i + (int) (n * samplesPerBand) << " ";
+            float v = processedAudio[i + (int) (n * samplesPerBand)];
+            if (v < 0.0f) std::cout << "HELP" << std::endl;
+            value += v;
+        }
+        //std::cout << std::endl;
+
+        frequencyBands[n] = value / samplesPerBand;
+    }
 }
 
 void AudioAnalyzer::renderWaveform(glm::mat4 transform) {
@@ -244,7 +266,7 @@ void AudioAnalyzer::renderWaveform(glm::mat4 transform) {
         float color[] = {1.0f, 0.0f, 0.0f, 0.0f};
         setColor(color);
 
-        glm::mat4 translate = glm::translate(glm::vec3(i * spacing, rawAudio[i] * 350.0f + (screenHeight * 0.33f), 0.0f));
+        glm::mat4 translate = glm::translate(glm::vec3(i * spacing, rawAudio[i] * 350.0f + (screenHeight * 0.5f), 0.0f));
         glm::mat4 scale = glm::scale(glm::vec3(2.0f, 2.0f, 2.0f));
         drawSquare(transform * translate * scale, true);
     }
@@ -258,7 +280,7 @@ void AudioAnalyzer::renderSpectrum(glm::mat4 transform) {
         setColor(color);
 
         glm::mat4 translate = glm::translate(glm::vec3(i * spacing * 4, screenHeight, 0.0f));
-        glm::mat4 scale = glm::scale(glm::vec3(2.0f, (processedAudio[i]) * -10.0f, 2.0f));
+        glm::mat4 scale = glm::scale(glm::vec3(2.0f, processedAudio[i] * -10.0f, 2.0f));
         drawSquare(transform * translate * scale, true);
     }
 }
@@ -266,12 +288,12 @@ void AudioAnalyzer::renderSpectrum(glm::mat4 transform) {
 void AudioAnalyzer::renderFrequencyBands(glm::mat4 transform) {
     glUseProgram(shader);
 
-    for (int i = 0; i < SAMPLE_SIZE / 4; i++) {
-        float color[] = {0.0f, 1.0f, 0.0f, 0.0f};
+    for (int i = 0; i < NUM_BANDS; i++) {
+        float color[] = {0.0f, 0.0f, 1.0f, 0.0f};
         setColor(color);
 
-        glm::mat4 translate = glm::translate(glm::vec3(i * spacing * 4, screenHeight, 0.0f));
-        glm::mat4 scale = glm::scale(glm::vec3(2.0f, (processedAudio[i]) * -10.0f, 2.0f));
+        glm::mat4 translate = glm::translate(glm::vec3(i * bandSpacing, 0.0f, 0.0f));
+        glm::mat4 scale = glm::scale(glm::vec3(bandSpacing, frequencyBands[i] * 10.0f, 2.0f));
         drawSquare(transform * translate * scale, true);
     }
 }
