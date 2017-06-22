@@ -16,7 +16,7 @@ bool mousePressed = false;
 bool updateSmokeSimulation = true;
 bool displayDensityField = true;
 bool displayVelocityField = false;
-bool updateAudioData = false;
+bool updateAudioData = true;
 bool displayAudioData = false;
 
 // Mouse Position callback
@@ -131,6 +131,22 @@ int main(int argc, char **argv) {
             lastTime += 1.0;
         }
 
+        float sideOffset = ((float) SCREEN_WIDTH * 0.075f);
+        float bandSpacing = ((float) SCREEN_WIDTH - sideOffset * 2.0f) / AudioAnalyzer::NUM_BANDS;
+
+        for (int i = 0; i < AudioAnalyzer::NUM_BANDS; i++) {
+            float value = audioAnalyzer->getFrequencyBand(i);
+
+            if (value < 1.0f) continue;
+
+            value = min(value, 15.0f);
+
+            glm::vec2 position = vec2(i * bandSpacing + sideOffset, SCREEN_HEIGHT * 0.95f);
+            glm::vec2 force = vec2(myRandom() * 250.0f - 125.0f, (value + 1.0f) * -15.0f);
+
+            smokeSimulation->emit(position, force, bandSpacing, value * 0.005f, value * 0.025f);
+        }
+
         if (mousePressed) smokeSimulation->addPulse(mousePosition);
 
         if (updateSmokeSimulation) smokeSimulation->update();
@@ -148,8 +164,8 @@ int main(int argc, char **argv) {
 
         if (updateAudioData) audioAnalyzer->update();
 
-        if (displayAudioData) audioAnalyzer->renderWaveform(mvp);
-        if (displayAudioData) audioAnalyzer->renderSpectrum(mvp);
+        // if (displayAudioData) audioAnalyzer->renderWaveform(mvp);
+        // if (displayAudioData) audioAnalyzer->renderSpectrum(mvp);
         if (displayAudioData) audioAnalyzer->renderFrequencyBands(mvp);
 
         // Swap buffers

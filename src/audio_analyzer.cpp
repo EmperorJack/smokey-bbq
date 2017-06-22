@@ -194,6 +194,10 @@ void AudioAnalyzer::update() {
     }
 }
 
+float AudioAnalyzer::getFrequencyBand(int i) {
+    return frequencyBands[i];
+}
+
 void AudioAnalyzer::renderWaveform(glm::mat4 transform) {
     glUseProgram(shader);
 

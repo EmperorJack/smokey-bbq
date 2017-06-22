@@ -175,6 +175,24 @@ void SmokeSimulation::addPulse(glm::vec2 position) {
     }
 }
 
+void SmokeSimulation::emit(glm::vec2 position, glm::vec2 force, float range, float density, float temperature) {
+    float horizontalSpacing = ((float) SCREEN_WIDTH) / GRID_SIZE;
+    float verticalSpacing = ((float) SCREEN_HEIGHT) / GRID_SIZE;
+
+    for (int i = 0; i < GRID_SIZE; i++) {
+        for (int j = 0; j < GRID_SIZE; j++) {
+            float x = i * horizontalSpacing;
+            float y = j * verticalSpacing;
+            glm::vec2 gridPosition = glm::vec2(x, y);
+            if (glm::distance(position, gridPosition) < range) {
+                grid[i][j].velocity = force;
+                grid[i][j].density += density * (1 - glm::distance(position, gridPosition) / range);
+                grid[i][j].temperature += temperature * (1 - glm::distance(position, gridPosition) / range);
+            }
+        }
+    }
+}
+
 glm::vec2 SmokeSimulation::traceParticle(float x, float y) {
     //return glm::vec2(x, y) - (TIME_STEP * getVelocity(x, y));
     glm::vec2 v = getVelocity(x, y);

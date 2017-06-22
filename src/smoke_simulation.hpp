@@ -35,6 +35,7 @@ class SmokeSimulation {
 
         // Interactions
         void addPulse(glm::vec2);
+        void emit(glm::vec2 position, glm::vec2 force, float range, float density, float temperature);
 
         // Toggle variables
         bool enableEmitter = false;
