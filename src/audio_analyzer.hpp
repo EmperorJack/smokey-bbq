@@ -12,13 +12,14 @@ class AudioAnalyzer {
     AudioAnalyzer(float screenWidth, float screenHeight);
     void shutDown();
 
+    void computeHanningWindow();
     void printAudioDevices();
 
-    void performFFT();
-    float hanningWindow(int n);
+    void update();
 
     void renderWaveform(glm::mat4);
     void renderSpectrum(glm::mat4);
+    void renderFrequencyBands(glm::mat4);
     void drawSquare(glm::mat4, bool);
 };
 

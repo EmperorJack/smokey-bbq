@@ -27,6 +27,7 @@ PaStreamParameters inputParameters;
 // Audio data variables
 float rawAudio[AudioAnalyzer::SAMPLE_SIZE];
 float processedAudio[AudioAnalyzer::SAMPLE_SIZE];
+float hanningWindow[AudioAnalyzer::SAMPLE_SIZE];
 
 // FFT variables
 kiss_fftr_cfg cfg;
@@ -83,6 +84,7 @@ AudioAnalyzer::AudioAnalyzer(float _screenWidth, float _screenHeight) {
         return;
     }
 
+    // Reset all buffers
     for (int i = 0; i < SAMPLE_SIZE; i++) {
         rawAudio[i] = 0.0f;
         fft_in[i] = 0.0f;
@@ -90,6 +92,9 @@ AudioAnalyzer::AudioAnalyzer(float _screenWidth, float _screenHeight) {
         fft_out[i].r = 0.0f;
         processedAudio[i] = 0.0f;
     }
+
+    // Precompute the hanning window
+    computeHanningWindow();
 
     printAudioDevices();
 
@@ -156,6 +161,14 @@ void AudioAnalyzer::shutDown() {
     if (paErrorOccured(err)) return;
 }
 
+void AudioAnalyzer::computeHanningWindow() {
+    for (int i = 0; i < SAMPLE_SIZE; i++) {
+        // hanningWindow[n] = (float) (0.5f * (1.0f - cos((2 * M_PI * i) / (SAMPLE_SIZE - 1))));
+        float val = (float) sin((M_PI * i) / (SAMPLE_SIZE - 1));
+        hanningWindow[i] = val * val;
+    }
+}
+
 void AudioAnalyzer::printAudioDevices() {
 
     // Get the number of devices
@@ -201,14 +214,18 @@ static int paCallback(const void *inputBuffer,
     return 0;
 }
 
-void AudioAnalyzer::performFFT() {
+void AudioAnalyzer::update() {
+
+    // Apply window function to raw audio data
     for (int i = 0; i < SAMPLE_SIZE; i++) {
-        rawAudio[i] = rawAudio[i] * hanningWindow(i);
+        rawAudio[i] = rawAudio[i] * hanningWindow[i];
         fft_in[i] = rawAudio[i];
     }
 
+    // Perform the fft
     kiss_fftr(cfg, fft_in, fft_out);
 
+    // Process the fft output
     for (int i = 0; i < SAMPLE_SIZE; i++) {
         float real = fft_out[i].r;
         float imaginary = fft_out[i].i;
@@ -218,12 +235,6 @@ void AudioAnalyzer::performFFT() {
         processedAudio[i] = max(20.0f * log10f(magnitude), processedAudio[i]);
         // processedAudio[i] = magnitude;
     }
-}
-
-float AudioAnalyzer::hanningWindow(int n) {
-    // return (float) (0.5f * (1.0f - cos((2 * M_PI * n) / (SAMPLE_SIZE - 1))));
-    float val = (float) sin((M_PI * n) / (SAMPLE_SIZE - 1));
-    return val * val;
 }
 
 void AudioAnalyzer::renderWaveform(glm::mat4 transform) {
@@ -240,6 +251,19 @@ void AudioAnalyzer::renderWaveform(glm::mat4 transform) {
 }
 
 void AudioAnalyzer::renderSpectrum(glm::mat4 transform) {
+    glUseProgram(shader);
+
+    for (int i = 0; i < SAMPLE_SIZE / 4; i++) {
+        float color[] = {0.0f, 1.0f, 0.0f, 0.0f};
+        setColor(color);
+
+        glm::mat4 translate = glm::translate(glm::vec3(i * spacing * 4, screenHeight, 0.0f));
+        glm::mat4 scale = glm::scale(glm::vec3(2.0f, (processedAudio[i]) * -10.0f, 2.0f));
+        drawSquare(transform * translate * scale, true);
+    }
+}
+
+void AudioAnalyzer::renderFrequencyBands(glm::mat4 transform) {
     glUseProgram(shader);
 
     for (int i = 0; i < SAMPLE_SIZE / 4; i++) {
