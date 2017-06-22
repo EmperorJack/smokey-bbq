@@ -2,8 +2,8 @@
 #define MAIN_HPP
 
 // OS settings
-static const bool WIN = true;
-static const bool MAC = false;
+static const bool WIN = false;
+static const bool MAC = true;
 static const bool LINUX = false;
 
 // Screen settings

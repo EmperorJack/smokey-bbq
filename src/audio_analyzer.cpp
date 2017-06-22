@@ -69,8 +69,8 @@ AudioAnalyzer::AudioAnalyzer() {
     int outDevNum = 0;
 
     if (MAC) {
-        inDevNum = 4;
-        outDevNum = 4;
+        inDevNum = 3;
+        outDevNum = 3;
     } else if (WIN) {
         inDevNum = 1;
         outDevNum = 3;
