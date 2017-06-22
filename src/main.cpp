@@ -13,10 +13,10 @@ glm::vec2 mousePosition;
 bool mousePressed = false;
 
 // Toggles
-bool updateSmokeSimulation = false;
-bool displaySmokeSimulation = false;
-bool updateAudioData = true;
-bool displayAudioData = true;
+bool updateSmokeSimulation = true;
+bool displaySmokeSimulation = true;
+bool updateAudioData = false;
+bool displayAudioData = false;
 
 // Mouse Position callback
 void mouseMovedCallback(GLFWwindow* win, double xPos, double yPos) {

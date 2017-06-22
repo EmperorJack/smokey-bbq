@@ -6,7 +6,8 @@ class SmokeSimulation {
  public:
 
         // Constants
-        static constexpr int GRID_SIZE = 192;
+        static constexpr int GRID_WIDTH = 192;
+        static constexpr int GRID_HEIGHT = 96;
         static constexpr float TIME_STEP = 0.1f;
         static constexpr float FLUID_DENSITY = 1.0f;
         static constexpr float STROKE_WEIGHT = 2.0f;
@@ -59,7 +60,7 @@ class SmokeSimulation {
         };
 
         // Instance variables
-        SmokeSimulation::gridCell grid[SmokeSimulation::GRID_SIZE][SmokeSimulation::GRID_SIZE];
+        SmokeSimulation::gridCell grid[SmokeSimulation::GRID_WIDTH][SmokeSimulation::GRID_HEIGHT];
         float gridSpacing;
 
         // Toggle variables
@@ -107,9 +108,9 @@ class SmokeSimulation {
         float getGridPressure(int i, int j);
 
         // Indexing
-        int wrapIndex(int i);
-        int clampIndex(int i);
-        bool clampBoundary(int &i);
+        int wrapIndex(int i, bool xAxis);
+        int clampIndex(int i, bool xAxis);
+        bool clampBoundary(int &i, bool xAxis);
 
         // Rendering
         void drawDensity();
