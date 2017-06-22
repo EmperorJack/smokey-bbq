@@ -9,6 +9,7 @@ class AudioAnalyzer {
     static constexpr int SAMPLE_SIZE = 1024;
     static constexpr int FFT_SIZE = 1024;
     static constexpr int NUM_BANDS = 32;
+    static constexpr float FREQUENCY_DAMPING = 0.92f;
 
     AudioAnalyzer(float screenWidth, float screenHeight);
     void shutDown();
