@@ -12,7 +12,7 @@ class AudioAnalyzer {
         static constexpr int SAMPLE_RATE = 44100;
         static constexpr int SAMPLE_SIZE = 1024;
         static constexpr int FFT_SIZE = 1024;
-        static constexpr int NUM_BANDS = 32;
+        static constexpr int NUM_BANDS = 24;
         static constexpr float FREQUENCY_DAMPING = 0.85f;
 
         // Setup

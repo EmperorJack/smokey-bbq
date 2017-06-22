@@ -18,7 +18,7 @@ bool displayDensityField = true;
 bool displayVelocityField = false;
 bool updateAudioData = true;
 bool displayAudioData = false;
-bool smokeAudio = false;
+bool smokeAudio = true;
 
 // Mouse Position callback
 void mouseMovedCallback(GLFWwindow* win, double xPos, double yPos) {
@@ -135,21 +135,27 @@ int main(int argc, char **argv) {
             lastTime += 1.0;
         }
 
-        float sideOffset = ((float) SCREEN_WIDTH * 0.075f);
-        float bandSpacing = ((float) SCREEN_WIDTH - sideOffset * 2.0f) / AudioAnalyzer::NUM_BANDS;
-
         if (smokeAudio) {
-            for (int i = 0; i < AudioAnalyzer::NUM_BANDS; i++) {
-                float value = audioAnalyzer->getFrequencyBand(i);
+            float sideOffset = ((float) SCREEN_WIDTH * 0.08f);
+            float bandSpacing = ((float) SCREEN_WIDTH - sideOffset * 2.0f) / (AudioAnalyzer::NUM_BANDS * 2);
+
+            for (int i = 0; i < AudioAnalyzer::NUM_BANDS * 2; i++) {
+                int index;
+                if (i < AudioAnalyzer::NUM_BANDS) {
+                    index = AudioAnalyzer::NUM_BANDS - i - 1;
+                } else {
+                    index = i % AudioAnalyzer::NUM_BANDS;
+                }
+                float value = audioAnalyzer->getFrequencyBand(index);
 
                 if (value < 3.0f) continue;
 
-                value = min(value, 15.0f);
+                value = min(value, 30.0f);
 
                 glm::vec2 position = vec2(i * bandSpacing + sideOffset, SCREEN_HEIGHT * 0.95f);
-                glm::vec2 force = vec2(myRandom() * 250.0f - 125.0f, (value + 1.0f) * -15.0f);
+                glm::vec2 force = vec2(myRandom() * 100.0f - 50.0f, (value + 1.0f) * -12.0f);
 
-                smokeSimulation->emit(position, force, bandSpacing, value * 0.005f, value * 0.025f);
+                smokeSimulation->emit(position, force, bandSpacing * 0.9f, value * 0.005f, value * 0.025f);
             }
         }
 
@@ -170,8 +176,8 @@ int main(int argc, char **argv) {
 
         if (updateAudioData) audioAnalyzer->update();
 
-        // if (displayAudioData) audioAnalyzer->renderWaveform(mvp);
-        // if (displayAudioData) audioAnalyzer->renderSpectrum(mvp);
+        if (displayAudioData) audioAnalyzer->renderWaveform(mvp);
+        if (displayAudioData) audioAnalyzer->renderSpectrum(mvp);
         if (displayAudioData) audioAnalyzer->renderFrequencyBands(mvp);
 
         // Swap buffers

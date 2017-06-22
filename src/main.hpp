@@ -7,9 +7,9 @@ static const bool MAC = false;
 static const bool LINUX = false;
 
 // Screen settings
-static const int SCREEN_WIDTH = 1920;
-static const int SCREEN_HEIGHT = 1080;
-static const bool FULL_SCREEN = true;
+static const int SCREEN_WIDTH = 1280;
+static const int SCREEN_HEIGHT = 720;
+static const bool FULL_SCREEN = false;
 
 static inline float myRandom() {
     return std::rand() % 100 / 100.0f;

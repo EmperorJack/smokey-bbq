@@ -172,9 +172,11 @@ void SmokeSimulation::addPulse(glm::vec2 position) {
             float y = j * verticalSpacing;
             glm::vec2 gridPosition = glm::vec2(x, y);
             if (glm::distance(position, gridPosition) < PULSE_RANGE) {
+                float falloffFactor = (1 - glm::distance(position, gridPosition) / PULSE_RANGE);
+
                 grid[i][j].velocity = PULSE_FORCE * (randomPulseAngle ? glm::normalize(force) : glm::normalize(gridPosition - position));
-                grid[i][j].density += 0.5f * (1 - glm::distance(position, gridPosition) / PULSE_RANGE);
-                grid[i][j].temperature += 2.5f * (1 - glm::distance(position, gridPosition) / PULSE_RANGE);
+                grid[i][j].density += 0.5f * falloffFactor;
+                grid[i][j].temperature += 2.5f * falloffFactor;
             }
         }
     }
@@ -190,9 +192,11 @@ void SmokeSimulation::emit(glm::vec2 position, glm::vec2 force, float range, flo
             float y = j * verticalSpacing;
             glm::vec2 gridPosition = glm::vec2(x, y);
             if (glm::distance(position, gridPosition) < range) {
+                float falloffFactor = (1 - glm::distance(position, gridPosition) / range);
+
                 grid[i][j].velocity = force;
-                grid[i][j].density += density * (1 - glm::distance(position, gridPosition) / range);
-                grid[i][j].temperature += temperature * (1 - glm::distance(position, gridPosition) / range);
+                grid[i][j].density += density * falloffFactor;
+                grid[i][j].temperature += temperature * falloffFactor;
             }
         }
     }
