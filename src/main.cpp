@@ -111,7 +111,7 @@ int main(int argc, char **argv) {
 
     printf("\n~~~\n\n");
 
-    audioAnalyzer->printAudioDevices();
+//    audioAnalyzer->printAudioDevices();
 
     printf("\n~~~\n\n");
 

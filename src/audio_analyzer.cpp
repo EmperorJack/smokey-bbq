@@ -6,8 +6,9 @@
 #include <shaderLoader.hpp>
 
 // OS variables
-bool WIN = true;
+bool WIN = false;
 bool MAC = false;
+bool LINUX = true;
 
 // GL variables
 GLuint sVBO;
@@ -90,6 +91,8 @@ AudioAnalyzer::AudioAnalyzer(float _screenWidth, float _screenHeight) {
         processedAudio[i] = 0.0f;
     }
 
+    printAudioDevices();
+
     int inDevNum = 0;
     int outDevNum = 0;
 
@@ -99,6 +102,9 @@ AudioAnalyzer::AudioAnalyzer(float _screenWidth, float _screenHeight) {
     } else if (WIN) {
         inDevNum = 1;
         outDevNum = 3;
+    } else if (LINUX) {
+        inDevNum = 7;
+        outDevNum = 7;
     }
 
     int inChan = 2;
