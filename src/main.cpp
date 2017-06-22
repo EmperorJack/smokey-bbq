@@ -111,7 +111,7 @@ int main(int argc, char **argv) {
 
     printf("\n~~~\n\n");
 
-//    audioAnalyzer->printAudioDevices();
+    // audioAnalyzer->printAudioDevices();
 
     printf("\n~~~\n\n");
 
@@ -146,7 +146,7 @@ int main(int argc, char **argv) {
 
         if (displaySmokeSimulation) smokeSimulation->render(mvp, mousePosition);
 
-        if (updateAudioData) audioAnalyzer->performFFT();
+        if (updateAudioData) audioAnalyzer->performFFT(displaySmokeSimulation);
 
         if (displayAudioData) audioAnalyzer->renderWaveform(mvp);
         if (displayAudioData) audioAnalyzer->renderSpectrum(mvp);

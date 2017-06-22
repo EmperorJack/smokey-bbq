@@ -25,7 +25,7 @@ PaStreamParameters outputParameters;
 PaStreamParameters inputParameters;
 
 // Audio data variables
-float rawAudio[AudioAnalyzer::SAMPLE_SIZE];
+float rawAudio[AudioAnalyzer::SAMPLE_SIZE * 2];
 float processedAudio[AudioAnalyzer::SAMPLE_SIZE];
 
 // FFT variables
@@ -193,13 +193,20 @@ static int paCallback(const void *inputBuffer,
     float *out = (float*) outputBuffer;
 
     for(unsigned int i = 0; i < framesPerBuffer; i++) {
-        rawAudio[i] = *in++;
+        // Input buffer interleaves left / right channels
+        rawAudio[i] = in[i*2];
+        rawAudio[i + framesPerBuffer] = in[i*2+1];
     }
 
     return 0;
 }
 
-void AudioAnalyzer::performFFT() {
+void AudioAnalyzer::performFFT(bool a) {
+    for (int i = 0; i < SAMPLE_SIZE; i++) {
+        rawAudio[i] = rawAudio[i] * (a ? hanningWindow(i) : 1.0f);
+        rawAudio[i + SAMPLE_SIZE] = rawAudio[i + SAMPLE_SIZE] * (a ? hanningWindow(i) : 1.0f);
+    }
+
     for (int i = 0; i < SAMPLE_SIZE; i++) {
         fft_in[i] = rawAudio[i];
     }
@@ -211,20 +218,26 @@ void AudioAnalyzer::performFFT() {
         float imaginary = fft_out[i].i;
         float magnitude = sqrt(real * real + imaginary * imaginary);
 
-        // processedAudio[i] = 20.0f * log10f(magnitude);
-        processedAudio[i] = magnitude;
+        processedAudio[i] = 20.0f * log10f(magnitude);
+        //processedAudio[i] = magnitude;
         // processedAudio[i] = fft_out[i].r;
     }
+}
+
+float AudioAnalyzer::hanningWindow(int n) {
+    return (float) (1.0f * (1.0f - cos((2 * M_PI * n) / (SAMPLE_SIZE - 1))));
+//    float val = (float) sin((M_PI * n) / (SAMPLE_SIZE - 1));
+//    return val * val;
 }
 
 void AudioAnalyzer::renderWaveform(glm::mat4 transform) {
     glUseProgram(shader);
 
-    for (int i = 0; i < SAMPLE_SIZE; i++) {
+    for (int i = 0; i < SAMPLE_SIZE * 2; i++) {
         float color[] = {1.0f, 0.0f, 0.0f, 0.0f};
         setColor(color);
 
-        glm::mat4 translate = glm::translate(glm::vec3(i * spacing, rawAudio[i] * 350.0f + (screenHeight * 0.33f), 0.0f));
+        glm::mat4 translate = glm::translate(glm::vec3(i * (spacing / 2.0f), rawAudio[i] * 350.0f + (screenHeight * 0.33f), 0.0f));
         glm::mat4 scale = glm::scale(glm::vec3(2.0f, 2.0f, 2.0f));
         drawSquare(transform * translate * scale, true);
     }
@@ -238,7 +251,7 @@ void AudioAnalyzer::renderSpectrum(glm::mat4 transform) {
         setColor(color);
 
         glm::mat4 translate = glm::translate(glm::vec3(i * spacing * 4, screenHeight, 0.0f));
-        glm::mat4 scale = glm::scale(glm::vec3(2.0f, processedAudio[i] * -50.0f , 2.0f));
+        glm::mat4 scale = glm::scale(glm::vec3(2.0f, (processedAudio[i] + 1.0f) * -10.0f, 2.0f));
         drawSquare(transform * translate * scale, true);
     }
 }
