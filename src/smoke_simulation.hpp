@@ -1,9 +1,11 @@
-#ifndef SMOKESIMULATION_H
-#define SMOKESIMULATION_H
+#ifndef SMOKE_SIMULATION_HPP
+#define SMOKE_SIMULATION_HPP
 
 class SmokeSimulation {
 
-    public:
+ public:
+
+        // Constants
         static constexpr int GRID_SIZE = 192;
         static constexpr float TIME_STEP = 0.1f;
         static constexpr float FLUID_DENSITY = 1.0f;
@@ -20,6 +22,29 @@ class SmokeSimulation {
         static constexpr float FALL_FORCE = 1.0f;
         static constexpr float ATMOSPHERE_TEMPERATURE = 0.0f;
 
+        // Setup
+        SmokeSimulation();
+        void resetFields();
+
+        // Per frame
+        void update();
+        void render(glm::mat4, glm::vec2);
+
+        // Interactions
+        void addPulse(glm::vec2);
+
+        // Toggles
+        void toggleVectorDisplay();
+        void toggleDensityDisplay();
+        void toggleEnableEmitter();
+        void togglePressureSolve();
+        void togglePulseType();
+        void toggleBuoyancy();
+        void toggleWrapBorders();
+
+    private:
+
+        // Structures
         struct gridCell {
             glm::vec2 velocity;
             glm::vec2 advectedVelocity;
@@ -33,11 +58,32 @@ class SmokeSimulation {
             glm::vec2 tracePosition;
         };
 
-        SmokeSimulation(float);
+        // Instance variables
+        SmokeSimulation::gridCell grid[SmokeSimulation::GRID_SIZE][SmokeSimulation::GRID_SIZE];
+        float gridSpacing;
 
-        void setupFields();
-        void update();
+        // Toggle variables
+        bool displayVectors = false;
+        bool displayDensity = true;
+        bool enableEmitter = false;
+        bool enablePressureSolve = true;
+        bool randomPulseAngle = false;
+        bool enableBuoyancy = true;
+        bool wrapBorders = true;
 
+        // VBOs
+        GLuint squareVBO;
+        GLuint velocityVBO;
+        GLuint densityVBO;
+
+        // Textures
+        GLuint densityTexture;
+
+        // Shaders
+        GLuint simpleShader;
+        GLuint densityShader;
+
+        // Fluid dynamics
         glm::vec2 getVelocity(float x, float y);
         float getDensity(float x, float y);
         float getTemperature(float x, float y);
@@ -60,22 +106,13 @@ class SmokeSimulation {
         float getGridTemperature(int i, int j);
         float getGridPressure(int i, int j);
 
+        // Indexing
         int wrapIndex(int i);
         int clampIndex(int i);
         bool clampBoundary(int &i);
 
-        void addPulse(glm::vec2);
-        void toggleVectorDisplay();
-        void toggleDensityDisplay();
-        void toggleEnableEmitter();
-        void togglePressureSolve();
-        void togglePulseType();
-        void toggleBuoyancy();
-        void toggleWrapBorders();
-
-        void render(glm::mat4, glm::vec2);
+        // Rendering
         void drawDensity();
-        void drawSquare(glm::mat4, bool);
         void drawLine(glm::mat4);
 };
 

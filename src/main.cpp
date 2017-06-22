@@ -1,17 +1,18 @@
 #include <iostream>
+#include <main.hpp>
 #include <opengl.hpp>
 #include <smoke_simulation.hpp>
 #include <audio_analyzer.hpp>
 
+// Object variables
 SmokeSimulation* smokeSimulation = nullptr;
 AudioAnalyzer* audioAnalyzer = nullptr;
 
-const int SCREEN_WIDTH = 800;
-const int SCREEN_HEIGHT= 800;
-
+// Mouse variables
 glm::vec2 mousePosition;
 bool mousePressed = false;
 
+// Toggles
 bool updateSmokeSimulation = false;
 bool displaySmokeSimulation = false;
 bool updateAudioData = true;
@@ -33,7 +34,7 @@ void mouseButtonCallback(GLFWwindow *win, int button, int action, int mods) {
 // Keyboard callback
 void keyCallback(GLFWwindow *win, int key, int scancode, int action, int mods) {
     if (key == ' ') {
-        smokeSimulation->setupFields();
+        smokeSimulation->resetFields();
     } else if (key == 'V' && action == GLFW_PRESS) {
         smokeSimulation->toggleVectorDisplay();
     } else if (key == 'D' && action == GLFW_PRESS) {
@@ -106,13 +107,11 @@ int main(int argc, char **argv) {
     printf("\n~~~\n\n");
 
     // Setup objects
-    smokeSimulation = new SmokeSimulation(SCREEN_WIDTH);
-    audioAnalyzer = new AudioAnalyzer(SCREEN_WIDTH, SCREEN_HEIGHT);
+    smokeSimulation = new SmokeSimulation();
+    audioAnalyzer = new AudioAnalyzer();
 
-    printf("\n~~~\n\n");
-
+    // printf("\n~~~\n\n");
     // audioAnalyzer->printAudioDevices();
-
     printf("\n~~~\n\n");
 
     double lastTime = glfwGetTime();

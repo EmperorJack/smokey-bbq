@@ -1,43 +1,12 @@
 #include <iostream>
+#include <main.hpp>
 #include <opengl.hpp>
 #include <smoke_simulation.hpp>
 #include <shaderLoader.hpp>
 
-// Toggles
-bool displayVectors = false;
-bool displayDensity = true;
-bool enableEmitter = false;
-bool enablePressureSolve = true;
-bool randomPulseAngle = false;
-bool enableBuoyancy = true;
-bool wrapBorders = true;
-
-// VBOs
-GLuint squareVBO;
-GLuint velocityVBO;
-GLuint densityVBO;
-
-// Textures
-GLuint densityTexture;
-
-// Shaders
-GLuint simpleShader;
-GLuint densityShader;
-
-// Instance variables
-float gridWorldSize;
-float gridSpacing;
-
-SmokeSimulation::gridCell grid[SmokeSimulation::GRID_SIZE][SmokeSimulation::GRID_SIZE];
-
-static inline float myRandom() {
-    return std::rand() % 100 / 100.0f;
-}
-
-SmokeSimulation::SmokeSimulation(float _gridWorldSize) {
-    gridWorldSize = _gridWorldSize;
-    gridSpacing = gridWorldSize / GRID_SIZE;
-    setupFields();
+SmokeSimulation::SmokeSimulation() {
+    gridSpacing = ((float) SCREEN_WIDTH) / GRID_SIZE;
+    resetFields();
 
     // Setup VBOs
     float squareVertices[] = {
@@ -82,7 +51,7 @@ SmokeSimulation::SmokeSimulation(float _gridWorldSize) {
     densityShader = loadShaders("resources/shaders/DensityVertexShader.glsl", "resources/shaders/DensityFragmentShader.glsl");
 }
 
-void SmokeSimulation::setupFields() {
+void SmokeSimulation::resetFields() {
     for (int i = 0; i < GRID_SIZE; i++) {
         for (int j = 0; j < GRID_SIZE; j++) {
             gridCell g;
@@ -102,6 +71,7 @@ void SmokeSimulation::setupFields() {
 }
 
 void SmokeSimulation::update() {
+
     // Advect velocity through velocity
     for (int i = 0; i < GRID_SIZE; i++) {
         for (int j = 0; j < GRID_SIZE; j++) {
@@ -468,29 +438,6 @@ void SmokeSimulation::drawDensity() {
 
     glDisableVertexAttribArray(0);
     glDisableVertexAttribArray(1);
-}
-
-void SmokeSimulation::drawSquare(glm::mat4 transform, bool fill) {
-    GLint transformID = glGetUniformLocation(3, "MVP");
-    glUniformMatrix4fv(transformID, 1, GL_FALSE, &transform[0][0]);
-
-    glEnableVertexAttribArray(0);
-    glBindBuffer(GL_ARRAY_BUFFER, squareVBO);
-    glVertexAttribPointer(
-            0,         // shader layout attribute
-            2,         // size
-            GL_FLOAT,  // type
-            GL_FALSE,  // normalized?
-            0,         // stride
-            (void*)0   // array buffer offset
-    );
-
-    if (fill) {
-        glDrawArrays(GL_TRIANGLE_FAN, 0, 4);
-    } else {
-        glDrawArrays(GL_LINE_LOOP, 0, 4);
-    }
-    glDisableVertexAttribArray(0);
 }
 
 void SmokeSimulation::drawLine(glm::mat4 transform) {

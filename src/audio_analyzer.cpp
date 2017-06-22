@@ -1,50 +1,12 @@
 #include <iostream>
+#include <main.hpp>
 #include <opengl.hpp>
 #include <portaudio.h>
 #include <kiss_fftr.h>
 #include <audio_analyzer.hpp>
 #include <shaderLoader.hpp>
 
-// OS variables
-bool WIN = false;
-bool MAC = false;
-bool LINUX = true;
-
-// GL variables
-GLuint sVBO;
-GLuint shader;
-
-// Instance variables
-float screenWidth, screenHeight;
-float spacing;
-float bandSpacing;
-
-// Port audio variables
-bool paInitSuccessful = false;
-PaStream *stream;
-PaStreamParameters outputParameters;
-PaStreamParameters inputParameters;
-
-// Audio data variables
-float rawAudio[AudioAnalyzer::SAMPLE_SIZE];
-float processedAudio[AudioAnalyzer::SAMPLE_SIZE / 2];
-float frequencyBands[AudioAnalyzer::NUM_BANDS];
-float hanningWindow[AudioAnalyzer::SAMPLE_SIZE];
-
-// FFT variables
-kiss_fftr_cfg cfg;
-kiss_fft_scalar fft_in[AudioAnalyzer::SAMPLE_SIZE];
-kiss_fft_cpx fft_out[AudioAnalyzer::SAMPLE_SIZE];
-
-bool paErrorOccured(PaError error) {
-    if (error != paNoError) {
-        fprintf(stderr, "PortAudio error: %s\n", Pa_GetErrorText(error));
-        return true;
-    }
-
-    return false;
-}
-
+float rawAudio[AudioAnalyzer::SAMPLE_SIZE]; // Declared here so the callback function can access it
 static int paCallback(const void *inputBuffer,
                       void *outputBuffer,
                       unsigned long framesPerBuffer,
@@ -52,12 +14,9 @@ static int paCallback(const void *inputBuffer,
                       PaStreamCallbackFlags statusFlags,
                       void *userData);
 
-AudioAnalyzer::AudioAnalyzer(float _screenWidth, float _screenHeight) {
-    screenWidth = _screenWidth;
-    screenHeight = _screenHeight;
-
-    spacing = screenWidth / ((float) SAMPLE_SIZE);
-    bandSpacing = screenWidth / ((float) NUM_BANDS);
+AudioAnalyzer::AudioAnalyzer() {
+    spacing = SCREEN_WIDTH / ((float) SAMPLE_SIZE);
+    bandSpacing = SCREEN_WIDTH / ((float) NUM_BANDS);
 
     // Setup VBOs
     float squareVertices[] = {
@@ -171,35 +130,10 @@ void AudioAnalyzer::shutDown() {
 
 void AudioAnalyzer::computeHanningWindow() {
     for (int i = 0; i < SAMPLE_SIZE; i++) {
-        //hanningWindow[i] = (float) (0.5f * (1.0f - cos((2 * M_PI * i) / (SAMPLE_SIZE - 1))));
+        // hanningWindow[i] = (float) (0.5f * (1.0f - cos((2 * M_PI * i) / (SAMPLE_SIZE - 1))));
         float val = (float) sin((M_PI * i) / (SAMPLE_SIZE - 1));
         hanningWindow[i] = val * val;
     }
-}
-
-void AudioAnalyzer::printAudioDevices() {
-
-    // Get the number of devices
-    int numDevices;
-    numDevices = Pa_GetDeviceCount();
-    if (numDevices < 0) {
-        printf("ERROR: Pa_CountDevices returned 0x%x\n", numDevices);
-        PaError err = numDevices;
-        if (paErrorOccured(err)) return;
-        return;
-    }
-
-    // Print out information for each device
-    const PaDeviceInfo *deviceInfo;
-    for(int i = 0; i < numDevices; i++) {
-        deviceInfo = Pa_GetDeviceInfo(i);
-        printf("--- Device (%x)\n", i);
-        printf("Name: %s\n", deviceInfo->name);
-        printf("Input channels: %x\n", deviceInfo->maxInputChannels);
-        printf("Output channels: %x\n", deviceInfo->maxOutputChannels);
-    }
-
-    printf("---\n");
 }
 
 static int paCallback(const void *inputBuffer,
@@ -208,7 +142,7 @@ static int paCallback(const void *inputBuffer,
                       const PaStreamCallbackTimeInfo* timeInfo,
                       PaStreamCallbackFlags statusFlags,
                       void *userData)
-{
+    {
     // Cast stream data to our structure
     float *in = (float*) inputBuffer;
     float *out = (float*) outputBuffer;
@@ -269,7 +203,7 @@ void AudioAnalyzer::renderWaveform(glm::mat4 transform) {
     setColor(color);
 
     for (int i = 0; i < SAMPLE_SIZE; i++) {
-        glm::mat4 translate = glm::translate(glm::vec3(i * spacing, rawAudio[i] * 350.0f + (screenHeight * 0.5f), 0.0f));
+        glm::mat4 translate = glm::translate(glm::vec3(i * spacing, rawAudio[i] * 350.0f + (SCREEN_HEIGHT * 0.5f), 0.0f));
         glm::mat4 scale = glm::scale(glm::vec3(spacing * 2.0f, spacing * 2.0f, 1.0f));
         drawSquare(transform * translate * scale, true);
     }
@@ -295,7 +229,7 @@ void AudioAnalyzer::renderFrequencyBands(glm::mat4 transform) {
     setColor(color);
 
     for (int i = 0; i < NUM_BANDS; i++) {
-        glm::mat4 translate = glm::translate(glm::vec3(i * bandSpacing, screenHeight, 0.0f));
+        glm::mat4 translate = glm::translate(glm::vec3(i * bandSpacing, SCREEN_HEIGHT, 0.0f));
         glm::mat4 scale = glm::scale(glm::vec3(bandSpacing * 0.75f, frequencyBands[i] * -10.0f, 1.0f));
         drawSquare(transform * translate * scale, true);
     }
@@ -322,4 +256,38 @@ void AudioAnalyzer::drawSquare(glm::mat4 transform, bool fill) {
         glDrawArrays(GL_LINE_LOOP, 0, 4);
     }
 //    glDisableVertexAttribArray(0);
+}
+
+void AudioAnalyzer::printAudioDevices() {
+
+    // Get the number of devices
+    int numDevices;
+    numDevices = Pa_GetDeviceCount();
+    if (numDevices < 0) {
+        printf("ERROR: Pa_CountDevices returned 0x%x\n", numDevices);
+        PaError err = numDevices;
+        if (paErrorOccured(err)) return;
+        return;
+    }
+
+    // Print out information for each device
+    const PaDeviceInfo *deviceInfo;
+    for(int i = 0; i < numDevices; i++) {
+        deviceInfo = Pa_GetDeviceInfo(i);
+        printf("--- Device (%x)\n", i);
+        printf("Name: %s\n", deviceInfo->name);
+        printf("Input channels: %x\n", deviceInfo->maxInputChannels);
+        printf("Output channels: %x\n", deviceInfo->maxOutputChannels);
+    }
+
+    printf("---\n");
+}
+
+bool AudioAnalyzer::paErrorOccured(PaError error) {
+    if (error != paNoError) {
+        fprintf(stderr, "PortAudio error: %s\n", Pa_GetErrorText(error));
+        return true;
+    }
+
+    return false;
 }
