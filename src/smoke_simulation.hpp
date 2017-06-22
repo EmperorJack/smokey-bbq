@@ -1,6 +1,8 @@
 #ifndef SMOKE_SIMULATION_HPP
 #define SMOKE_SIMULATION_HPP
 
+#include <vector>
+
 class SmokeSimulation {
 
  public:
@@ -61,7 +63,7 @@ class SmokeSimulation {
         };
 
         // Instance variables
-        SmokeSimulation::gridCell grid[SmokeSimulation::GRID_SIZE][SmokeSimulation::GRID_SIZE];
+        std::vector<std::vector<SmokeSimulation::gridCell>> grid;
         float gridSpacing;
 
         // VBOs

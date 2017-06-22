@@ -47,13 +47,18 @@ SmokeSimulation::SmokeSimulation() {
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+
     // Setup shaders
     simpleShader = loadShaders("resources/shaders/SimpleVertexShader.glsl", "resources/shaders/SimpleFragmentShader.glsl");
     densityShader = loadShaders("resources/shaders/DensityVertexShader.glsl", "resources/shaders/DensityFragmentShader.glsl");
 }
 
 void SmokeSimulation::resetFields() {
+    grid.clear();
     for (int i = 0; i < GRID_SIZE; i++) {
+        grid.push_back(std::vector<gridCell>());
         for (int j = 0; j < GRID_SIZE; j++) {
             gridCell g;
             g.velocity = glm::vec2(0.0f, 0.0f);
@@ -66,7 +71,7 @@ void SmokeSimulation::resetFields() {
             g.temperature = ATMOSPHERE_TEMPERATURE;
             g.advectedTemperatue = ATMOSPHERE_TEMPERATURE;
             g.tracePosition = glm::vec2(0.0f, 0.0f);
-            grid[i][j] = g;
+            grid[i].push_back(g);
         }
     }
 }

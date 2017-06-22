@@ -18,6 +18,7 @@ bool displayDensityField = true;
 bool displayVelocityField = false;
 bool updateAudioData = true;
 bool displayAudioData = false;
+bool smokeAudio = false;
 
 // Mouse Position callback
 void mouseMovedCallback(GLFWwindow* win, double xPos, double yPos) {
@@ -34,7 +35,7 @@ void mouseButtonCallback(GLFWwindow *win, int button, int action, int mods) {
 
 // Keyboard callback
 void keyCallback(GLFWwindow *win, int key, int scancode, int action, int mods) {
-    if (key == ' ') {
+    if (key == ' ' && action == GLFW_PRESS) {
         smokeSimulation->resetFields();
     } else if (key == 'E' && action == GLFW_PRESS) {
         smokeSimulation->enableEmitter = !smokeSimulation->enableEmitter;
@@ -56,6 +57,8 @@ void keyCallback(GLFWwindow *win, int key, int scancode, int action, int mods) {
         displayAudioData = !displayAudioData;
     } else if (key == 'F' && action == GLFW_PRESS) {
         updateAudioData = !updateAudioData;
+    } else if (key == 'Z' && action == GLFW_PRESS) {
+        smokeAudio = !smokeAudio;
     }
 }
 
@@ -76,6 +79,7 @@ int main(int argc, char **argv) {
     // Open a window and create its OpenGL context
     GLFWwindow* window;
     glfwWindowHint(GLFW_RESIZABLE, GL_FALSE);
+    glfwWindowHint(GLFW_AUTO_ICONIFY, GL_FALSE);
     window = glfwCreateWindow(SCREEN_WIDTH, SCREEN_HEIGHT, "Window", (FULL_SCREEN ? glfwGetPrimaryMonitor() : NULL), NULL);
     if (window == NULL) {
         fprintf(stderr, "Failed to open GLFW window\n");
@@ -134,17 +138,19 @@ int main(int argc, char **argv) {
         float sideOffset = ((float) SCREEN_WIDTH * 0.075f);
         float bandSpacing = ((float) SCREEN_WIDTH - sideOffset * 2.0f) / AudioAnalyzer::NUM_BANDS;
 
-        for (int i = 0; i < AudioAnalyzer::NUM_BANDS; i++) {
-            float value = audioAnalyzer->getFrequencyBand(i);
+        if (smokeAudio) {
+            for (int i = 0; i < AudioAnalyzer::NUM_BANDS; i++) {
+                float value = audioAnalyzer->getFrequencyBand(i);
 
-            if (value < 3.0f) continue;
+                if (value < 3.0f) continue;
 
-            value = min(value, 15.0f);
+                value = min(value, 15.0f);
 
-            glm::vec2 position = vec2(i * bandSpacing + sideOffset, SCREEN_HEIGHT * 0.95f);
-            glm::vec2 force = vec2(myRandom() * 250.0f - 125.0f, (value + 1.0f) * -15.0f);
+                glm::vec2 position = vec2(i * bandSpacing + sideOffset, SCREEN_HEIGHT * 0.95f);
+                glm::vec2 force = vec2(myRandom() * 250.0f - 125.0f, (value + 1.0f) * -15.0f);
 
-            smokeSimulation->emit(position, force, bandSpacing, value * 0.005f, value * 0.025f);
+                smokeSimulation->emit(position, force, bandSpacing, value * 0.005f, value * 0.025f);
+            }
         }
 
         if (mousePressed) smokeSimulation->addPulse(mousePosition);
