@@ -19,14 +19,20 @@ AudioAnalyzer::AudioAnalyzer() {
     bandSpacing = SCREEN_WIDTH / ((float) NUM_BANDS);
 
     // Setup VBOs
+    float waveformVertices[SAMPLE_SIZE * 2] = {};
+
+    glGenBuffers(1, &waveformVBO);
+    glBindBuffer(GL_ARRAY_BUFFER, waveformVBO);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(waveformVertices), waveformVertices, GL_STATIC_DRAW);
+
     float squareVertices[] = {
             0.0f, 0.0f,
             0.0f, 1.0f,
             1.0f, 1.0f,
             1.0f, 0.0f,
     };
-    glGenBuffers(1, &sVBO);
-    glBindBuffer(GL_ARRAY_BUFFER, sVBO);
+    glGenBuffers(1, &squareVBO);
+    glBindBuffer(GL_ARRAY_BUFFER, squareVBO);
     glBufferData(GL_ARRAY_BUFFER, sizeof(squareVertices), squareVertices, GL_STATIC_DRAW);
 
     shader = loadShaders("resources/shaders/SimpleVertexShader.glsl", "resources/shaders/SimpleFragmentShader.glsl");
@@ -181,7 +187,7 @@ void AudioAnalyzer::update() {
     }
 
     // Bin similar frequencies into discrete bands
-    float samplesPerBand = SAMPLE_SIZE / 2 / NUM_BANDS;
+    float samplesPerBand = SAMPLE_SIZE / NUM_BANDS / 2.0f;
     for (int n = 0; n < NUM_BANDS; n++) {
         float value = 0.0f;
 
@@ -204,11 +210,30 @@ void AudioAnalyzer::renderWaveform(glm::mat4 transform) {
     float color[] = {1.0f, 0.0f, 0.0f, 0.0f};
     setColor(shader, color);
 
+    float waveformVertices[SAMPLE_SIZE * 2];
+
     for (int i = 0; i < SAMPLE_SIZE; i++) {
-        glm::mat4 translate = glm::translate(glm::vec3(i * spacing, rawAudio[i] * 350.0f + (SCREEN_HEIGHT * 0.5f), 0.0f));
-        glm::mat4 scale = glm::scale(glm::vec3(spacing * 2.0f, spacing * 2.0f, 1.0f));
-        drawSquare(transform * translate * scale, true);
+        waveformVertices[i*2] = i * spacing;
+        waveformVertices[i*2+1] = rawAudio[i] * 350.0f + (SCREEN_HEIGHT * 0.5f);
     }
+
+    GLint transformID = glGetUniformLocation(3, "MVP");
+    glUniformMatrix4fv(transformID, 1, GL_FALSE, &transform[0][0]);
+
+    glEnableVertexAttribArray(0);
+    glBindBuffer(GL_ARRAY_BUFFER, waveformVBO);
+    glBufferSubData(GL_ARRAY_BUFFER, 0.0f, sizeof(waveformVertices), waveformVertices);
+    glVertexAttribPointer(
+            0,         // shader layout attribute
+            2,         // size
+            GL_FLOAT,  // type
+            GL_FALSE,  // normalized?
+            0,         // stride
+            (void*)0   // array buffer offset
+    );
+
+    glDrawArrays(GL_LINE_STRIP, 0, SAMPLE_SIZE);
+    glDisableVertexAttribArray(0);
 }
 
 void AudioAnalyzer::renderSpectrum(glm::mat4 transform) {
@@ -242,7 +267,7 @@ void AudioAnalyzer::drawSquare(glm::mat4 transform, bool fill) {
     glUniformMatrix4fv(transformID, 1, GL_FALSE, &transform[0][0]);
 
     glEnableVertexAttribArray(0);
-    glBindBuffer(GL_ARRAY_BUFFER, sVBO);
+    glBindBuffer(GL_ARRAY_BUFFER, squareVBO);
     glVertexAttribPointer(
             0,         // shader layout attribute
             2,         // size
@@ -257,7 +282,7 @@ void AudioAnalyzer::drawSquare(glm::mat4 transform, bool fill) {
     } else {
         glDrawArrays(GL_LINE_LOOP, 0, 4);
     }
-//    glDisableVertexAttribArray(0);
+    glDisableVertexAttribArray(0);
 }
 
 void AudioAnalyzer::printAudioDevices() {

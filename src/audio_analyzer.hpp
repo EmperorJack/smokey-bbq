@@ -36,7 +36,8 @@ class AudioAnalyzer {
     private:
 
         // VBOs
-        GLuint sVBO;
+        GLuint waveformVBO;
+        GLuint squareVBO;
 
         // Shaders
         GLuint shader;
