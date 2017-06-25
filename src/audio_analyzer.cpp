@@ -7,6 +7,7 @@
 #include <shaderLoader.hpp>
 
 float rawAudio[AudioAnalyzer::SAMPLE_SIZE]; // Declared here so the callback function can access it
+float hanningWindow[AudioAnalyzer::SAMPLE_SIZE];
 static int paCallback(const void *inputBuffer,
                       void *outputBuffer,
                       unsigned long framesPerBuffer,
@@ -157,7 +158,7 @@ static int paCallback(const void *inputBuffer,
     for(unsigned int i = 0; i < framesPerBuffer; i++) {
         // Input buffer interleaves left and right channels
         // Mixing left and right channels into one mono channel
-        rawAudio[i] = (in[i*2] + in[i*2+1]) / 2.0f;
+        rawAudio[i] = (in[i*2] + in[i*2+1]) * 0.5f * hanningWindow[i];
     }
 
     return 0;
@@ -167,7 +168,6 @@ void AudioAnalyzer::update() {
 
     // Apply window function to raw audio data
     for (int i = 0; i < SAMPLE_SIZE; i++) {
-        rawAudio[i] = rawAudio[i] * hanningWindow[i];
         fft_in[i] = rawAudio[i];
     }
 
@@ -200,8 +200,6 @@ void AudioAnalyzer::update() {
 
         frequencyBands[n] *= FREQUENCY_DAMPING;
 
-
-//        value = pow(value, (n + 1) / ((float) NUM_BANDS + 1)) * 5.0f;
         value = 20.0f * log10f(value);
         frequencyBands[n] = max(value, frequencyBands[n]);
     }
@@ -243,7 +241,8 @@ void AudioAnalyzer::renderWaveform(glm::mat4 transform) {
     glDisableVertexAttribArray(0);
 }
 
-void AudioAnalyzer::renderSpectrum(glm::mat4 transform) {
+
+void AudioAnalyzer::renderLinearSpectrum(glm::mat4 transform) {
     glUseProgram(shader);
 
     float color[] = {0.0f, 0.0f, 1.0f, 0.0f};
@@ -252,6 +251,30 @@ void AudioAnalyzer::renderSpectrum(glm::mat4 transform) {
     for (int i = 0; i < SAMPLE_SIZE / 4; i++) {
         glm::mat4 translate = glm::translate(glm::vec3(i * spacing * 4, 0.0f, 0.0f));
         glm::mat4 scale = glm::scale(glm::vec3(spacing * 3, processedAudio[i] * 10.0f, 1.0f));
+        drawSquare(transform * translate * scale, true);
+    }
+}
+
+void AudioAnalyzer::renderLogSpectrum(glm::mat4 transform) {
+    glUseProgram(shader);
+
+    float color[] = {0.0f, 0.0f, 1.0f, 0.0f};
+    setColor(shader, color);
+
+    float logOver = log10f(SAMPLE_SIZE / 4);
+
+    for (int i = 0; i < SAMPLE_SIZE / 4; i++) {
+        float pct = i / (float) (SAMPLE_SIZE / 4);
+        float x = pct * SCREEN_WIDTH;
+        // float x = log10f(i) / logOver * SCREEN_WIDTH;
+
+        float fIndex = (powf(10, pct * logOver));
+        int minIndex = (int) max(fIndex, 0.0f);
+        int maxIndex = (int) min(fIndex + 1.0f, SAMPLE_SIZE / 4 - 1.0f);
+        float value = lerp(processedAudio[minIndex], processedAudio[maxIndex], fIndex - minIndex);
+
+        glm::mat4 translate = glm::translate(glm::vec3(x, 0.0f, 0.0f)); // i * spacing * 4
+        glm::mat4 scale = glm::scale(glm::vec3(spacing * 3, value * 10.0f, 1.0f));
         drawSquare(transform * translate * scale, true);
     }
 }

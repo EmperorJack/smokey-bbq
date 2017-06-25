@@ -28,7 +28,8 @@ class AudioAnalyzer {
 
         // Rendering
         void renderWaveform(glm::mat4);
-        void renderSpectrum(glm::mat4);
+        void renderLinearSpectrum(glm::mat4);
+        void renderLogSpectrum(glm::mat4);
         void renderFrequencyBands(glm::mat4);
 
         // Utility
@@ -56,7 +57,6 @@ class AudioAnalyzer {
         // Audio data variables
         float processedAudio[AudioAnalyzer::SAMPLE_SIZE / 2];
         float frequencyBands[AudioAnalyzer::NUM_BANDS];
-        float hanningWindow[AudioAnalyzer::SAMPLE_SIZE];
 
         // FFT variables
         kiss_fftr_cfg cfg;
