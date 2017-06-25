@@ -46,9 +46,11 @@ include_directories(${PROJECT_SOURCE_DIR}/lib/glm)
 include_directories(${PROJECT_SOURCE_DIR}/lib/portaudio/include)
 link_directories(${PROJECT_SOURCE_DIR}/lib/portaudio/libs)
 if (APPLE)
-    set(${PORT_AUDIO_LIBRARY} portaudio_mac)
+    set(PORT_AUDIO_LIBRARY portaudio_mac)
 elseif(UNIX)
-    set(${PORT_AUDIO_LIBRARY} portaudio_linux)
+    set(PORT_AUDIO_LIBRARY portaudio_linux)
+else()
+    set(PORT_AUDIO_LIBRARY portaudio)
 endif()
 
 # Include the kiss fft library
@@ -82,7 +84,7 @@ endif()
 add_executable(${PROJECT_NAME} ${SOURCES} ${COMMON} ${EXTERNAL})
 
 # Link the external libraries
-target_link_libraries(${PROJECT_NAME} glfw glew ${frameworks} portaudio_mac ${OPENGL_LIBRARIES})
+target_link_libraries(${PROJECT_NAME} glfw glew ${frameworks} ${PORT_AUDIO_LIBRARY} ${OPENGL_LIBRARIES})
 
 # Copy shaders to the build directory
 set(SHADER_SUBDIRECTORY resources/shaders)

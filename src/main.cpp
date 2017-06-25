@@ -146,6 +146,7 @@ int main(int argc, char **argv) {
                 } else {
                     index = i % AudioAnalyzer::NUM_BANDS;
                 }
+
                 float value = audioAnalyzer->getFrequencyBand(index);
 
                 if (value < 3.0f) continue;
@@ -153,7 +154,7 @@ int main(int argc, char **argv) {
                 value = min(value, 30.0f);
 
                 glm::vec2 position = vec2(i * bandSpacing + sideOffset, SCREEN_HEIGHT * 0.95f);
-                glm::vec2 force = vec2(myRandom() * 100.0f - 50.0f, (value + 1.0f) * -12.0f);
+                glm::vec2 force = vec2(myRandom() * 100.0f - 50.0f, (value + 0.5f) * -10.0f);
 
                 smokeSimulation->emit(position, force, bandSpacing * 0.9f, value * 0.005f, value * 0.025f);
             }
