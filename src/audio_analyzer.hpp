@@ -57,6 +57,7 @@ class AudioAnalyzer {
         // Audio data variables
         float processedAudio[AudioAnalyzer::SAMPLE_SIZE / 2];
         float frequencyBands[AudioAnalyzer::NUM_BANDS];
+        int mapping[SAMPLE_SIZE / 2];
 
         // FFT variables
         kiss_fftr_cfg cfg;

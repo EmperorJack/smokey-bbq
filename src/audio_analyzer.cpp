@@ -1,4 +1,5 @@
 #include <iostream>
+#include <vector>
 #include <main.hpp>
 #include <opengl.hpp>
 #include <portaudio.h>
@@ -57,6 +58,48 @@ AudioAnalyzer::AudioAnalyzer() {
     computeHanningWindow();
 
     resetBuffers();
+
+    // ~~~
+    float bandThresholds[NUM_BANDS];
+
+    for (int i = 0; i < NUM_BANDS; i++) {
+        float pct = i / (float) NUM_BANDS;
+        float val = log10f(i) / log10f(NUM_BANDS);
+        //std::cout << "band (" << i << ") = " << val << std::endl;
+        bandThresholds[i] = val;
+    }
+
+    float sampleThresholds[SAMPLE_SIZE / 2];
+
+    for (int i = 0; i < SAMPLE_SIZE / 2; i++) {
+        float pct = i / (float) SAMPLE_SIZE / 2;
+        float val = log10f(i) / log10f(SAMPLE_SIZE / 2);
+        //std::cout << "sample (" << i << ") = " << val << std::endl;
+        sampleThresholds[i] = val;
+    }
+
+    std::vector<int> mappings[NUM_BANDS];
+
+    for (int i = 0; i < NUM_BANDS; i++) {
+        float minValue = bandThresholds[i];
+        float maxValue = (i+1 == NUM_BANDS ? 1.0f : bandThresholds[i+1]);
+
+        for (int j = 0; j < SAMPLE_SIZE / 2; j++) {
+            if (minValue <= sampleThresholds[j] && sampleThresholds[j] < maxValue) {
+                mappings[i].push_back(j);
+                mapping[j] = i;
+            }
+        }
+    }
+
+    for (int i = 0; i < NUM_BANDS; i++) {
+        //std::cout << "(" << i << ") : [";
+        for (int j : mappings[i]) {
+            //std::cout << " " << j << ", ";
+        }
+        //std::cout << "]" << std::endl;
+    }
+    // ~~~
 
     printAudioDevices();
 
@@ -175,7 +218,8 @@ void AudioAnalyzer::update() {
     kiss_fftr(cfg, fft_in, fft_out);
 
     // To store the processed audio before it's converted to decibels
-    float toBin[SAMPLE_SIZE / 2];
+    float toBin[NUM_BANDS] = {};
+    // float toBin[SAMPLE_SIZE / 2];
 
     // Process the fft output
     for (int i = 0; i < SAMPLE_SIZE / 2; i++) {
@@ -186,22 +230,22 @@ void AudioAnalyzer::update() {
         processedAudio[i] *= FREQUENCY_DAMPING;
         processedAudio[i] = max(20.0f * log10f(magnitude), processedAudio[i]);
 
-        toBin[i] = magnitude;
+        toBin[mapping[i]] += magnitude;
+        // toBin[i] = magnitude;
     }
 
     // Bin similar frequencies into discrete bands
-    float samplesPerBand = SAMPLE_SIZE / NUM_BANDS / 2.0f;
+//    float samplesPerBand = SAMPLE_SIZE / NUM_BANDS / 2.0f;
     for (int n = 0; n < NUM_BANDS; n++) {
-        float value = 0.0f;
-
-        for (int i = 0; i < samplesPerBand; i++) {
-            value += toBin[i + (int) (n * samplesPerBand)];
-        }
+//        float value = 0.0f;
+//
+//        for (int i = 0; i < samplesPerBand; i++) {
+//            value += toBin[i + (int) (n * samplesPerBand)];
+//        }
 
         frequencyBands[n] *= FREQUENCY_DAMPING;
-
-        value = 20.0f * log10f(value);
-        frequencyBands[n] = max(value, frequencyBands[n]);
+        frequencyBands[n] = max(20.0f * log10f(toBin[n]), frequencyBands[n]);
+        // frequencyBands[n] = max(20.0f * log10f(value), frequencyBands[n]);
     }
 }
 
@@ -261,20 +305,23 @@ void AudioAnalyzer::renderLogSpectrum(glm::mat4 transform) {
     float color[] = {0.0f, 0.0f, 1.0f, 0.0f};
     setColor(shader, color);
 
-    float logOver = log10f(SAMPLE_SIZE / 4);
+    float logOver = log10f(SAMPLE_SIZE / 2);
 
-    for (int i = 0; i < SAMPLE_SIZE / 4; i++) {
-        float pct = i / (float) (SAMPLE_SIZE / 4);
+    for (int i = 0; i < SAMPLE_SIZE / 2; i++) {
+        float pct = i / (float) (SAMPLE_SIZE / 2);
+
         float x = pct * SCREEN_WIDTH;
-        // float x = log10f(i) / logOver * SCREEN_WIDTH;
+        // x = log10f(i) / logOver * SCREEN_WIDTH;
 
         float fIndex = (powf(10, pct * logOver));
         int minIndex = (int) max(fIndex, 0.0f);
-        int maxIndex = (int) min(fIndex + 1.0f, SAMPLE_SIZE / 4 - 1.0f);
+        int maxIndex = (int) min(fIndex + 1.0f, SAMPLE_SIZE / 2 - 1.0f);
+
         float value = lerp(processedAudio[minIndex], processedAudio[maxIndex], fIndex - minIndex);
+        // value = processedAudio[i];
 
         glm::mat4 translate = glm::translate(glm::vec3(x, 0.0f, 0.0f)); // i * spacing * 4
-        glm::mat4 scale = glm::scale(glm::vec3(spacing * 3, value * 10.0f, 1.0f));
+        glm::mat4 scale = glm::scale(glm::vec3(spacing * 1.5f, value * 10.0f, 1.0f));
         drawSquare(transform * translate * scale, true);
     }
 }
