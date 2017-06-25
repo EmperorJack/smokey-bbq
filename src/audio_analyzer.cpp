@@ -55,19 +55,7 @@ AudioAnalyzer::AudioAnalyzer() {
     // Precompute the hanning window
     computeHanningWindow();
 
-    // Reset all buffers
-    for (int i = 0; i < SAMPLE_SIZE; i++) {
-        rawAudio[i] = 0.0f;
-        fft_in[i] = 0.0f;
-        fft_out[i].i = 0.0f;
-        fft_out[i].r = 0.0f;
-    }
-    for (int i = 0; i < NUM_BANDS / 2; i++) {
-        processedAudio[i] = 0.0f;
-    }
-    for (int i = 0; i < NUM_BANDS; i++) {
-        frequencyBands[i] = 0.0f;
-    }
+    resetBuffers();
 
     printAudioDevices();
 
@@ -115,6 +103,21 @@ AudioAnalyzer::AudioAnalyzer() {
 
     err = Pa_StartStream(stream);
     if (paErrorOccured(err)) return;
+}
+
+void AudioAnalyzer::resetBuffers() {
+    for (int i = 0; i < SAMPLE_SIZE; i++) {
+        rawAudio[i] = 0.0f;
+        fft_in[i] = 0.0f;
+        fft_out[i].i = 0.0f;
+        fft_out[i].r = 0.0f;
+    }
+    for (int i = 0; i < SAMPLE_SIZE / 2; i++) {
+        processedAudio[i] = 0.0f;
+    }
+    for (int i = 0; i < NUM_BANDS; i++) {
+        frequencyBands[i] = 0.0f;
+    }
 }
 
 void AudioAnalyzer::shutDown() {
@@ -196,7 +199,11 @@ void AudioAnalyzer::update() {
         }
 
         frequencyBands[n] *= FREQUENCY_DAMPING;
-        frequencyBands[n] = max(20.0f * log10f(value), frequencyBands[n]);
+
+
+//        value = pow(value, (n + 1) / ((float) NUM_BANDS + 1)) * 5.0f;
+        value = 20.0f * log10f(value);
+        frequencyBands[n] = max(value, frequencyBands[n]);
     }
 }
 

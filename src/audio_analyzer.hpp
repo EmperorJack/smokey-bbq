@@ -17,6 +17,7 @@ class AudioAnalyzer {
 
         // Setup
         AudioAnalyzer();
+        void resetBuffers();
         void shutDown();
 
         // Updating

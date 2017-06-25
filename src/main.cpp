@@ -37,6 +37,7 @@ void mouseButtonCallback(GLFWwindow *win, int button, int action, int mods) {
 void keyCallback(GLFWwindow *win, int key, int scancode, int action, int mods) {
     if (key == ' ' && action == GLFW_PRESS) {
         smokeSimulation->resetFields();
+        audioAnalyzer->resetBuffers();
     } else if (key == 'E' && action == GLFW_PRESS) {
         smokeSimulation->enableEmitter = !smokeSimulation->enableEmitter;
     } else if (key == 'P' && action == GLFW_PRESS) {
