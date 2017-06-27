@@ -16,7 +16,7 @@ class SmokeSimulation {
         static constexpr float EMITTER_RANGE = 80.0f;
         static constexpr float PULSE_FORCE = 150.0f;
         static constexpr float VELOCITY_DISSAPATION = 0.98;
-        static constexpr float DENSITY_DISSAPATION = 0.987;
+        static constexpr float DENSITY_DISSAPATION = 0.97; // 0.987
         static constexpr float TEMPERATURE_DISSAPATION = 0.96f;
         static constexpr int JACOBI_ITERATIONS = 40;
         static constexpr float GRAVITY = 0.0981f;

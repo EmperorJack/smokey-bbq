@@ -10,9 +10,8 @@ class AudioAnalyzer {
 
         // Constants
         static constexpr int SAMPLE_RATE = 44100;
-        static constexpr int SAMPLE_SIZE = 1024;
-        static constexpr int FFT_SIZE = 1024;
-        static constexpr int NUM_BANDS = 24;
+        static constexpr int SAMPLE_SIZE = 2048;
+        static constexpr int NUM_BANDS = 18;
         static constexpr float FREQUENCY_DAMPING = 0.85f;
 
         // Setup
@@ -66,6 +65,7 @@ class AudioAnalyzer {
 
         // Setup
         void computeHanningWindow();
+        void computeLogMapping();
 
         // Error handling
         bool paErrorOccured(PaError error);

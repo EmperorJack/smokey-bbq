@@ -48,7 +48,7 @@ AudioAnalyzer::AudioAnalyzer() {
     }
 
     // Initialize kiss fft
-    cfg = kiss_fftr_alloc(AudioAnalyzer::FFT_SIZE, false, 0,0);
+    cfg = kiss_fftr_alloc(AudioAnalyzer::SAMPLE_SIZE, false, 0,0);
     if (cfg == NULL) {
         fprintf(stderr, "Failed to initialize kiss fft");
         return;
@@ -59,47 +59,8 @@ AudioAnalyzer::AudioAnalyzer() {
 
     resetBuffers();
 
-    // ~~~
-    float bandThresholds[NUM_BANDS];
-
-    for (int i = 0; i < NUM_BANDS; i++) {
-        float pct = i / (float) NUM_BANDS;
-        float val = log10f(i) / log10f(NUM_BANDS);
-        //std::cout << "band (" << i << ") = " << val << std::endl;
-        bandThresholds[i] = val;
-    }
-
-    float sampleThresholds[SAMPLE_SIZE / 2];
-
-    for (int i = 0; i < SAMPLE_SIZE / 2; i++) {
-        float pct = i / (float) SAMPLE_SIZE / 2;
-        float val = log10f(i) / log10f(SAMPLE_SIZE / 2);
-        //std::cout << "sample (" << i << ") = " << val << std::endl;
-        sampleThresholds[i] = val;
-    }
-
-    std::vector<int> mappings[NUM_BANDS];
-
-    for (int i = 0; i < NUM_BANDS; i++) {
-        float minValue = bandThresholds[i];
-        float maxValue = (i+1 == NUM_BANDS ? 1.0f : bandThresholds[i+1]);
-
-        for (int j = 0; j < SAMPLE_SIZE / 2; j++) {
-            if (minValue <= sampleThresholds[j] && sampleThresholds[j] < maxValue) {
-                mappings[i].push_back(j);
-                mapping[j] = i;
-            }
-        }
-    }
-
-    for (int i = 0; i < NUM_BANDS; i++) {
-        //std::cout << "(" << i << ") : [";
-        for (int j : mappings[i]) {
-            //std::cout << " " << j << ", ";
-        }
-        //std::cout << "]" << std::endl;
-    }
-    // ~~~
+    // Compute log mapping
+    computeLogMapping();
 
     printAudioDevices();
 
@@ -187,6 +148,48 @@ void AudioAnalyzer::computeHanningWindow() {
     }
 }
 
+void AudioAnalyzer::computeLogMapping() {
+    float bandThresholds[NUM_BANDS];
+
+    for (int i = 0; i < NUM_BANDS; i++) {
+        float pct = i / (float) NUM_BANDS;
+        // float val = log10f(i) / log10f(NUM_BANDS);
+        // std::cout << "band (" << i << ") = " << val << std::endl;
+        bandThresholds[i] = pct;
+    }
+
+    float sampleThresholds[SAMPLE_SIZE / 2];
+
+    for (int i = 0; i < SAMPLE_SIZE / 2; i++) {
+        // float pct = i / (float) (SAMPLE_SIZE / 2);
+        float val = log10f(i) / log10f(SAMPLE_SIZE / 2);
+        // std::cout << "sample (" << i << ") = " << pct << std::endl;
+        sampleThresholds[i] = val;
+    }
+
+    std::vector<int> mappings[NUM_BANDS];
+
+    for (int i = 0; i < NUM_BANDS; i++) {
+        float minValue = bandThresholds[i];
+        float maxValue = (i+1 == NUM_BANDS ? 1.0f : bandThresholds[i+1]);
+
+        for (int j = 0; j < SAMPLE_SIZE / 2; j++) {
+            if (minValue <= sampleThresholds[j] && sampleThresholds[j] < maxValue) {
+                mappings[i].push_back(j);
+                mapping[j] = i;
+            }
+        }
+    }
+
+    //    for (int i = 0; i < NUM_BANDS; i++) {
+    //        std::cout << "(" << i << ") : [";
+    //        for (int j : mappings[i]) {
+    //            std::cout << " " << j << ", ";
+    //        }
+    //        std::cout << "]" << std::endl;
+    //    }
+}
+
 static int paCallback(const void *inputBuffer,
                       void *outputBuffer,
                       unsigned long framesPerBuffer,
@@ -194,6 +197,7 @@ static int paCallback(const void *inputBuffer,
                       PaStreamCallbackFlags statusFlags,
                       void *userData)
     {
+
     // Cast stream data to our structure
     float *in = (float*) inputBuffer;
     float *out = (float*) outputBuffer;
@@ -230,7 +234,7 @@ void AudioAnalyzer::update() {
         processedAudio[i] *= FREQUENCY_DAMPING;
         processedAudio[i] = max(20.0f * log10f(magnitude), processedAudio[i]);
 
-        toBin[mapping[i]] += magnitude;
+        toBin[mapping[i]] = magnitude;
         // toBin[i] = magnitude;
     }
 
