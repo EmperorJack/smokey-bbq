@@ -37,7 +37,7 @@ AudioAnalyzer::AudioAnalyzer() {
     glBindBuffer(GL_ARRAY_BUFFER, squareVBO);
     glBufferData(GL_ARRAY_BUFFER, sizeof(squareVertices), squareVertices, GL_STATIC_DRAW);
 
-    shader = loadShaders("resources/shaders/SimpleVertexShader.glsl", "resources/shaders/SimpleFragmentShader.glsl");
+    shader = loadShaders("SimpleVertexShader", "SimpleFragmentShader");
 
     // Initialize audio features
     PaError err = Pa_Initialize();

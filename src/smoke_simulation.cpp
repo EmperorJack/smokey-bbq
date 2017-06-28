@@ -51,8 +51,8 @@ SmokeSimulation::SmokeSimulation() {
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 
     // Setup shaders
-    simpleShader = loadShaders("resources/shaders/SimpleVertexShader.glsl", "resources/shaders/SimpleFragmentShader.glsl");
-    densityShader = loadShaders("resources/shaders/DensityVertexShader.glsl", "resources/shaders/DensityFragmentShader.glsl");
+    simpleShader = loadShaders("SimpleVertexShader", "SimpleFragmentShader");
+    densityShader = loadShaders("DensityVertexShader", "DensityFragmentShader");
 }
 
 void SmokeSimulation::resetFields() {

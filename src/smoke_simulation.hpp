@@ -5,7 +5,39 @@
 
 class SmokeSimulation {
 
- public:
+    struct Surface {
+        GLuint fboHandle;
+        GLuint textureHandle;
+        int numComponents;
+    };
+
+    struct Slab {
+        Surface ping;
+        Surface pong;
+    };
+
+    // Programs
+    GLuint advectProgram;
+    GLuint applyImpulseProgram;
+    GLuint applyBuoyancyProgram;
+    GLuint computeDivergenceProgram;
+    GLuint jacobiProgram;
+    GLuint applyPressureProgram;
+
+    // Slabs
+    Slab velocitySlab;
+    Slab divergenceSlab;
+    Slab pressureSlab;
+    Slab densitySlab;
+    Slab temperatureSlab;
+
+    void init();
+    void initPrograms();
+    void initSlabs();
+    Slab createSlab(int width, int height, int numComponents);
+    Surface createSurface(int width, int height, int numComponents);
+
+    public:
 
         // Constants
         static constexpr int GRID_SIZE = 192;

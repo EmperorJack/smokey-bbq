@@ -1,11 +1,16 @@
 #include <iostream>
 #include <fstream>
 #include <vector>
-
 #include <opengl.hpp>
 #include <shaderLoader.hpp>
 
-GLuint loadShaders(const char * vertex_file_path,const char * fragment_file_path){
+GLuint loadShaders(std::string vertex_file_path_s, std::string fragment_file_path_s) {
+    vertex_file_path_s = std::string(SHADER_PATH) + vertex_file_path_s + std::string(".glsl");
+    fragment_file_path_s = std::string(SHADER_PATH) + fragment_file_path_s + std::string(".glsl");
+
+    const char* vertex_file_path = vertex_file_path_s.c_str();
+    const char* fragment_file_path = fragment_file_path_s.c_str();
+
     // Create the shaders
     GLuint VertexShaderID = glCreateShader(GL_VERTEX_SHADER);
     GLuint FragmentShaderID = glCreateShader(GL_FRAGMENT_SHADER);
