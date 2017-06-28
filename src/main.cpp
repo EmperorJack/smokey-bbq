@@ -13,12 +13,12 @@ glm::vec2 mousePosition;
 bool mousePressed = false;
 
 // Toggles
-bool updateSmokeSimulation = false;
-bool displayDensityField = false;
+bool updateSmokeSimulation = true;
+bool displayDensityField = true;
 bool displayVelocityField = false;
 bool updateAudioData = true;
 bool displayAudioData = true;
-bool smokeAudio = false;
+bool smokeAudio = true;
 
 // Mouse Position callback
 void mouseMovedCallback(GLFWwindow* win, double xPos, double yPos) {
@@ -150,7 +150,7 @@ int main(int argc, char **argv) {
 
                 float value = audioAnalyzer->getFrequencyBand(index);
 
-                if (value < 3.0f) continue;
+                if (value < 2.0f) continue;
 
                 value = min(value, 30.0f);
 
@@ -178,7 +178,7 @@ int main(int argc, char **argv) {
 
         if (updateAudioData) audioAnalyzer->update();
 
-        if (displayAudioData) audioAnalyzer->renderWaveform(mvp);
+        // if (displayAudioData) audioAnalyzer->renderWaveform(mvp);
         // if (displayAudioData) audioAnalyzer->renderLinearSpectrum(mvp);
         if (displayAudioData) audioAnalyzer->renderLogSpectrum(mvp);
         if (displayAudioData) audioAnalyzer->renderFrequencyBands(mvp);

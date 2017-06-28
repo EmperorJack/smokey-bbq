@@ -8,7 +8,7 @@ class SmokeSimulation {
  public:
 
         // Constants
-        static constexpr int GRID_SIZE = 128;
+        static constexpr int GRID_SIZE = 192;
         static constexpr float TIME_STEP = 0.1f;
         static constexpr float FLUID_DENSITY = 1.0f;
         static constexpr float STROKE_WEIGHT = 2.0f;
@@ -16,7 +16,7 @@ class SmokeSimulation {
         static constexpr float EMITTER_RANGE = 80.0f;
         static constexpr float PULSE_FORCE = 150.0f;
         static constexpr float VELOCITY_DISSAPATION = 0.98;
-        static constexpr float DENSITY_DISSAPATION = 0.987;
+        static constexpr float DENSITY_DISSAPATION = 0.97; // 0.987
         static constexpr float TEMPERATURE_DISSAPATION = 0.96f;
         static constexpr int JACOBI_ITERATIONS = 40;
         static constexpr float GRAVITY = 0.0981f;
@@ -48,22 +48,19 @@ class SmokeSimulation {
 
     private:
 
-        // Structures
-        struct gridCell {
-            glm::vec2 velocity;
-            glm::vec2 advectedVelocity;
-            float divergence;
-            float pressure;
-            float newPressure;
-            float density;
-            float advectedDensity;
-            float temperature;
-            float advectedTemperatue;
-            glm::vec2 tracePosition;
-        };
+        // Grid fields
+        glm::vec2 velocity[SmokeSimulation::GRID_SIZE][SmokeSimulation::GRID_SIZE];
+        glm::vec2 advectedVelocity[SmokeSimulation::GRID_SIZE][SmokeSimulation::GRID_SIZE];
+        float divergence[SmokeSimulation::GRID_SIZE][SmokeSimulation::GRID_SIZE];
+        float pressure[SmokeSimulation::GRID_SIZE][SmokeSimulation::GRID_SIZE];
+        float newPressure[SmokeSimulation::GRID_SIZE][SmokeSimulation::GRID_SIZE];
+        float density[SmokeSimulation::GRID_SIZE][SmokeSimulation::GRID_SIZE];
+        float advectedDensity[SmokeSimulation::GRID_SIZE][SmokeSimulation::GRID_SIZE];
+        float temperature[SmokeSimulation::GRID_SIZE][SmokeSimulation::GRID_SIZE];
+        float advectedTemperatue[SmokeSimulation::GRID_SIZE][SmokeSimulation::GRID_SIZE];
+        glm::vec2 tracePosition[SmokeSimulation::GRID_SIZE][SmokeSimulation::GRID_SIZE];
 
         // Instance variables
-        std::vector<std::vector<SmokeSimulation::gridCell>> grid;
         float gridSpacing;
 
         // VBOs
