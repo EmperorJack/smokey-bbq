@@ -53,6 +53,8 @@ SmokeSimulation::SmokeSimulation() {
     // Setup shaders
     simpleShader = loadShaders("SimpleVertexShader", "SimpleFragmentShader");
     densityShader = loadShaders("DensityVertexShader", "DensityFragmentShader");
+
+    init();
 }
 
 void SmokeSimulation::resetFields() {
@@ -75,17 +77,19 @@ void SmokeSimulation::resetFields() {
 void SmokeSimulation::update() {
 
     // Advect velocity through velocity
-    for (int i = 0; i < GRID_SIZE; i++) {
-        for (int j = 0; j < GRID_SIZE; j++) {
-            advectedVelocity[i][j] = getVelocity(tracePosition[i][j].x, tracePosition[i][j].y) * VELOCITY_DISSAPATION;
-        }
-    }
-
-    for (int i = 0; i < GRID_SIZE; i++) {
-        for (int j = 0; j < GRID_SIZE; j++) {
-            velocity[i][j] = advectedVelocity[i][j];
-        }
-    }
+    advect(velocitySlab.ping, velocitySlab.ping, velocitySlab.pong, VELOCITY_DISSIPATION);
+    SwapSurfaces(&velocitySlab);
+//    for (int i = 0; i < GRID_SIZE; i++) {
+//        for (int j = 0; j < GRID_SIZE; j++) {
+//            advectedVelocity[i][j] = getVelocity(tracePosition[i][j].x, tracePosition[i][j].y) * VELOCITY_DISSIPATION;
+//        }
+//    }
+//
+//    for (int i = 0; i < GRID_SIZE; i++) {
+//        for (int j = 0; j < GRID_SIZE; j++) {
+//            velocity[i][j] = advectedVelocity[i][j];
+//        }
+//    }
 
     // Smoke emitter
     if (enableEmitter) {
@@ -136,8 +140,8 @@ void SmokeSimulation::update() {
     // Advect density and temperature through velocity
     for (int i = 0; i < GRID_SIZE; i++) {
         for (int j = 0; j < GRID_SIZE; j++) {
-            advectedDensity[i][j] = getDensity(tracePosition[i][j].x, tracePosition[i][j].y) * DENSITY_DISSAPATION;
-            advectedTemperatue[i][j] = getTemperature(tracePosition[i][j].x, tracePosition[i][j].y) * TEMPERATURE_DISSAPATION;
+            advectedDensity[i][j] = getDensity(tracePosition[i][j].x, tracePosition[i][j].y) * DENSITY_DISSIPATION;
+            advectedTemperatue[i][j] = getTemperature(tracePosition[i][j].x, tracePosition[i][j].y) * TEMPERATURE_DISSIPATION;
         }
     }
 
@@ -392,6 +396,10 @@ bool SmokeSimulation::clampBoundary(int &i) {
 }
 
 void SmokeSimulation::renderDensity() {
+//    glBindTexture(GL_TEXTURE_2D, velocitySlab.ping.textureHandle);
+//    drawFullscreenQuad();
+//
+//    return;
     glUseProgram(densityShader);
 
     passScreenSize(densityShader);
@@ -404,6 +412,7 @@ void SmokeSimulation::renderDensity() {
         }
     }
 
+    glBindTexture(GL_TEXTURE_2D, densityTexture);
     glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA32F, GRID_SIZE, GRID_SIZE, 0, GL_RG, GL_FLOAT, &densityField[0][0][0]);
 
     // Bind vertices
@@ -421,7 +430,6 @@ void SmokeSimulation::renderDensity() {
     glDrawArrays(GL_TRIANGLES, 0, 3);
 
     glDisableVertexAttribArray(0);
-    glDisableVertexAttribArray(1);
 }
 
 void SmokeSimulation::renderVelocityField(glm::mat4 transform, glm::vec2 mousePosition) {
@@ -463,7 +471,7 @@ void SmokeSimulation::renderVelocityField(glm::mat4 transform, glm::vec2 mousePo
 
     float mouseColor[] = { 1.0f, 0.0f, 0.0f, 0.0f };
     setColor(simpleShader, mouseColor);
-    drawLine(transform * translate * scale * rotate);
+    //drawLine(transform * translate * scale * rotate);
 }
 
 void SmokeSimulation::drawLine(glm::mat4 transform) {

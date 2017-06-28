@@ -1,8 +1,6 @@
 #ifndef SMOKE_SIMULATION_HPP
 #define SMOKE_SIMULATION_HPP
 
-#include <vector>
-
 class SmokeSimulation {
 
     struct Surface {
@@ -34,23 +32,30 @@ class SmokeSimulation {
     void init();
     void initPrograms();
     void initSlabs();
+
     Slab createSlab(int width, int height, int numComponents);
     Surface createSurface(int width, int height, int numComponents);
+    void SwapSurfaces(Slab* slab);
+    void ClearSurface(Surface s, float v);
+    void resetState();
+    void drawFullscreenQuad();
+
+    void advect(Surface velocity, Surface source, Surface destination, float dissipation);
 
     public:
 
         // Constants
-        static constexpr int GRID_SIZE = 192;
+        static constexpr int GRID_SIZE = 128;
         static constexpr float TIME_STEP = 0.1f;
         static constexpr float FLUID_DENSITY = 1.0f;
         static constexpr float STROKE_WEIGHT = 2.0f;
         static constexpr float PULSE_RANGE = 50.0f;
         static constexpr float EMITTER_RANGE = 80.0f;
         static constexpr float PULSE_FORCE = 150.0f;
-        static constexpr float VELOCITY_DISSAPATION = 0.98;
-        static constexpr float DENSITY_DISSAPATION = 0.97; // 0.987
-        static constexpr float TEMPERATURE_DISSAPATION = 0.96f;
-        static constexpr int JACOBI_ITERATIONS = 40;
+        static constexpr float VELOCITY_DISSIPATION = 0.98;
+        static constexpr float DENSITY_DISSIPATION = 0.97; // 0.987
+        static constexpr float TEMPERATURE_DISSIPATION = 0.96f;
+        static constexpr int JACOBI_ITERATIONS = 100;
         static constexpr float GRAVITY = 0.0981f;
         static constexpr float RISE_FORCE = 1.0f;
         static constexpr float FALL_FORCE = 1.0f;
