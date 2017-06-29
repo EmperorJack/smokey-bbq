@@ -91,19 +91,14 @@ void SmokeSimulation::advect(Surface velocitySurface, Surface source, Surface de
     GLuint p = advectProgram;
     glUseProgram(p);
 
-//    GLint inverseSize = glGetUniformLocation(p, "InverseSize");
-//    GLint timeStep = glGetUniformLocation(p, "TimeStep");
-    GLint dissLoc = glGetUniformLocation(p, "Dissipation");
-    GLint sourceTexture = glGetUniformLocation(p, "SourceTexture");
-
-    GLint inverseSize = glGetUniformLocation(p, "rdx");
-    GLint timeStep = glGetUniformLocation(p, "timeStep");
     GLint gridSizeLoc = glGetUniformLocation(p, "gridSize");
     GLint gridSpacingLoc = glGetUniformLocation(p, "gridSpacing");
+    GLint timeStep = glGetUniformLocation(p, "timeStep");
+    GLint dissLoc = glGetUniformLocation(p, "dissipation");
+    GLint sourceTexture = glGetUniformLocation(p, "sourceTexture");
+
     glUniform1f(gridSizeLoc, GRID_SIZE);
     glUniform1f(gridSpacingLoc, gridSpacing);
-
-    glUniform2f(inverseSize, 1.0f / GRID_SIZE, 1.0f / GRID_SIZE);
     glUniform1f(timeStep, TIME_STEP);
     glUniform1f(dissLoc, dissipation);
     glUniform1i(sourceTexture, 1);
@@ -117,7 +112,7 @@ void SmokeSimulation::advect(Surface velocitySurface, Surface source, Surface de
     glTexImage2D(GL_TEXTURE_2D, 0, GL_RG32F, GRID_SIZE, GRID_SIZE, 0, GL_RG, GL_FLOAT, &velocity[0][0][0]);
 
     int targetIndex = GRID_SIZE / 2;
-//    std::cout << velocity[targetIndex][targetIndex].x;
+    std::cout << velocity[targetIndex][targetIndex].x;
 
     drawFullscreenQuad();
 
@@ -131,14 +126,14 @@ void SmokeSimulation::advect(Surface velocitySurface, Surface source, Surface de
 
     for (int i = 0; i < GRID_SIZE; i++) {
         for (int j = 0; j < GRID_SIZE; j++) {
-            velocity[i][j].x = pixels[(GRID_SIZE * i + j) * 2] * dissipation;
-            velocity[i][j].y = pixels[(GRID_SIZE * i + j) * 2 + 1] * dissipation;
+            velocity[i][j].x = pixels[(GRID_SIZE * i + j) * 2];
+            velocity[i][j].y = pixels[(GRID_SIZE * i + j) * 2 + 1];
             if (isnan(velocity[i][j].x)) velocity[i][j].x = 0.0f;
             if (isnan(velocity[i][j].y)) velocity[i][j].y = 0.0f;
         }
     }
 
-//    std::cout << " -> " << velocity[targetIndex][targetIndex].x << std::endl;
+    std::cout << " -> " << velocity[targetIndex][targetIndex].x << std::endl;
 
     resetState();
 }
@@ -154,7 +149,6 @@ void SmokeSimulation::resetState() {
 void SmokeSimulation::drawFullscreenQuad() {
 
     // Bind vertices
-    glEnableVertexAttribArray(0);
     glBindBuffer(GL_ARRAY_BUFFER, densityVBO);
     glVertexAttribPointer(
             0,         // shader layout attribute
@@ -166,6 +160,4 @@ void SmokeSimulation::drawFullscreenQuad() {
     );
 
     glDrawArrays(GL_TRIANGLES, 0, 3);
-
-    glDisableVertexAttribArray(0);
 }

@@ -9,8 +9,7 @@ uniform sampler2D sourceTexture;
 uniform int gridSize;
 uniform float gridSpacing;
 uniform float timeStep;
-uniform float rdx;
-uniform float Dissipation;
+uniform float dissipation;
 
 vec2 getGridVelocity(sampler2D source, float i, float j) {
     vec2 texcoord = vec2(i, j);// / float(gridSize);
@@ -70,7 +69,7 @@ void main() {
 
     vec2 tracePosition = traceParticle(pos.x * gridSpacing, pos.y * gridSpacing);
     vec2 newValue = getVelocity(sourceTexture, tracePosition.x, tracePosition.y);
-    color = vec3(newValue.xy, 0.0f) * Dissipation;
+    color = vec3(newValue.xy * dissipation, 0.0f);
 
 //    color = vec3(getVelocity(i * gridSpacing, j * gridSpacing), 0.0f);
 

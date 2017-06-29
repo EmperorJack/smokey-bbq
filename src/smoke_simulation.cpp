@@ -471,7 +471,7 @@ void SmokeSimulation::renderVelocityField(glm::mat4 transform, glm::vec2 mousePo
 
     float mouseColor[] = { 1.0f, 0.0f, 0.0f, 0.0f };
     setColor(simpleShader, mouseColor);
-    //drawLine(transform * translate * scale * rotate);
+    drawLine(transform * translate * scale * rotate);
 }
 
 void SmokeSimulation::drawLine(glm::mat4 transform) {
