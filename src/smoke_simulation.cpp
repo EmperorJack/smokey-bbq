@@ -72,14 +72,36 @@ void SmokeSimulation::resetFields() {
             tracePosition[i][j] = glm::vec2(0.0f, 0.0f);
         }
     }
+
+    clearSurface(velocitySlab.ping, 0);
+    clearSurface(velocitySlab.pong, 0);
 }
 
 void SmokeSimulation::update() {
-    glViewport(0, 0, GRID_SIZE, GRID_SIZE);
+//    glViewport(0, 0, GRID_SIZE, GRID_SIZE);
+
+    glBindTexture(GL_TEXTURE_2D, velocitySlab.ping.textureHandle);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RG32F, GRID_SIZE, GRID_SIZE, 0, GL_RG, GL_FLOAT, &velocity[0][0][0]);
+    glBindTexture(GL_TEXTURE_2D, velocitySlab.pong.textureHandle);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RG32F, GRID_SIZE, GRID_SIZE, 0, GL_RG, GL_FLOAT, &velocity[0][0][0]);
+
+    int targetIndex = GRID_SIZE / 2;
+    std::cout << "(" << velocity[targetIndex][targetIndex].x << ", " << velocity[targetIndex][targetIndex].y << ")";
 
     // Advect velocity through velocity
     advect(velocitySlab.ping, velocitySlab.ping, velocitySlab.pong, VELOCITY_DISSIPATION);
-    SwapSurfaces(&velocitySlab);
+    swapSurfaces(&velocitySlab);
+
+    std::cout << " -> (" << velocity[targetIndex][targetIndex].x << ", " << velocity[targetIndex][targetIndex].y << ")" << std::endl;
+
+//    GLfloat* pixels = new GLfloat[GRID_SIZE * GRID_SIZE * 2];
+//
+//    glActiveTexture(GL_TEXTURE0);
+//    glBindTexture(GL_TEXTURE_2D, velocitySlab.ping.textureHandle);
+//    glGetTexImage(GL_TEXTURE_2D, 0, GL_RG, GL_FLOAT, pixels);
+//
+//    std::cout << " -> (" << pixels[0] << ", " << pixels[1] << ")" << std::endl;
+
 //    for (int i = 0; i < GRID_SIZE; i++) {
 //        for (int j = 0; j < GRID_SIZE; j++) {
 //            advectedVelocity[i][j] = getVelocity(tracePosition[i][j].x, tracePosition[i][j].y) * VELOCITY_DISSIPATION;
@@ -397,27 +419,27 @@ bool SmokeSimulation::clampBoundary(int &i) {
 }
 
 void SmokeSimulation::renderDensity() {
-    glViewport(0, 0, SCREEN_WIDTH, SCREEN_HEIGHT);
+//    glViewport(0, 0, SCREEN_WIDTH, SCREEN_HEIGHT);
 
-//    glUseProgram(densityShader);
+    glUseProgram(densityShader);
 
-//    passScreenSize(densityShader);
+    passScreenSize(densityShader);
 
     glActiveTexture(GL_TEXTURE0);
-    glBindTexture(GL_TEXTURE_2D, velocitySlab.ping.textureHandle);
-//    drawFullscreenQuad();
-//    return;
+    glBindTexture(GL_TEXTURE_2D, velocitySlab.pong.textureHandle);
+    drawFullscreenQuad();
+    return;
 
-//    float densityField[SmokeSimulation::GRID_SIZE][SmokeSimulation::GRID_SIZE][2];
-//    for (int i = 0; i < GRID_SIZE; i++) {
-//        for (int j = 0; j < GRID_SIZE; j++) {
-//            densityField[i][j][0] = velocity[j][i].x; // grid[j][i].pressure / 1000.0f;
-//            densityField[i][j][1] = velocity[j][i].y; // grid[j][i].divergence / 1000.0f;
-//        }
-//    }
-//
-//    glBindTexture(GL_TEXTURE_2D, densityTexture);
-//    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA32F, GRID_SIZE, GRID_SIZE, 0, GL_RG, GL_FLOAT, &densityField[0][0][0]);
+    float densityField[SmokeSimulation::GRID_SIZE][SmokeSimulation::GRID_SIZE][2];
+    for (int i = 0; i < GRID_SIZE; i++) {
+        for (int j = 0; j < GRID_SIZE; j++) {
+            densityField[i][j][0] = density[j][i]; // densityField[j][i].x; // grid[j][i].pressure / 1000.0f;
+            densityField[i][j][1] = temperature[j][i]; // densityField[j][i].y; // grid[j][i].divergence / 1000.0f;
+        }
+    }
+
+    glBindTexture(GL_TEXTURE_2D, densityTexture);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA32F, GRID_SIZE, GRID_SIZE, 0, GL_RG, GL_FLOAT, &densityField[0][0][0]);
 
     // Bind vertices
     glEnableVertexAttribArray(0);

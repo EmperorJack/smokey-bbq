@@ -35,8 +35,8 @@ class SmokeSimulation {
 
     Slab createSlab(int width, int height, int numComponents);
     Surface createSurface(int width, int height, int numComponents);
-    void SwapSurfaces(Slab* slab);
-    void ClearSurface(Surface s, float v);
+    void swapSurfaces(Slab *slab);
+    void clearSurface(Surface s, float v);
     void resetState();
     void drawFullscreenQuad();
 
@@ -47,7 +47,7 @@ class SmokeSimulation {
     public:
 
         // Constants
-        static constexpr int GRID_SIZE = 64;
+        static constexpr int GRID_SIZE = 16;
         static constexpr float TIME_STEP = 0.1f;
         static constexpr float FLUID_DENSITY = 1.0f;
         static constexpr float STROKE_WEIGHT = 2.0f;

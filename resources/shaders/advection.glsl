@@ -1,6 +1,6 @@
 #version 330 core
 
-layout(origin_upper_left) in vec4 gl_FragCoord;
+//layout(origin_upper_left) in vec4 gl_FragCoord;
 layout(location = 0) out vec3 color;
 
 uniform sampler2D velocityTexture;
@@ -12,7 +12,7 @@ uniform float timeStep;
 uniform float dissipation;
 
 vec2 getGridVelocity(sampler2D source, float i, float j) {
-    vec2 texcoord = vec2(i, j);// / float(gridSize);
+    vec2 texcoord = vec2(i, j); // / float(gridSize);
     return texture(source, texcoord).xy;
 }
 
@@ -60,20 +60,20 @@ void main() {
     //int i = int(pos.x); // * float(gridSize)
     //int j = int(pos.y); // * float(gridSize)
 
-    if ((gridsize / 2 - 10) < pos.x && pos.x < (gridsize / 2 + 10) &&
-        (gridsize / 2 - 10) < pos.y && pos.y < (gridsize / 2 + 10)) {
-        color = vec3(75f, 25f, 0.0f);
+//    if ((gridSize / 2 - 10) < pos.x && pos.x < (gridSize / 2 + 10) &&
+//        (gridSize / 2 - 10) < pos.y && pos.y < (gridSize / 2 + 10)) {
+//        color = vec3(75.0f, 25.0f, 0.0f);
 //        return;
-    } else {
-        color = vec3(0.0f, 1.0f, 0.0f);
+//    } else {
+//        color = vec3(0.0f, 1.0f, 0.0f);
 //        return;
-    }
+//    }
 
-    vec2 tracePosition = traceParticle(pos.x * gridSpacing, pos.y * gridSpacing);
-    vec2 newValue = getVelocity(sourceTexture, tracePosition.x, tracePosition.y);
-    color = vec3(newValue.xy * dissipation, 0.0f);
+//    vec2 tracePosition = traceParticle(pos.x * gridSpacing, pos.y * gridSpacing);
+//    vec2 newValue = getVelocity(sourceTexture, tracePosition.x, tracePosition.y);
+//    color = vec3(newValue.xy * dissipation, 0.0f);
 
-    color = vec3(1.0f, 1.0f, 0.0f);
+    color = vec3(1.0f, 0.0f, 0.0f);
 
 //    color = vec3(getVelocity(i * gridSpacing, j * gridSpacing), 0.0f);
 

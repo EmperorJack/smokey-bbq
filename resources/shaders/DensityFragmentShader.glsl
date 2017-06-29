@@ -1,6 +1,6 @@
 #version 330 core
 
-in vec2 UV;
+layout(origin_upper_left) in vec4 gl_FragCoord;
 
 out vec3 color;
 
@@ -10,14 +10,14 @@ uniform int screenHeight;
 uniform sampler2D densityTexture;
 
 void main() {
-    float density = texture(densityTexture, UV).r;
-    float temperature = texture(densityTexture, UV).g;
+    float ny = gl_FragCoord.x / screenWidth;
+    float nx = gl_FragCoord.y / screenHeight;
 
-    float nx = gl_FragCoord.x / float(screenWidth);
-    float ny = gl_FragCoord.y / float(screenHeight);
+    float density = texture(densityTexture, vec2(nx, ny)).r;
+    float temperature = texture(densityTexture, vec2(nx, ny)).g;
 
-//    color = vec3(ny, nx, temperature) * (density * 5.0f);
-//    color = vec3(temperature, density, 0.0f);
+    color = vec3(ny, nx, temperature) * (density * 5.0f);
+    color = vec3(density, temperature, 0.0f);
 
-    color = vec3(nx, ny, 0.0f);
+//    color = vec3(nx, ny, 0.0f);
 }
