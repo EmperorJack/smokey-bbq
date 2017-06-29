@@ -12,7 +12,7 @@ void SmokeSimulation::init() {
 }
 
 void SmokeSimulation::initPrograms() {
-    advectProgram = loadShaders("SimpleVertexShader", "SimpleFragmentShader");
+    advectProgram = loadShaders("DensityVertexShader", "advection");
     //applyImpulseProgram = loadShaders("")
     //applyBuoyancyProgram = loadShaders("")
     //computeDivergenceProgram = loadShaders("")
@@ -96,27 +96,23 @@ void SmokeSimulation::advect(Surface velocitySurface, Surface source, Surface de
     GLuint p = advectProgram;
     glUseProgram(p);
 
-//    GLint gridSizeLoc = glGetUniformLocation(p, "gridSize");
-//    GLint gridSpacingLoc = glGetUniformLocation(p, "gridSpacing");
-//    GLint timeStep = glGetUniformLocation(p, "timeStep");
-//    GLint dissLoc = glGetUniformLocation(p, "dissipation");
-//    GLint sourceTexture = glGetUniformLocation(p, "sourceTexture");
-//
-//    glUniform1f(gridSizeLoc, GRID_SIZE);
-//    glUniform1f(gridSpacingLoc, gridSpacing);
-//    glUniform1f(timeStep, TIME_STEP);
-//    glUniform1f(dissLoc, dissipation);
-//    glUniform1i(sourceTexture, 1);
+    GLint gridSizeLoc = glGetUniformLocation(p, "gridSize");
+    GLint gridSpacingLoc = glGetUniformLocation(p, "gridSpacing");
+    GLint timeStep = glGetUniformLocation(p, "timeStep");
+    GLint dissLoc = glGetUniformLocation(p, "dissipation");
+    GLint sourceTexture = glGetUniformLocation(p, "sourceTexture");
+
+    glUniform1i(gridSizeLoc, GRID_SIZE);
+    glUniform1f(gridSpacingLoc, gridSpacing);
+    glUniform1f(timeStep, TIME_STEP);
+    glUniform1f(dissLoc, dissipation);
+    glUniform1i(sourceTexture, 1);
 
     glBindFramebuffer(GL_FRAMEBUFFER, destination.fboHandle);
-//    glActiveTexture(GL_TEXTURE0);
-//    glBindTexture(GL_TEXTURE_2D, velocitySurface.textureHandle);
-//    loadVelocityIntoTexture();
-//    glTexImage2D(GL_TEXTURE_2D, 0, GL_RG32F, GRID_SIZE, GRID_SIZE, 0, GL_RG, GL_FLOAT, &velocity[0][0][0]);
-//    glActiveTexture(GL_TEXTURE1);
-//    glBindTexture(GL_TEXTURE_2D, source.textureHandle);
-//    loadVelocityIntoTexture();
-//    glTexImage2D(GL_TEXTURE_2D, 0, GL_RG32F, GRID_SIZE, GRID_SIZE, 0, GL_RG, GL_FLOAT, &velocity[0][0][0]);
+    glActiveTexture(GL_TEXTURE0);
+    glBindTexture(GL_TEXTURE_2D, velocitySurface.textureHandle);
+    glActiveTexture(GL_TEXTURE1);
+    glBindTexture(GL_TEXTURE_2D, source.textureHandle);
 
     drawFullscreenQuad();
 

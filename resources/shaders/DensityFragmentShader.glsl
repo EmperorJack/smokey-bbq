@@ -19,5 +19,5 @@ void main() {
     color = vec3(ny, nx, temperature) * (density * 5.0f);
     color = vec3(density, temperature, 0.0f);
 
-//    color = vec3(nx, ny, 0.0f);
+    //color = vec3(nx, ny, 0.0f);
 }

@@ -78,7 +78,7 @@ void SmokeSimulation::resetFields() {
 }
 
 void SmokeSimulation::update() {
-//    glViewport(0, 0, GRID_SIZE, GRID_SIZE);
+    glViewport(0, 0, GRID_SIZE, GRID_SIZE);
 
     glBindTexture(GL_TEXTURE_2D, velocitySlab.ping.textureHandle);
     glTexImage2D(GL_TEXTURE_2D, 0, GL_RG32F, GRID_SIZE, GRID_SIZE, 0, GL_RG, GL_FLOAT, &velocity[0][0][0]);
@@ -419,7 +419,7 @@ bool SmokeSimulation::clampBoundary(int &i) {
 }
 
 void SmokeSimulation::renderDensity() {
-//    glViewport(0, 0, SCREEN_WIDTH, SCREEN_HEIGHT);
+    glViewport(0, 0, SCREEN_WIDTH, SCREEN_HEIGHT);
 
     glUseProgram(densityShader);
 

@@ -12,7 +12,7 @@ uniform float timeStep;
 uniform float dissipation;
 
 vec2 getGridVelocity(sampler2D source, float i, float j) {
-    vec2 texcoord = vec2(i, j); // / float(gridSize);
+    vec2 texcoord = vec2(i, j) / gridSize;
     return texture(source, texcoord).xy;
 }
 
@@ -54,14 +54,14 @@ void main() {
 //    vec2 texcoord = gl_FragCoord.xy / gridSize;
 //    vec2 coords = gl_FragCoord.xy;
 
-    // Comes in as value 0-gridsize
-    vec2 pos = vec2(gl_FragCoord);// + vec2(0.5, 0.5);
+    vec2 pos = vec2(gl_FragCoord) - vec2(0.5, 0.5);
+//    color = vec3(pos.x / gridSize, pos.y / gridSize, 0.0f);
+//    return;
+//    int i = int(pos.x); // * float(gridSize)
+//    int j = int(pos.y); // * float(gridSize)
 
-    //int i = int(pos.x); // * float(gridSize)
-    //int j = int(pos.y); // * float(gridSize)
-
-//    if ((gridSize / 2 - 10) < pos.x && pos.x < (gridSize / 2 + 10) &&
-//        (gridSize / 2 - 10) < pos.y && pos.y < (gridSize / 2 + 10)) {
+//    if ((gridSize / 2 - 8) < pos.x && pos.x < (gridSize / 2 + 8) &&
+//        (gridSize / 2 - 8) < pos.y && pos.y < (gridSize / 2 + 8)) {
 //        color = vec3(75.0f, 25.0f, 0.0f);
 //        return;
 //    } else {
@@ -69,16 +69,16 @@ void main() {
 //        return;
 //    }
 
-//    vec2 tracePosition = traceParticle(pos.x * gridSpacing, pos.y * gridSpacing);
-//    vec2 newValue = getVelocity(sourceTexture, tracePosition.x, tracePosition.y);
-//    color = vec3(newValue.xy * dissipation, 0.0f);
+    vec2 tracePosition = traceParticle(pos.x * gridSpacing, pos.y * gridSpacing);
+    vec2 newValue = getVelocity(sourceTexture, tracePosition.x, tracePosition.y);
+    color = vec3(newValue.xy * dissipation, 0.0f);
 
-    color = vec3(1.0f, 0.0f, 0.0f);
+//    color = vec3(1.0f, 0.0f, 0.0f);
 
 //    color = vec3(getVelocity(i * gridSpacing, j * gridSpacing), 0.0f);
 
-    //vec2 pos = coords - timeStep * (1 / float(gridSize)) * texture(velocityTexture, coords).xy;
-    //color = vec3(getVelocity(sourceTexture, pos.x, pos.y), 0.0f);
+//    vec2 pos = coords - timeStep * (1 / float(gridSize)) * texture(velocityTexture, coords).xy;
+//    color = vec3(getVelocity(sourceTexture, pos.x, pos.y), 0.0f);
 
 //    vec2 fragCoord = gl_FragCoord.xy;
 //    vec2 u = texture(velocityTexture, rdx * fragCoord).xy;
