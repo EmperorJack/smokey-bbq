@@ -42,10 +42,12 @@ class SmokeSimulation {
 
     void advect(Surface velocity, Surface source, Surface destination, float dissipation);
 
+    void loadVelocityIntoTexture();
+
     public:
 
         // Constants
-        static constexpr int GRID_SIZE = 128;
+        static constexpr int GRID_SIZE = 64;
         static constexpr float TIME_STEP = 0.1f;
         static constexpr float FLUID_DENSITY = 1.0f;
         static constexpr float STROKE_WEIGHT = 2.0f;
@@ -78,9 +80,9 @@ class SmokeSimulation {
 
         // Toggle variables
         bool enableEmitter = false;
-        bool enablePressureSolve = true;
+        bool enablePressureSolve = false;
         bool randomPulseAngle = false;
-        bool enableBuoyancy = true;
+        bool enableBuoyancy = false;
         bool wrapBorders = false;
 
     private:

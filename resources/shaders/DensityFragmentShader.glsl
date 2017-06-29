@@ -16,6 +16,8 @@ void main() {
     float nx = gl_FragCoord.x / float(screenWidth);
     float ny = gl_FragCoord.y / float(screenHeight);
 
-    color = vec3(ny, nx, temperature) * (density * 5.0f);
-    //color = vec3(temperature, density, density);
+//    color = vec3(ny, nx, temperature) * (density * 5.0f);
+//    color = vec3(temperature, density, 0.0f);
+
+    color = vec3(nx, ny, 0.0f);
 }

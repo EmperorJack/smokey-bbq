@@ -106,18 +106,20 @@ void SmokeSimulation::advect(Surface velocitySurface, Surface source, Surface de
     glBindFramebuffer(GL_FRAMEBUFFER, destination.fboHandle);
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_2D, velocitySurface.textureHandle);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RG32F, GRID_SIZE, GRID_SIZE, 0, GL_RG, GL_FLOAT, &velocity[0][0][0]);
+//    loadVelocityIntoTexture();
+     glTexImage2D(GL_TEXTURE_2D, 0, GL_RG32F, GRID_SIZE, GRID_SIZE, 0, GL_RG, GL_FLOAT, &velocity[0][0][0]);
     glActiveTexture(GL_TEXTURE1);
     glBindTexture(GL_TEXTURE_2D, source.textureHandle);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RG32F, GRID_SIZE, GRID_SIZE, 0, GL_RG, GL_FLOAT, &velocity[0][0][0]);
+//    loadVelocityIntoTexture();
+     glTexImage2D(GL_TEXTURE_2D, 0, GL_RG32F, GRID_SIZE, GRID_SIZE, 0, GL_RG, GL_FLOAT, &velocity[0][0][0]);
 
     int targetIndex = GRID_SIZE / 2;
-    std::cout << velocity[targetIndex][targetIndex].x;
+    std::cout << "(" << velocity[targetIndex][targetIndex].x << ", " << velocity[targetIndex][targetIndex].y << ")";
 
     drawFullscreenQuad();
 
-    resetState();
-
+//    resetState();
+//    return;
     GLfloat* pixels = new GLfloat[GRID_SIZE * GRID_SIZE * 2];
 
     glActiveTexture(GL_TEXTURE0);
@@ -126,14 +128,18 @@ void SmokeSimulation::advect(Surface velocitySurface, Surface source, Surface de
 
     for (int i = 0; i < GRID_SIZE; i++) {
         for (int j = 0; j < GRID_SIZE; j++) {
-            velocity[i][j].x = pixels[(GRID_SIZE * i + j) * 2];
-            velocity[i][j].y = pixels[(GRID_SIZE * i + j) * 2 + 1];
-            if (isnan(velocity[i][j].x)) velocity[i][j].x = 0.0f;
-            if (isnan(velocity[i][j].y)) velocity[i][j].y = 0.0f;
+            float xValue = pixels[(GRID_SIZE * i + j) * 2];
+            float yValue = pixels[(GRID_SIZE * i + j) * 2 + 1];
+
+            if (isnan(xValue)) xValue = 0.0f;
+            if (isnan(yValue)) yValue = 0.0f;
+
+            velocity[i][j].x = xValue;
+            velocity[i][j].y = yValue;
         }
     }
 
-    std::cout << " -> " << velocity[targetIndex][targetIndex].x << std::endl;
+    std::cout << " -> (" << velocity[targetIndex][targetIndex].x << ", " << velocity[targetIndex][targetIndex].y << ")" << std::endl;
 
     resetState();
 }
@@ -149,6 +155,7 @@ void SmokeSimulation::resetState() {
 void SmokeSimulation::drawFullscreenQuad() {
 
     // Bind vertices
+    glEnableVertexAttribArray(0);
     glBindBuffer(GL_ARRAY_BUFFER, densityVBO);
     glVertexAttribPointer(
             0,         // shader layout attribute
@@ -160,4 +167,18 @@ void SmokeSimulation::drawFullscreenQuad() {
     );
 
     glDrawArrays(GL_TRIANGLES, 0, 3);
+
+    glDisableVertexAttribArray(0);
+}
+
+void SmokeSimulation::loadVelocityIntoTexture() {
+    float field[SmokeSimulation::GRID_SIZE][SmokeSimulation::GRID_SIZE][2];
+    for (int i = 0; i < GRID_SIZE; i++) {
+        for (int j = 0; j < GRID_SIZE; j++) {
+            field[i][GRID_SIZE - i - j][0] = velocity[j][i].x;
+            field[i][GRID_SIZE - i - j][1] = velocity[j][i].y;
+        }
+    }
+
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RG32F, GRID_SIZE, GRID_SIZE, 0, GL_RG, GL_FLOAT, &field[0][0][0]);
 }

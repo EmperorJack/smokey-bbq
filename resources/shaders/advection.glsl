@@ -17,8 +17,8 @@ vec2 getGridVelocity(sampler2D source, float i, float j) {
 }
 
 float getInterpolatedVelocity(sampler2D source, float x, float y, bool xAxis) {
-     i = (x); //(int(x + gridSize)) - gridSize;
-     j = (y); //(int(y + gridSize)) - gridSize;
+    int i = int(x); //(int(x + gridSize)) - gridSize;
+    int j = int(y); //(int(y + gridSize)) - gridSize;
 
     return (i+1-x) * (j+1-y) * (xAxis ? getGridVelocity(source, i, j).x : getGridVelocity(source, i, j).y) +
            (x-i) * (j+1-y)   * (xAxis ? getGridVelocity(source, i+1, j).x : getGridVelocity(source, i+1, j).y) +
@@ -46,7 +46,7 @@ vec2 getVelocity(sampler2D source, float x, float y) {
 
 vec2 traceParticle(float x, float y) {
     vec2 v = getVelocity(velocityTexture, x, y);
-    v = getVelocity(velocityTexture, x + 0.5f * timeStep * v.x, y + 0.5f * timeStep * v.y);
+    v = getVelocity(velocityTexture, x + (0.5f * timeStep * v.x), y + (0.5f * timeStep * v.y));
     return vec2(x, y) - (timeStep * v);
 }
 
@@ -60,16 +60,20 @@ void main() {
     //int i = int(pos.x); // * float(gridSize)
     //int j = int(pos.y); // * float(gridSize)
 
-//    if ((64 / 2 - 10) < pos.x && pos.x < (64 / 2 + 10) &&
-//        (64 / 2 - 10) < pos.y && pos.y < (64 / 2 + 10)) {
-//        vec2 newValue = vec2(75f, 25f);
-//        color = vec3(newValue, 0.0f);
+    if ((gridsize / 2 - 10) < pos.x && pos.x < (gridsize / 2 + 10) &&
+        (gridsize / 2 - 10) < pos.y && pos.y < (gridsize / 2 + 10)) {
+        color = vec3(75f, 25f, 0.0f);
 //        return;
-//    }
+    } else {
+        color = vec3(0.0f, 1.0f, 0.0f);
+//        return;
+    }
 
     vec2 tracePosition = traceParticle(pos.x * gridSpacing, pos.y * gridSpacing);
     vec2 newValue = getVelocity(sourceTexture, tracePosition.x, tracePosition.y);
     color = vec3(newValue.xy * dissipation, 0.0f);
+
+    color = vec3(1.0f, 1.0f, 0.0f);
 
 //    color = vec3(getVelocity(i * gridSpacing, j * gridSpacing), 0.0f);
 
@@ -80,6 +84,4 @@ void main() {
 //    vec2 u = texture(velocityTexture, rdx * fragCoord).xy;
 //    vec2 tracePosition = rdx * (fragCoord - timeStep * u);
 //    color = vec3(getVelocity(sourceTexture, tracePosition.x, tracePosition.y), 0.0f);
-
-//    color = vec3(pos.xy, 0.0f);
 }
