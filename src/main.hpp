@@ -2,9 +2,9 @@
 #define MAIN_HPP
 
 // OS settings
-static const bool WIN = true;
+static const bool WIN = false;
 static const bool MAC = false;
-static const bool LINUX = false;
+static const bool LINUX = true;
 
 // Screen settings
 static const int SCREEN_WIDTH = 800;
