@@ -47,7 +47,7 @@ class SmokeSimulation {
     public:
 
         // Constants
-        static constexpr int GRID_SIZE = 32;
+        static constexpr int GRID_SIZE = 64;
         static constexpr float TIME_STEP = 0.1f;
         static constexpr float FLUID_DENSITY = 1.0f;
         static constexpr float STROKE_WEIGHT = 2.0f;
@@ -80,10 +80,11 @@ class SmokeSimulation {
 
         // Toggle variables
         bool enableEmitter = false;
-        bool enablePressureSolve = false;
+        bool enablePressureSolve = true;
         bool randomPulseAngle = false;
-        bool enableBuoyancy = false;
+        bool enableBuoyancy = true;
         bool wrapBorders = false;
+        bool gpuImplementation = false;
 
     private:
 

@@ -80,39 +80,34 @@ void SmokeSimulation::resetFields() {
 void SmokeSimulation::update() {
     glViewport(0, 0, GRID_SIZE, GRID_SIZE);
 
-    glBindTexture(GL_TEXTURE_2D, velocitySlab.ping.textureHandle);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RG32F, GRID_SIZE, GRID_SIZE, 0, GL_RG, GL_FLOAT, &velocity[0][0][0]);
-    glBindTexture(GL_TEXTURE_2D, velocitySlab.pong.textureHandle);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RG32F, GRID_SIZE, GRID_SIZE, 0, GL_RG, GL_FLOAT, &velocity[0][0][0]);
-
-    int targetIndex = GRID_SIZE / 2;
-    std::cout << "(" << velocity[targetIndex][targetIndex].x << ", " << velocity[targetIndex][targetIndex].y << ")";
-
     // Advect velocity through velocity
-    advect(velocitySlab.ping, velocitySlab.ping, velocitySlab.pong, VELOCITY_DISSIPATION);
-    swapSurfaces(&velocitySlab);
+    if (gpuImplementation) {
+        glBindTexture(GL_TEXTURE_2D, velocitySlab.ping.textureHandle);
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RG32F, GRID_SIZE, GRID_SIZE, 0, GL_RG, GL_FLOAT, &velocity[0][0][0]);
+        glBindTexture(GL_TEXTURE_2D, velocitySlab.pong.textureHandle);
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RG32F, GRID_SIZE, GRID_SIZE, 0, GL_RG, GL_FLOAT, &velocity[0][0][0]);
 
-    std::cout << " -> (" << velocity[targetIndex][targetIndex].x << ", " << velocity[targetIndex][targetIndex].y << ")" << std::endl;
+        int targetIndex = GRID_SIZE / 2;
+        // std::cout << "(" << velocity[targetIndex][targetIndex].x << ", " << velocity[targetIndex][targetIndex].y << ")";
 
-//    GLfloat* pixels = new GLfloat[GRID_SIZE * GRID_SIZE * 2];
-//
-//    glActiveTexture(GL_TEXTURE0);
-//    glBindTexture(GL_TEXTURE_2D, velocitySlab.ping.textureHandle);
-//    glGetTexImage(GL_TEXTURE_2D, 0, GL_RG, GL_FLOAT, pixels);
-//
-//    std::cout << " -> (" << pixels[0] << ", " << pixels[1] << ")" << std::endl;
+        advect(velocitySlab.ping, velocitySlab.ping, velocitySlab.pong, VELOCITY_DISSIPATION);
+        swapSurfaces(&velocitySlab);
 
-//    for (int i = 0; i < GRID_SIZE; i++) {
-//        for (int j = 0; j < GRID_SIZE; j++) {
-//            advectedVelocity[i][j] = getVelocity(tracePosition[i][j].x, tracePosition[i][j].y) * VELOCITY_DISSIPATION;
-//        }
-//    }
-//
-//    for (int i = 0; i < GRID_SIZE; i++) {
-//        for (int j = 0; j < GRID_SIZE; j++) {
-//            velocity[i][j] = advectedVelocity[i][j];
-//        }
-//    }
+        // std::cout << " -> (" << velocity[targetIndex][targetIndex].x << ", " << velocity[targetIndex][targetIndex].y << ")" << std::endl;
+
+    } else {
+        for (int i = 0; i < GRID_SIZE; i++) {
+            for (int j = 0; j < GRID_SIZE; j++) {
+                advectedVelocity[i][j] = getVelocity(tracePosition[i][j].x, tracePosition[i][j].y) * VELOCITY_DISSIPATION;
+            }
+        }
+
+        for (int i = 0; i < GRID_SIZE; i++) {
+            for (int j = 0; j < GRID_SIZE; j++) {
+                velocity[i][j] = advectedVelocity[i][j];
+            }
+        }
+    }
 
     // Smoke emitter
     if (enableEmitter) {
@@ -425,16 +420,16 @@ void SmokeSimulation::renderDensity() {
 
     passScreenSize(densityShader);
 
-    glActiveTexture(GL_TEXTURE0);
-    glBindTexture(GL_TEXTURE_2D, velocitySlab.pong.textureHandle);
-    drawFullscreenQuad();
-    return;
+//    glActiveTexture(GL_TEXTURE0);
+//    glBindTexture(GL_TEXTURE_2D, velocitySlab.pong.textureHandle);
+//    drawFullscreenQuad();
+//    return;
 
     float densityField[SmokeSimulation::GRID_SIZE][SmokeSimulation::GRID_SIZE][2];
     for (int i = 0; i < GRID_SIZE; i++) {
         for (int j = 0; j < GRID_SIZE; j++) {
-            densityField[i][j][0] = density[j][i]; // densityField[j][i].x; // grid[j][i].pressure / 1000.0f;
-            densityField[i][j][1] = temperature[j][i]; // densityField[j][i].y; // grid[j][i].divergence / 1000.0f;
+            densityField[i][j][0] = density[i][j]; // densityField[j][i].x; // grid[j][i].pressure / 1000.0f;
+            densityField[i][j][1] = temperature[i][j]; // densityField[j][i].y; // grid[j][i].divergence / 1000.0f;
         }
     }
 

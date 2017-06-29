@@ -12,13 +12,20 @@ uniform float timeStep;
 uniform float dissipation;
 
 vec2 getGridVelocity(sampler2D source, float i, float j) {
-    vec2 texcoord = vec2(i, j) / gridSize;
+    if (i < 0 || i >= gridSize) {
+        i = 0;
+    }
+    if (j < 0 || j >= gridSize) {
+        j = 0;
+    }
+
+    vec2 texcoord = vec2(i, j) / float(gridSize);
     return texture(source, texcoord).xy;
 }
 
 float getInterpolatedVelocity(sampler2D source, float x, float y, bool xAxis) {
-    int i = int(x); //(int(x + gridSize)) - gridSize;
-    int j = int(y); //(int(y + gridSize)) - gridSize;
+    int i = (int(x + gridSize)) - gridSize;
+    int j = (int(y + gridSize)) - gridSize;
 
     return (i+1-x) * (j+1-y) * (xAxis ? getGridVelocity(source, i, j).x : getGridVelocity(source, i, j).y) +
            (x-i) * (j+1-y)   * (xAxis ? getGridVelocity(source, i+1, j).x : getGridVelocity(source, i+1, j).y) +
@@ -51,27 +58,29 @@ vec2 traceParticle(float x, float y) {
 }
 
 void main() {
-//    vec2 texcoord = gl_FragCoord.xy / gridSize;
-//    vec2 coords = gl_FragCoord.xy;
+    vec2 pos = gl_FragCoord.xy;
 
-    vec2 pos = vec2(gl_FragCoord) - vec2(0.5, 0.5);
-//    color = vec3(pos.x / gridSize, pos.y / gridSize, 0.0f);
+//    color = vec3(pos.x, pos.y, 0.0f);
 //    return;
-//    int i = int(pos.x); // * float(gridSize)
-//    int j = int(pos.y); // * float(gridSize)
+
+    int i = int(pos.x);
+    int j = int(pos.y);
 
 //    if ((gridSize / 2 - 8) < pos.x && pos.x < (gridSize / 2 + 8) &&
 //        (gridSize / 2 - 8) < pos.y && pos.y < (gridSize / 2 + 8)) {
 //        color = vec3(75.0f, 25.0f, 0.0f);
 //        return;
-//    } else {
-//        color = vec3(0.0f, 1.0f, 0.0f);
-//        return;
 //    }
 
-    vec2 tracePosition = traceParticle(pos.x * gridSpacing, pos.y * gridSpacing);
+//    vec2 tracePosition = traceParticle(pos.x * gridSpacing, pos.y * gridSpacing);
+    vec2 tracePosition = traceParticle(i * gridSpacing, j * gridSpacing);
     vec2 newValue = getVelocity(sourceTexture, tracePosition.x, tracePosition.y);
     color = vec3(newValue.xy * dissipation, 0.0f);
+
+//    float inverseSize = 1.0f / float(gridSize);
+//    vec2 u = texture(velocityTexture, inverseSize * pos).xy;
+//    vec2 coord = inverseSize * (pos - timeStep * u);
+//    color = vec3(texture(sourceTexture, coord).xy, 0.0f) * dissipation;
 
 //    color = vec3(1.0f, 0.0f, 0.0f);
 

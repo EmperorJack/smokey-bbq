@@ -48,6 +48,8 @@ void keyCallback(GLFWwindow *win, int key, int scancode, int action, int mods) {
         smokeSimulation->wrapBorders = !smokeSimulation->wrapBorders;
     } else if (key == 'B' && action == GLFW_PRESS) {
         smokeSimulation->enableBuoyancy = !smokeSimulation->enableBuoyancy;
+    } else if (key == 'G' && action == GLFW_PRESS) {
+        smokeSimulation->gpuImplementation = !smokeSimulation->gpuImplementation;
     } else if (key == 'S' && action == GLFW_PRESS) {
         displayDensityField = !displayDensityField;
     } else if (key == 'V' && action == GLFW_PRESS) {
