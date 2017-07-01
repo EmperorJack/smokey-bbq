@@ -1,15 +1,16 @@
 #ifndef MAIN_HPP
 #define MAIN_HPP
 
-// OS settings
-static const bool WIN = false;
-static const bool MAC = false;
-static const bool LINUX = true;
-
 // Screen settings
+#define FULL_SCREEN false
+
+#if FULL_SCREEN
+static const int SCREEN_WIDTH = 1280;
+static const int SCREEN_HEIGHT = 800;
+#else
 static const int SCREEN_WIDTH = 800;
 static const int SCREEN_HEIGHT = 800;
-static const bool FULL_SCREEN = false;
+#endif
 
 // Paths
 static const char* SHADER_PATH = "resources/shaders/";

@@ -67,16 +67,20 @@ AudioAnalyzer::AudioAnalyzer() {
     int inDevNum = 0;
     int outDevNum = 0;
 
-    if (MAC) {
-        inDevNum = 3;
-        outDevNum = 3;
-    } else if (WIN) {
-        inDevNum = 1;
-        outDevNum = 3;
-    } else if (LINUX) {
-        inDevNum = 7;
-        outDevNum = 7;
-    }
+    #ifdef __APPLE__
+    inDevNum = 3;
+    outDevNum = 3;
+    #endif
+
+    #ifdef __MINGW32__
+    inDevNum = 1;
+    outDevNum = 3;
+    #endif
+
+    #ifdef __linux__
+    inDevNum = 7;
+    outDevNum = 7;
+    #endif
 
     int inChan = 2;
     int outChan = 2;
