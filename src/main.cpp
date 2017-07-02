@@ -3,6 +3,8 @@
 #include <opengl.hpp>
 #include <smoke_simulation.hpp>
 #include <audio_analyzer.hpp>
+#include <imgui.h>
+#include <imgui_impl_glfw_gl3.h>
 
 // Object variables
 SmokeSimulation* smokeSimulation = nullptr;
@@ -109,6 +111,9 @@ int main(int argc, char **argv) {
     glGenVertexArrays(1, &vertexArray);
     glBindVertexArray(vertexArray);
 
+    // Setup ImGui binding
+    ImGui_ImplGlfwGL3_Init(window, false);
+
     printf("\n~~~\n\n");
 
     // Setup objects
@@ -124,6 +129,10 @@ int main(int argc, char **argv) {
 
     // Check if the escape key was pressed or the window was closed
     while(glfwGetKey(window, GLFW_KEY_ESCAPE) != GLFW_PRESS && glfwWindowShouldClose(window) == 0) {
+
+        // Poll events and setup GUI for the current frame
+        glfwPollEvents();
+        ImGui_ImplGlfwGL3_NewFrame();
 
         // Measure speed
         double currentTime = glfwGetTime();
@@ -161,7 +170,7 @@ int main(int argc, char **argv) {
             }
         }
 
-        if (mousePressed) smokeSimulation->addPulse(mousePosition);
+        if (mousePressed && !ImGui::IsMouseHoveringAnyWindow()) smokeSimulation->addPulse(mousePosition);
 
         if (updateSmokeSimulation) smokeSimulation->update();
 
@@ -183,13 +192,17 @@ int main(int argc, char **argv) {
         if (displayAudioData) audioAnalyzer->renderLogSpectrum(mvp);
         if (displayAudioData) audioAnalyzer->renderFrequencyBands(mvp);
 
-        // Swap buffers
+        // Render GUI
+        ImGui::ShowTestWindow();
+        ImGui::Render();
+
         glfwSwapBuffers(window);
-        glfwPollEvents();
     }
 
     audioAnalyzer->shutDown();
 
+    ImGui_ImplGlfwGL3_Shutdown();
     glfwTerminate();
+
     return 0;
 }

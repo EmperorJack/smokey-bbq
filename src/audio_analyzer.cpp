@@ -68,8 +68,8 @@ AudioAnalyzer::AudioAnalyzer() {
     int outDevNum = 0;
 
     #ifdef __APPLE__
-    inDevNum = 3;
-    outDevNum = 3;
+    inDevNum = 2;
+    outDevNum = 2;
     #endif
 
     #ifdef __MINGW32__
@@ -238,7 +238,7 @@ void AudioAnalyzer::update() {
         processedAudio[i] *= FREQUENCY_DAMPING;
         processedAudio[i] = max(20.0f * log10f(magnitude), processedAudio[i]);
 
-        toBin[mapping[i]] = magnitude;
+        toBin[mapping[i]] += magnitude * 0.25f;
         // toBin[i] = magnitude;
     }
 
