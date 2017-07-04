@@ -8,6 +8,7 @@ SmokeSimulation::SmokeSimulation() {
     float size = (float) min(SCREEN_WIDTH, SCREEN_HEIGHT);
     gridSpacing = size / GRID_SIZE;
     resetFields();
+    setDefaults();
 
     // Setup VBOs
     float squareVertices[] = {
@@ -70,6 +71,27 @@ void SmokeSimulation::resetFields() {
             tracePosition[i][j] = glm::vec2(0.0f, 0.0f);
         }
     }
+}
+
+void SmokeSimulation::setDefaults() {
+    TIME_STEP = 0.1f;
+    FLUID_DENSITY = 1.0f;
+    JACOBI_ITERATIONS = 40;
+
+    GRAVITY = 0.0981f;
+    PULSE_RANGE = 50.0f;
+    EMITTER_RANGE = 80.0f;
+    PULSE_FORCE = 150.0f;
+
+    VELOCITY_DISSAPATION = 0.98;
+    DENSITY_DISSAPATION = 0.97;
+    TEMPERATURE_DISSAPATION = 0.96f;
+
+    RISE_FORCE = 1.0f;
+    FALL_FORCE = 1.0f;
+    ATMOSPHERE_TEMPERATURE = 0.0f;
+
+    STROKE_WEIGHT = 2.0f;
 }
 
 void SmokeSimulation::update() {

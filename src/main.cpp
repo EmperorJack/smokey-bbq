@@ -1,14 +1,19 @@
 #include <iostream>
 #include <main.hpp>
 #include <opengl.hpp>
-#include <smoke_simulation.hpp>
-#include <audio_analyzer.hpp>
 #include <imgui.h>
 #include <imgui_impl_glfw_gl3.h>
+#include <smoke_simulation.hpp>
+#include <audio_analyzer.hpp>
+#include <smoke_simulation_gui.hpp>
 
-// Object variables
+// Object instances
 SmokeSimulation* smokeSimulation = nullptr;
 AudioAnalyzer* audioAnalyzer = nullptr;
+
+// Gui instances
+SmokeSimulationGui* smokeSimulationGui = nullptr;
+//AudioAnalyzerGui* audioAnalyzerGui = nullptr;
 
 // Mouse variables
 glm::vec2 mousePosition;
@@ -19,7 +24,7 @@ bool updateSmokeSimulation = true;
 bool displayDensityField = true;
 bool displayVelocityField = false;
 bool updateAudioData = true;
-bool displayAudioData = true;
+bool displayAudioData = false;
 bool smokeAudio = true;
 
 // Mouse Position callback
@@ -116,9 +121,12 @@ int main(int argc, char **argv) {
 
     printf("\n~~~\n\n");
 
-    // Setup objects
+    // Setup object instances
     smokeSimulation = new SmokeSimulation();
     audioAnalyzer = new AudioAnalyzer();
+
+    // Setup GUI instances
+    smokeSimulationGui = new SmokeSimulationGui(smokeSimulation);
 
     // printf("\n~~~\n\n");
     // audioAnalyzer->printAudioDevices();
@@ -161,7 +169,7 @@ int main(int argc, char **argv) {
 
                 if (value < 2.0f) continue;
 
-                value = min(value, 30.0f);
+//                value = min(value, 30.0f);
 
                 glm::vec2 position = vec2(i * bandSpacing + sideOffset, SCREEN_HEIGHT * 0.95f);
                 glm::vec2 force = vec2(myRandom() * 100.0f - 50.0f, (value + 0.5f) * -10.0f);
@@ -193,7 +201,7 @@ int main(int argc, char **argv) {
         if (displayAudioData) audioAnalyzer->renderFrequencyBands(mvp);
 
         // Render GUI
-        ImGui::ShowTestWindow();
+        smokeSimulationGui->render();
         ImGui::Render();
 
         glfwSwapBuffers(window);

@@ -1,6 +1,8 @@
 #ifndef MAIN_HPP
 #define MAIN_HPP
 
+#include <random>
+
 // Screen settings
 #define FULL_SCREEN false
 
@@ -13,7 +15,7 @@ static const int SCREEN_HEIGHT = 720;
 #endif
 
 static inline float myRandom() {
-    return rand() % 100 / 100.0f;
+    return std::rand() % 100 / 100.0f;
 }
 
 #endif
