@@ -55,12 +55,20 @@ void SmokeSimulationGui::render() {
     ImGui::SliderFloat("##L", &smokeSimulation->FALL_FORCE, 0.1f, 10.0f, "%.2f");
 
     ImGui::Text("Atmosphere Temperature");
-    ImGui::SliderFloat("##M", &smokeSimulation->ATMOSPHERE_TEMPERATURE, 0.1f, 10.0f, "%.2f");
+    ImGui::SliderFloat("##M", &smokeSimulation->ATMOSPHERE_TEMPERATURE, -10.0f, 10.0f, "%.2f");
 
-    ImGui::Separator(); // Misc variables
+    // ImGui::Separator(); // Misc variables
 
     // ImGui::Text("Stroke Weight");
     // ImGui::SliderFloat("##N", &smokeSimulation->STROKE_WEIGHT, 0.1f, 10.0f, "%.2f");
+
+    ImGui::Separator(); // Toggles
+
+    ImGui::Checkbox("Enable Emitter", &smokeSimulation->enableEmitter);
+    ImGui::Checkbox("Random Impulse Angle", &smokeSimulation->randomPulseAngle);
+    ImGui::Checkbox("Enable Buoyancy Force", &smokeSimulation->enableBuoyancy);
+    ImGui::Checkbox("Wrap Borders", &smokeSimulation->wrapBorders);
+    ImGui::Checkbox("Enable Pressure Solver", &smokeSimulation->enablePressureSolve);
 
     ImGui::End();
 }

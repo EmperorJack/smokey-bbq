@@ -68,8 +68,8 @@ AudioAnalyzer::AudioAnalyzer() {
     int outDevNum = 0;
 
     #ifdef __APPLE__
-    inDevNum = 3;
-    outDevNum = 3;
+    inDevNum = 2;
+    outDevNum = 2;
     #endif
 
     #ifdef __MINGW32__
