@@ -10,6 +10,17 @@ SmokeSimulationGui::SmokeSimulationGui(SmokeSimulation *smokeSimulation) {
 void SmokeSimulationGui::render() {
     ImGui::Begin("Smoke Simulation");
 
+    // Toggles
+
+    ImGui::Checkbox("Display Density Field", &smokeSimulation->displayDensityField);
+    ImGui::Checkbox("Display Velocity Field", &smokeSimulation->displayVelocityField);
+    ImGui::Checkbox("Update Simulation", &smokeSimulation->updateSimulation);
+    ImGui::Checkbox("Enable Emitter", &smokeSimulation->enableEmitter);
+    ImGui::Checkbox("Random Impulse Angle", &smokeSimulation->randomPulseAngle);
+    ImGui::Checkbox("Enable Buoyancy Force", &smokeSimulation->enableBuoyancy);
+    ImGui::Checkbox("Wrap Borders", &smokeSimulation->wrapBorders);
+    ImGui::Checkbox("Enable Pressure Solver", &smokeSimulation->enablePressureSolve);
+
     ImGui::Separator(); // Core equation variables
 
     ImGui::Text("Time Step");
@@ -61,14 +72,6 @@ void SmokeSimulationGui::render() {
 
     // ImGui::Text("Stroke Weight");
     // ImGui::SliderFloat("##N", &smokeSimulation->STROKE_WEIGHT, 0.1f, 10.0f, "%.2f");
-
-    ImGui::Separator(); // Toggles
-
-    ImGui::Checkbox("Enable Emitter", &smokeSimulation->enableEmitter);
-    ImGui::Checkbox("Random Impulse Angle", &smokeSimulation->randomPulseAngle);
-    ImGui::Checkbox("Enable Buoyancy Force", &smokeSimulation->enableBuoyancy);
-    ImGui::Checkbox("Wrap Borders", &smokeSimulation->wrapBorders);
-    ImGui::Checkbox("Enable Pressure Solver", &smokeSimulation->enablePressureSolve);
 
     ImGui::End();
 }

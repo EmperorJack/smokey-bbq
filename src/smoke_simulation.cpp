@@ -8,7 +8,8 @@ SmokeSimulation::SmokeSimulation() {
     float size = (float) min(SCREEN_WIDTH, SCREEN_HEIGHT);
     gridSpacing = size / GRID_SIZE;
     resetFields();
-    setDefaults();
+    setDefaultVariables();
+    setDefaultToggles();
 
     // Setup VBOs
     float squareVertices[] = {
@@ -73,7 +74,7 @@ void SmokeSimulation::resetFields() {
     }
 }
 
-void SmokeSimulation::setDefaults() {
+void SmokeSimulation::setDefaultVariables() {
     TIME_STEP = 0.1f;
     FLUID_DENSITY = 1.0f;
     JACOBI_ITERATIONS = 40;
@@ -94,7 +95,19 @@ void SmokeSimulation::setDefaults() {
     STROKE_WEIGHT = 2.0f;
 }
 
+void SmokeSimulation::setDefaultToggles() {
+    displayDensityField = true;
+    displayVelocityField = false;
+    updateSimulation = true;
+    enableEmitter = false;
+    enablePressureSolve = true;
+    randomPulseAngle = false;
+    enableBuoyancy = true;
+    wrapBorders = false;
+}
+
 void SmokeSimulation::update() {
+    if (!updateSimulation) return;
 
     // Advect velocity through velocity
     for (int i = 0; i < GRID_SIZE; i++) {
@@ -411,6 +424,11 @@ bool SmokeSimulation::clampBoundary(int &i) {
     }
 
     return false;
+}
+
+void SmokeSimulation::render(glm::mat4 transform, glm::vec2 mousePosition) {
+    if (displayDensityField) renderDensity();
+    if (displayVelocityField) renderVelocityField(transform, mousePosition);
 }
 
 void SmokeSimulation::renderDensity() {

@@ -8,7 +8,7 @@ class SmokeSimulation {
 public:
 
     // Constants
-    static constexpr int GRID_SIZE = 192;
+    static constexpr int GRID_SIZE = 128;
 
     // Variables
     float TIME_STEP;
@@ -28,26 +28,29 @@ public:
 
     // Setup
     SmokeSimulation();
-    void setDefaults();
+    void setDefaultVariables();
+    void setDefaultToggles();
     void resetFields();
 
     // Updating
     void update();
 
     // Rendering
-    void renderDensity();
-    void renderVelocityField(glm::mat4, glm::vec2);
+    void render(glm::mat4 transform, glm::vec2 mousePosition);
 
     // Interactions
     void addPulse(glm::vec2);
     void emit(glm::vec2 position, glm::vec2 force, float range, float density, float temperature);
 
     // Toggle variables
-    bool enableEmitter = false;
-    bool enablePressureSolve = true;
-    bool randomPulseAngle = false;
-    bool enableBuoyancy = true;
-    bool wrapBorders = false;
+    bool displayDensityField;
+    bool displayVelocityField;
+    bool updateSimulation;
+    bool enableEmitter;
+    bool enablePressureSolve;
+    bool randomPulseAngle;
+    bool enableBuoyancy;
+    bool wrapBorders;
 
 private:
 
@@ -107,6 +110,8 @@ private:
     bool clampBoundary(int &i);
 
     // Rendering
+    void renderDensity();
+    void renderVelocityField(glm::mat4 transform, glm::vec2 mousePosition);
     void drawLine(glm::mat4);
 
 };
