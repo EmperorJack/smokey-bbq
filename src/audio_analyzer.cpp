@@ -83,6 +83,44 @@ AudioAnalyzer::AudioAnalyzer() {
     inDevNum = 7;
     outDevNum = 7;
     #endif
+}
+
+std::vector<std::pair<int, const char*>> AudioAnalyzer::getInputDevices() {
+    std::vector<std::pair<int, const char*>> inputs;
+
+    int numDevices;
+    numDevices = Pa_GetDeviceCount();
+    if (numDevices < 0) {
+        printf("ERROR: Pa_CountDevices returned 0x%x\n", numDevices);
+        PaError err = numDevices;
+        if (paErrorOccured(err)) return inputs;
+        return inputs;
+    }
+
+    // Print out information for each device
+    const PaDeviceInfo *deviceInfo;
+    for(int i = 0; i < numDevices; i++) {
+        deviceInfo = Pa_GetDeviceInfo(i);
+        if (deviceInfo->maxInputChannels > 0) {
+            inputs.push_back(std::make_pair(i, deviceInfo->name));
+        }
+    }
+
+    return inputs;
+};
+
+bool AudioAnalyzer::openDevice(int deviceIndex) {
+
+    // Close the existing stream if there is one
+    if (stream != nullptr) {
+        PaError err = Pa_CloseStream(stream);
+//        if (paErrorOccured(err)) return false;
+    }
+
+    resetBuffers();
+
+    int inDevNum = deviceIndex;
+    int outDevNum = deviceIndex;
 
     int inChan = 2;
     int outChan = 2;
@@ -100,7 +138,7 @@ AudioAnalyzer::AudioAnalyzer() {
     outputParameters.hostApiSpecificStreamInfo = NULL;
     outputParameters.sampleFormat = paFloat32;
     outputParameters.suggestedLatency = Pa_GetDeviceInfo(outDevNum)->defaultLowOutputLatency ;
-    err = Pa_OpenStream(
+    PaError err = Pa_OpenStream(
             &stream,
             &inputParameters,
             &outputParameters,
@@ -110,10 +148,12 @@ AudioAnalyzer::AudioAnalyzer() {
             paCallback,
             (void*) this
     );
-    if (paErrorOccured(err)) return;
+    if (paErrorOccured(err)) return false;
 
     err = Pa_StartStream(stream);
-    if (paErrorOccured(err)) return;
+    if (paErrorOccured(err)) return false;
+
+    return true;
 }
 
 void AudioAnalyzer::resetBuffers() {

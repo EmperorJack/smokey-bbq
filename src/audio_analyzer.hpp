@@ -24,6 +24,11 @@ public:
     void resetBuffers();
     void shutDown();
 
+    // Audio devices
+    std::vector<std::pair<int, const char*>> getInputDevices();
+    bool openDevice(int deviceIndex);
+    void printAudioDevices();
+
     // Updating
     void update();
 
@@ -32,9 +37,6 @@ public:
 
     // Rendering
     void render(glm::mat4 transform);
-
-    // Utility
-    void printAudioDevices();
 
     // Toggle variables
     bool displayWaveform;
@@ -58,7 +60,7 @@ private:
 
     // Port audio variables
     bool paInitSuccessful = false;
-    PaStream *stream;
+    PaStream *stream = nullptr;
     PaStreamParameters outputParameters;
     PaStreamParameters inputParameters;
 

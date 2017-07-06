@@ -1,8 +1,11 @@
 #include <audio_analyzer_gui.hpp>
 #include <imgui.h>
 
+std::vector<std::pair<int, const char*>> inputDevices;
+
 AudioAnalyzerGui::AudioAnalyzerGui(AudioAnalyzer *audioAnalyzer) {
     this->audioAnalyzer = audioAnalyzer;
+    inputDevices = audioAnalyzer->getInputDevices();
 }
 
 void AudioAnalyzerGui::render() {
@@ -18,7 +21,15 @@ void AudioAnalyzerGui::render() {
 }
 
 void AudioAnalyzerGui::renderDeviceSelector() {
+    ImGui::Text("Input Devices");
 
+    static int select = 0;
+
+    for (int i = 0; i < inputDevices.size(); i++) {
+        ImGui::RadioButton(inputDevices[i].second, &select, inputDevices[i].first);
+    }
+
+    if (ImGui::Button("Apply")) audioAnalyzer->openDevice(select);
 }
 
 void AudioAnalyzerGui::renderToggles() {
