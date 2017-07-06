@@ -21,6 +21,10 @@ void SmokeSimulationGui::render() {
     ImGui::Checkbox("Wrap Borders", &smokeSimulation->wrapBorders);
     ImGui::Checkbox("Enable Pressure Solver", &smokeSimulation->enablePressureSolve);
 
+    ImGui::Separator(); // Reset toggles
+
+    if (ImGui::Button("Reset Toggles")) smokeSimulation->setDefaultToggles();
+
     ImGui::Separator(); // Core equation variables
 
     ImGui::Text("Time Step");
@@ -72,6 +76,10 @@ void SmokeSimulationGui::render() {
 
     // ImGui::Text("Stroke Weight");
     // ImGui::SliderFloat("##N", &smokeSimulation->STROKE_WEIGHT, 0.1f, 10.0f, "%.2f");
+
+    ImGui::Separator(); // Reset variables
+
+    if (ImGui::Button("Reset Variables")) smokeSimulation->setDefaultVariables();
 
     ImGui::End();
 }

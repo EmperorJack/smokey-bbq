@@ -10,8 +10,8 @@
 static const int SCREEN_WIDTH = 1280;
 static const int SCREEN_HEIGHT = 800;
 #else
-static const int SCREEN_WIDTH = 1280;
-static const int SCREEN_HEIGHT = 720;
+static const int SCREEN_WIDTH = 1000;
+static const int SCREEN_HEIGHT = 1000;
 #endif
 
 static inline float myRandom() {
