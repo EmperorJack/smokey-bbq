@@ -1,8 +1,6 @@
 #include <smoke_simulation_gui.hpp>
 #include <imgui.h>
 
-int m_CurrentPane = 1;
-
 SmokeSimulationGui::SmokeSimulationGui(SmokeSimulation *smokeSimulation) {
     this->smokeSimulation = smokeSimulation;
 }

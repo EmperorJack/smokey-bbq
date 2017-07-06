@@ -58,6 +58,8 @@ AudioAnalyzer::AudioAnalyzer() {
     computeHanningWindow();
 
     resetBuffers();
+    setDefaultVariables();
+    setDefaultToggles();
 
     // Compute log mapping
     computeLogMapping();
@@ -68,7 +70,7 @@ AudioAnalyzer::AudioAnalyzer() {
     int outDevNum = 0;
 
     #ifdef __APPLE__
-    inDevNum = 2;
+    inDevNum = 0;
     outDevNum = 2;
     #endif
 
@@ -127,6 +129,18 @@ void AudioAnalyzer::resetBuffers() {
     for (int i = 0; i < NUM_BANDS; i++) {
         frequencyBands[i] = 0.0f;
     }
+}
+
+void AudioAnalyzer::setDefaultVariables() {
+    FREQUENCY_DAMPING = 0.85f;
+}
+
+void AudioAnalyzer::setDefaultToggles() {
+    displayWaveform = false;
+    displaySpectrum = false;
+    displayFrequencyBands = false;
+    updateAnalyzer = true;
+    logScaleBands = true;
 }
 
 void AudioAnalyzer::shutDown() {
@@ -216,6 +230,7 @@ static int paCallback(const void *inputBuffer,
 }
 
 void AudioAnalyzer::update() {
+    if (!updateAnalyzer) return;
 
     // Apply window function to raw audio data
     for (int i = 0; i < SAMPLE_SIZE; i++) {
@@ -261,6 +276,15 @@ float AudioAnalyzer::getFrequencyBand(int i) {
     return frequencyBands[i];
 }
 
+void AudioAnalyzer::render(glm::mat4 transform) {
+    if (displayWaveform) renderWaveform(transform);
+    if (displaySpectrum) {
+        if (logScaleBands) renderLogSpectrum(transform);
+        else renderLinearSpectrum(transform);
+    }
+    if (displayFrequencyBands) renderFrequencyBands(transform);
+}
+
 void AudioAnalyzer::renderWaveform(glm::mat4 transform) {
     glUseProgram(shader);
 
@@ -292,7 +316,6 @@ void AudioAnalyzer::renderWaveform(glm::mat4 transform) {
     glDrawArrays(GL_LINE_STRIP, 0, SAMPLE_SIZE);
     glDisableVertexAttribArray(0);
 }
-
 
 void AudioAnalyzer::renderLinearSpectrum(glm::mat4 transform) {
     glUseProgram(shader);

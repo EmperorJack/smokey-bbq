@@ -6,6 +6,7 @@
 #include <smoke_simulation.hpp>
 #include <audio_analyzer.hpp>
 #include <smoke_simulation_gui.hpp>
+#include <audio_analyzer_gui.hpp>
 
 // Object instances
 SmokeSimulation* smokeSimulation = nullptr;
@@ -13,16 +14,15 @@ AudioAnalyzer* audioAnalyzer = nullptr;
 
 // Gui instances
 SmokeSimulationGui* smokeSimulationGui = nullptr;
-//AudioAnalyzerGui* audioAnalyzerGui = nullptr;
+AudioAnalyzerGui* audioAnalyzerGui = nullptr;
 
 // Mouse variables
 glm::vec2 mousePosition;
 bool mousePressed = false;
 
 // Toggles
-bool displaySmokeSimulationGui = true;
-bool updateAudioData = true;
-bool displayAudioData = false;
+bool displaySmokeSimulationGui = false;
+bool displayAudioAnalyzerGui = false;
 bool smokeAudio = true;
 
 // Mouse Position callback
@@ -46,9 +46,7 @@ void keyCallback(GLFWwindow *win, int key, int scancode, int action, int mods) {
     } else if (key == 'S' && action == GLFW_PRESS) {
         displaySmokeSimulationGui = !displaySmokeSimulationGui;
     } else if (key == 'A' && action == GLFW_PRESS) {
-        displayAudioData = !displayAudioData;
-    } else if (key == 'F' && action == GLFW_PRESS) {
-        updateAudioData = !updateAudioData;
+        displayAudioAnalyzerGui = !displayAudioAnalyzerGui;
     } else if (key == 'Z' && action == GLFW_PRESS) {
         smokeAudio = !smokeAudio;
     }
@@ -111,6 +109,7 @@ int main(int argc, char **argv) {
 
     // Setup GUI instances
     smokeSimulationGui = new SmokeSimulationGui(smokeSimulation);
+    audioAnalyzerGui = new AudioAnalyzerGui(audioAnalyzer);
 
     // printf("\n~~~\n\n");
     // audioAnalyzer->printAudioDevices();
@@ -176,15 +175,13 @@ int main(int argc, char **argv) {
 
         smokeSimulation->render(mvp, mousePosition);
 
-        if (updateAudioData) audioAnalyzer->update();
+        audioAnalyzer->update();
 
-        // if (displayAudioData) audioAnalyzer->renderWaveform(mvp);
-        // if (displayAudioData) audioAnalyzer->renderLinearSpectrum(mvp);
-        if (displayAudioData) audioAnalyzer->renderLogSpectrum(mvp);
-        if (displayAudioData) audioAnalyzer->renderFrequencyBands(mvp);
+        audioAnalyzer->render(mvp);
 
         // Render GUI
         if (displaySmokeSimulationGui) smokeSimulationGui->render();
+        if (displayAudioAnalyzerGui) audioAnalyzerGui->render();
         ImGui::Render();
 
         glfwSwapBuffers(window);
