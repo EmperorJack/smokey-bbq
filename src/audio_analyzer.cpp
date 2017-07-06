@@ -48,8 +48,8 @@ AudioAnalyzer::AudioAnalyzer() {
     }
 
     // Initialize kiss fft
-    cfg = kiss_fftr_alloc(AudioAnalyzer::SAMPLE_SIZE, false, 0,0);
-    if (cfg == NULL) {
+    fft_cfg = kiss_fftr_alloc(AudioAnalyzer::SAMPLE_SIZE, false, 0,0);
+    if (fft_cfg == NULL) {
         fprintf(stderr, "Failed to initialize kiss fft");
         return;
     }
@@ -61,99 +61,13 @@ AudioAnalyzer::AudioAnalyzer() {
     setDefaultVariables();
     setDefaultToggles();
 
-    // Compute log mapping
+    // Compute band mappings
     computeLogMapping();
 
     printAudioDevices();
 
-    int inDevNum = 0;
-    int outDevNum = 0;
-
-    #ifdef __APPLE__
-    inDevNum = 3;
-    outDevNum = 3;
-    #endif
-
-    #ifdef __MINGW32__
-    inDevNum = 1;
-    outDevNum = 3;
-    #endif
-
-    #ifdef __linux__
-    inDevNum = 7;
-    outDevNum = 7;
-    #endif
-}
-
-std::vector<std::pair<int, const char*>> AudioAnalyzer::getInputDevices() {
-    std::vector<std::pair<int, const char*>> inputs;
-
-    int numDevices;
-    numDevices = Pa_GetDeviceCount();
-    if (numDevices < 0) {
-        printf("ERROR: Pa_CountDevices returned 0x%x\n", numDevices);
-        PaError err = numDevices;
-        if (paErrorOccured(err)) return inputs;
-        return inputs;
-    }
-
-    // Print out information for each device
-    const PaDeviceInfo *deviceInfo;
-    for(int i = 0; i < numDevices; i++) {
-        deviceInfo = Pa_GetDeviceInfo(i);
-        if (deviceInfo->maxInputChannels > 0) {
-            inputs.push_back(std::make_pair(i, deviceInfo->name));
-        }
-    }
-
-    return inputs;
-};
-
-bool AudioAnalyzer::openDevice(int deviceIndex) {
-
-    // Close the existing stream if there is one
-    if (stream != nullptr) {
-        PaError err = Pa_CloseStream(stream);
-//        if (paErrorOccured(err)) return false;
-    }
-
-    resetBuffers();
-
-    int inDevNum = deviceIndex;
-    int outDevNum = deviceIndex;
-
-    int inChan = 2;
-    int outChan = 2;
-
-    memset(&inputParameters, 0, sizeof(inputParameters));
-    inputParameters.channelCount = inChan;
-    inputParameters.device = inDevNum;
-    inputParameters.hostApiSpecificStreamInfo = NULL;
-    inputParameters.sampleFormat = paFloat32;
-    inputParameters.suggestedLatency = Pa_GetDeviceInfo(inDevNum)->defaultLowInputLatency ;
-
-    memset(&outputParameters, 0, sizeof(outputParameters));
-    outputParameters.channelCount = outChan;
-    outputParameters.device = outDevNum;
-    outputParameters.hostApiSpecificStreamInfo = NULL;
-    outputParameters.sampleFormat = paFloat32;
-    outputParameters.suggestedLatency = Pa_GetDeviceInfo(outDevNum)->defaultLowOutputLatency ;
-    PaError err = Pa_OpenStream(
-            &stream,
-            &inputParameters,
-            &outputParameters,
-            SAMPLE_RATE,
-            SAMPLE_SIZE,
-            paNoFlag,
-            paCallback,
-            (void*) this
-    );
-    if (paErrorOccured(err)) return false;
-
-    err = Pa_StartStream(stream);
-    if (paErrorOccured(err)) return false;
-
-    return true;
+    // Attempt to open the default audio input device
+    openDevice(0);
 }
 
 void AudioAnalyzer::resetBuffers() {
@@ -184,18 +98,81 @@ void AudioAnalyzer::setDefaultToggles() {
 }
 
 void AudioAnalyzer::shutDown() {
-    free(cfg);
+    free(fft_cfg);
 
     if (!paInitSuccessful) return;
 
-    PaError err = Pa_StopStream(stream);
-    if (paErrorOccured(err)) return;
+    if (stream != nullptr) {
+        PaError err = Pa_StopStream(stream);
+        if (paErrorOccured(err)) return;
 
-    err = Pa_CloseStream(stream);
-    if (paErrorOccured(err)) return;
+        err = Pa_CloseStream(stream);
+        if (paErrorOccured(err)) return;
+    }
 
-    err = Pa_Terminate();
+    PaError err = Pa_Terminate();
     if (paErrorOccured(err)) return;
+}
+
+std::vector<std::pair<int, const char*>> AudioAnalyzer::getInputDevices() {
+    std::vector<std::pair<int, const char*>> inputs;
+
+    int numDevices;
+    numDevices = Pa_GetDeviceCount();
+    if (numDevices < 0) {
+        fprintf(stderr, "ERROR: Pa_CountDevices returned 0x%x\n", numDevices);
+        PaError err = numDevices;
+        paErrorOccured(err);
+        return inputs;
+    }
+
+    // Print out information for each device
+    const PaDeviceInfo *deviceInfo;
+    for(int i = 0; i < numDevices; i++) {
+        deviceInfo = Pa_GetDeviceInfo(i);
+        if (deviceInfo->maxInputChannels > 0) {
+            inputs.push_back(std::make_pair(i, deviceInfo->name));
+        }
+    }
+
+    return inputs;
+};
+
+bool AudioAnalyzer::openDevice(int deviceIndex) {
+
+    // Close the existing stream if there is one
+    if (stream != nullptr) {
+        PaError err = Pa_CloseStream(stream);
+        if (paErrorOccured(err)) return false;
+    }
+
+    resetBuffers();
+
+    int inputChannels = 2;
+
+    memset(&inputParameters, 0, sizeof(inputParameters));
+    inputParameters.channelCount = inputChannels;
+    inputParameters.device = deviceIndex;
+    inputParameters.hostApiSpecificStreamInfo = NULL;
+    inputParameters.sampleFormat = paFloat32;
+    inputParameters.suggestedLatency = Pa_GetDeviceInfo(deviceIndex)->defaultLowInputLatency ;
+
+    PaError err = Pa_OpenStream(
+            &stream,
+            &inputParameters,
+            NULL,
+            SAMPLE_RATE,
+            SAMPLE_SIZE,
+            paNoFlag,
+            paCallback,
+            (void*) this
+    );
+    if (paErrorOccured(err)) return false;
+
+    err = Pa_StartStream(stream);
+    if (paErrorOccured(err)) return false;
+
+    return true;
 }
 
 void AudioAnalyzer::computeHanningWindow() {
@@ -278,11 +255,10 @@ void AudioAnalyzer::update() {
     }
 
     // Perform the fft
-    kiss_fftr(cfg, fft_in, fft_out);
+    kiss_fftr(fft_cfg, fft_in, fft_out);
 
     // To store the processed audio before it's converted to decibels
     float toBin[NUM_BANDS] = {};
-    // float toBin[SAMPLE_SIZE / 2];
 
     // Process the fft output
     for (int i = 0; i < SAMPLE_SIZE / 2; i++) {
@@ -294,21 +270,12 @@ void AudioAnalyzer::update() {
         processedAudio[i] = max(20.0f * log10f(magnitude), processedAudio[i]);
 
         toBin[mapping[i]] += magnitude * 0.15f;
-        // toBin[i] = magnitude;
     }
 
     // Bin similar frequencies into discrete bands
-//    float samplesPerBand = SAMPLE_SIZE / NUM_BANDS / 2.0f;
     for (int n = 0; n < NUM_BANDS; n++) {
-//        float value = 0.0f;
-//
-//        for (int i = 0; i < samplesPerBand; i++) {
-//            value += toBin[i + (int) (n * samplesPerBand)];
-//        }
-
         frequencyBands[n] *= FREQUENCY_DAMPING;
         frequencyBands[n] = max(20.0f * log10f(toBin[n]), frequencyBands[n]);
-        // frequencyBands[n] = max(20.0f * log10f(value), frequencyBands[n]);
     }
 }
 
@@ -439,9 +406,9 @@ void AudioAnalyzer::printAudioDevices() {
     int numDevices;
     numDevices = Pa_GetDeviceCount();
     if (numDevices < 0) {
-        printf("ERROR: Pa_CountDevices returned 0x%x\n", numDevices);
+        fprintf(stderr, "ERROR: Pa_CountDevices returned 0x%x\n", numDevices);
         PaError err = numDevices;
-        if (paErrorOccured(err)) return;
+        paErrorOccured(err);
         return;
     }
 

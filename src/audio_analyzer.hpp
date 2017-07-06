@@ -61,7 +61,6 @@ private:
     // Port audio variables
     bool paInitSuccessful = false;
     PaStream *stream = nullptr;
-    PaStreamParameters outputParameters;
     PaStreamParameters inputParameters;
 
     // Audio data variables
@@ -70,7 +69,7 @@ private:
     int mapping[SAMPLE_SIZE / 2];
 
     // FFT variables
-    kiss_fftr_cfg cfg;
+    kiss_fftr_cfg fft_cfg;
     kiss_fft_scalar fft_in[AudioAnalyzer::SAMPLE_SIZE];
     kiss_fft_cpx fft_out[AudioAnalyzer::SAMPLE_SIZE];
 
