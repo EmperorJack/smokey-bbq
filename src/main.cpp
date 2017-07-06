@@ -157,7 +157,7 @@ int main(int argc, char **argv) {
                 glm::vec2 position = vec2(i * bandSpacing + sideOffset, SCREEN_HEIGHT * 0.95f);
                 glm::vec2 force = vec2(myRandom() * 100.0f - 50.0f, (value + 0.5f) * -10.0f);
 
-                smokeSimulation->emit(position, force, bandSpacing * 0.9f, value * 0.005f, value * 0.02f);
+                smokeSimulation->emit(position, force, bandSpacing * 0.9f, value * 0.0065f, value * 0.02f);
             }
         }
 

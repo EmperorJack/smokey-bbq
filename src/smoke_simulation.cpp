@@ -77,16 +77,16 @@ void SmokeSimulation::resetFields() {
 void SmokeSimulation::setDefaultVariables() {
     TIME_STEP = 0.1f;
     FLUID_DENSITY = 1.0f;
-    JACOBI_ITERATIONS = 40;
+    JACOBI_ITERATIONS = 25;
 
     GRAVITY = 0.0981f;
     PULSE_RANGE = 50.0f;
     EMITTER_RANGE = 80.0f;
     PULSE_FORCE = 150.0f;
 
-    VELOCITY_DISSAPATION = 0.98;
-    DENSITY_DISSAPATION = 0.97;
-    TEMPERATURE_DISSAPATION = 0.96f;
+    VELOCITY_DISSAPATION = 0.98f;
+    DENSITY_DISSAPATION = 0.95f;
+    TEMPERATURE_DISSAPATION = 0.92f;
 
     RISE_FORCE = 1.0f;
     FALL_FORCE = 1.0f;

@@ -70,8 +70,8 @@ AudioAnalyzer::AudioAnalyzer() {
     int outDevNum = 0;
 
     #ifdef __APPLE__
-    inDevNum = 0;
-    outDevNum = 2;
+    inDevNum = 3;
+    outDevNum = 3;
     #endif
 
     #ifdef __MINGW32__
@@ -132,7 +132,7 @@ void AudioAnalyzer::resetBuffers() {
 }
 
 void AudioAnalyzer::setDefaultVariables() {
-    FREQUENCY_DAMPING = 0.85f;
+    FREQUENCY_DAMPING = 0.72f;
 }
 
 void AudioAnalyzer::setDefaultToggles() {

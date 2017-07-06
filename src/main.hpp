@@ -7,8 +7,8 @@
 #define FULL_SCREEN false
 
 #if FULL_SCREEN
-static const int SCREEN_WIDTH = 1280;
-static const int SCREEN_HEIGHT = 800;
+static const int SCREEN_WIDTH = 1920;
+static const int SCREEN_HEIGHT = 1080;
 #else
 static const int SCREEN_WIDTH = 1280;
 static const int SCREEN_HEIGHT = 720;
