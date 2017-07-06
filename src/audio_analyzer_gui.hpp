@@ -18,6 +18,11 @@ private:
     // Smoke simulation instance
     AudioAnalyzer *audioAnalyzer;
 
+    // Rendering
+    void renderDeviceSelector();
+    void renderToggles();
+    void renderVariables();
+
 };
 
 

@@ -8,8 +8,14 @@ SmokeSimulationGui::SmokeSimulationGui(SmokeSimulation *smokeSimulation) {
 void SmokeSimulationGui::render() {
     ImGui::Begin("Smoke Simulation");
 
-    // Toggles
+    renderToggles();
+    ImGui::Separator();
+    renderVariables();
 
+    ImGui::End();
+}
+
+void SmokeSimulationGui::renderToggles() {
     ImGui::Checkbox("Display Density Field", &smokeSimulation->displayDensityField);
     ImGui::Checkbox("Display Velocity Field", &smokeSimulation->displayVelocityField);
     ImGui::Checkbox("Update Simulation", &smokeSimulation->updateSimulation);
@@ -22,8 +28,10 @@ void SmokeSimulationGui::render() {
     ImGui::Separator(); // Reset toggles
 
     if (ImGui::Button("Reset Toggles")) smokeSimulation->setDefaultToggles();
+}
 
-    ImGui::Separator(); // Core equation variables
+void SmokeSimulationGui::renderVariables() {
+    // Core equation variables
 
     ImGui::Text("Time Step");
     ImGui::SliderFloat("##A", &smokeSimulation->TIME_STEP, 0.01f, 1.0f, "%.3f");
@@ -78,6 +86,4 @@ void SmokeSimulationGui::render() {
     ImGui::Separator(); // Reset variables
 
     if (ImGui::Button("Reset Variables")) smokeSimulation->setDefaultVariables();
-
-    ImGui::End();
 }

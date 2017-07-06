@@ -8,8 +8,20 @@ AudioAnalyzerGui::AudioAnalyzerGui(AudioAnalyzer *audioAnalyzer) {
 void AudioAnalyzerGui::render() {
     ImGui::Begin("Audio Analyzer");
 
-    // Toggles
+    renderDeviceSelector();
+    ImGui::Separator();
+    renderToggles();
+    ImGui::Separator();
+    renderVariables();
 
+    ImGui::End();
+}
+
+void AudioAnalyzerGui::renderDeviceSelector() {
+
+}
+
+void AudioAnalyzerGui::renderToggles() {
     ImGui::Checkbox("Display Waveform", &audioAnalyzer->displayWaveform);
     ImGui::Checkbox("Display Frequency Spectrum", &audioAnalyzer->displaySpectrum);
     ImGui::Checkbox("Display Frequency Bands", &audioAnalyzer->displayFrequencyBands);
@@ -19,15 +31,13 @@ void AudioAnalyzerGui::render() {
     ImGui::Separator(); // Reset toggles
 
     if (ImGui::Button("Reset Toggles")) audioAnalyzer->setDefaultToggles();
+}
 
-    ImGui::Separator(); // Variables
-
+void AudioAnalyzerGui::renderVariables() {
     ImGui::Text("Frequency Damping");
     ImGui::SliderFloat("##A", &audioAnalyzer->FREQUENCY_DAMPING, 0.5f, 1.0f, "%.3f");
 
     ImGui::Separator(); // Reset variables
 
     if (ImGui::Button("Reset Variables")) audioAnalyzer->setDefaultVariables();
-
-    ImGui::End();
 }

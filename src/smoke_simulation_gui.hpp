@@ -18,6 +18,10 @@ private:
     // Smoke simulation instance
     SmokeSimulation *smokeSimulation;
 
+    // Rendering
+    void renderToggles();
+    void renderVariables();
+
 };
 
 
