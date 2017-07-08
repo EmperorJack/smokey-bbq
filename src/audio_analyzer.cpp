@@ -64,8 +64,6 @@ AudioAnalyzer::AudioAnalyzer() {
     // Compute band mappings
     computeLogMapping();
 
-    printAudioDevices();
-
     // Attempt to open the default audio input device
     openDevice(0);
 }
@@ -87,6 +85,7 @@ void AudioAnalyzer::resetBuffers() {
 
 void AudioAnalyzer::setDefaultVariables() {
     FREQUENCY_DAMPING = 0.72f;
+    FREQUENCY_SCALE = 0.15f;
 }
 
 void AudioAnalyzer::setDefaultToggles() {
@@ -185,21 +184,22 @@ void AudioAnalyzer::computeHanningWindow() {
 
 void AudioAnalyzer::computeLogMapping() {
     float bandThresholds[NUM_BANDS];
+    float sampleLinearThresholds[SAMPLE_SIZE / 2];
+    float sampleLogThresholds[SAMPLE_SIZE / 2];
 
     for (int i = 0; i < NUM_BANDS; i++) {
         float pct = i / (float) NUM_BANDS;
-        // float val = log10f(i) / log10f(NUM_BANDS);
-        // std::cout << "band (" << i << ") = " << val << std::endl;
         bandThresholds[i] = pct;
     }
 
-    float sampleThresholds[SAMPLE_SIZE / 2];
+    for (int i = 0; i < SAMPLE_SIZE / 2; i++) {
+        float pct = i / (float) (SAMPLE_SIZE / 2);
+        sampleLinearThresholds[i] = pct;
+    }
 
     for (int i = 0; i < SAMPLE_SIZE / 2; i++) {
-        // float pct = i / (float) (SAMPLE_SIZE / 2);
-        float val = log10f(i) / log10f(SAMPLE_SIZE / 2);
-        // std::cout << "sample (" << i << ") = " << pct << std::endl;
-        sampleThresholds[i] = val;
+        float pct = log10f(i) / log10f(SAMPLE_SIZE / 2);
+        sampleLogThresholds[i] = pct;
     }
 
     std::vector<int> mappings[NUM_BANDS];
@@ -209,20 +209,25 @@ void AudioAnalyzer::computeLogMapping() {
         float maxValue = (i+1 == NUM_BANDS ? 1.0f : bandThresholds[i+1]);
 
         for (int j = 0; j < SAMPLE_SIZE / 2; j++) {
-            if (minValue <= sampleThresholds[j] && sampleThresholds[j] < maxValue) {
-                mappings[i].push_back(j);
-                mapping[j] = i;
+            if (minValue <= sampleLinearThresholds[j] && sampleLinearThresholds[j] <= maxValue) {
+                // mappings[i].push_back(j);
+                linearMapping[j] = i;
+            }
+
+            if (minValue <= sampleLogThresholds[j] && sampleLogThresholds[j] < maxValue) {
+                // mappings[i].push_back(j);
+                logMapping[j] = i;
             }
         }
     }
 
-    //    for (int i = 0; i < NUM_BANDS; i++) {
-    //        std::cout << "(" << i << ") : [";
-    //        for (int j : mappings[i]) {
-    //            std::cout << " " << j << ", ";
-    //        }
-    //        std::cout << "]" << std::endl;
-    //    }
+//    for (int i = 0; i < NUM_BANDS; i++) {
+//        std::cout << "(" << i << ") " << mappings[i].size() << " long : [";
+//        for (int j : mappings[i]) {
+//            std::cout << " " << j << ", ";
+//        }
+//        std::cout << "]" << std::endl;
+//    }
 }
 
 static int paCallback(const void *inputBuffer,
@@ -269,7 +274,7 @@ void AudioAnalyzer::update() {
         processedAudio[i] *= FREQUENCY_DAMPING;
         processedAudio[i] = max(20.0f * log10f(magnitude), processedAudio[i]);
 
-        toBin[mapping[i]] += magnitude * 0.15f;
+        toBin[(logScaleBands ? logMapping : linearMapping)[i]] += magnitude * FREQUENCY_SCALE;
     }
 
     // Bin similar frequencies into discrete bands

@@ -16,6 +16,7 @@ public:
 
     // Variables
     float FREQUENCY_DAMPING;
+    float FREQUENCY_SCALE;
 
     // Setup
     AudioAnalyzer();
@@ -66,7 +67,8 @@ private:
     // Audio data variables
     float processedAudio[AudioAnalyzer::SAMPLE_SIZE / 2];
     float frequencyBands[AudioAnalyzer::NUM_BANDS];
-    int mapping[SAMPLE_SIZE / 2];
+    int linearMapping[SAMPLE_SIZE / 2];
+    int logMapping[SAMPLE_SIZE / 2];
 
     // FFT variables
     kiss_fftr_cfg fft_cfg;
