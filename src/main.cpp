@@ -1,23 +1,28 @@
 #include <iostream>
 #include <main.hpp>
 #include <opengl.hpp>
+#include <imgui.h>
+#include <imgui_impl_glfw_gl3.h>
 #include <smoke_simulation.hpp>
 #include <audio_analyzer.hpp>
+#include <smoke_simulation_gui.hpp>
+#include <audio_analyzer_gui.hpp>
 
-// Object variables
+// Object instances
 SmokeSimulation* smokeSimulation = nullptr;
 AudioAnalyzer* audioAnalyzer = nullptr;
+
+// Gui instances
+SmokeSimulationGui* smokeSimulationGui = nullptr;
+AudioAnalyzerGui* audioAnalyzerGui = nullptr;
 
 // Mouse variables
 glm::vec2 mousePosition;
 bool mousePressed = false;
 
 // Toggles
-bool updateSmokeSimulation = true;
-bool displayDensityField = true;
-bool displayVelocityField = false;
-bool updateAudioData = true;
-bool displayAudioData = true;
+bool displaySmokeSimulationGui = false;
+bool displayAudioAnalyzerGui = false;
 bool smokeAudio = true;
 
 // Mouse Position callback
@@ -38,26 +43,10 @@ void keyCallback(GLFWwindow *win, int key, int scancode, int action, int mods) {
     if (key == ' ' && action == GLFW_PRESS) {
         smokeSimulation->resetFields();
         audioAnalyzer->resetBuffers();
-    } else if (key == 'E' && action == GLFW_PRESS) {
-        smokeSimulation->enableEmitter = !smokeSimulation->enableEmitter;
-    } else if (key == 'P' && action == GLFW_PRESS) {
-        smokeSimulation->enablePressureSolve = !smokeSimulation->enablePressureSolve;
-    } else if (key == 'R' && action == GLFW_PRESS) {
-        smokeSimulation->randomPulseAngle = !smokeSimulation->randomPulseAngle;
-    } else if (key == 'W' && action == GLFW_PRESS) {
-        smokeSimulation->wrapBorders = !smokeSimulation->wrapBorders;
-    } else if (key == 'B' && action == GLFW_PRESS) {
-        smokeSimulation->enableBuoyancy = !smokeSimulation->enableBuoyancy;
     } else if (key == 'S' && action == GLFW_PRESS) {
-        displayDensityField = !displayDensityField;
-    } else if (key == 'V' && action == GLFW_PRESS) {
-        displayVelocityField = !displayVelocityField;
-    } else if (key == 'U' && action == GLFW_PRESS) {
-        updateSmokeSimulation = !updateSmokeSimulation;
+        displaySmokeSimulationGui = !displaySmokeSimulationGui;
     } else if (key == 'A' && action == GLFW_PRESS) {
-        displayAudioData = !displayAudioData;
-    } else if (key == 'F' && action == GLFW_PRESS) {
-        updateAudioData = !updateAudioData;
+        displayAudioAnalyzerGui = !displayAudioAnalyzerGui;
     } else if (key == 'Z' && action == GLFW_PRESS) {
         smokeAudio = !smokeAudio;
     }
@@ -109,11 +98,18 @@ int main(int argc, char **argv) {
     glGenVertexArrays(1, &vertexArray);
     glBindVertexArray(vertexArray);
 
+    // Setup ImGui binding
+    ImGui_ImplGlfwGL3_Init(window, false);
+
     printf("\n~~~\n\n");
 
-    // Setup objects
+    // Setup object instances
     smokeSimulation = new SmokeSimulation();
     audioAnalyzer = new AudioAnalyzer();
+
+    // Setup GUI instances
+    smokeSimulationGui = new SmokeSimulationGui(smokeSimulation);
+    audioAnalyzerGui = new AudioAnalyzerGui(audioAnalyzer);
 
     // printf("\n~~~\n\n");
     // audioAnalyzer->printAudioDevices();
@@ -124,6 +120,10 @@ int main(int argc, char **argv) {
 
     // Check if the escape key was pressed or the window was closed
     while(glfwGetKey(window, GLFW_KEY_ESCAPE) != GLFW_PRESS && glfwWindowShouldClose(window) == 0) {
+
+        // Poll events and setup GUI for the current frame
+        glfwPollEvents();
+        ImGui_ImplGlfwGL3_NewFrame();
 
         // Measure speed
         double currentTime = glfwGetTime();
@@ -152,18 +152,18 @@ int main(int argc, char **argv) {
 
                 if (value < 2.0f) continue;
 
-                value = min(value, 30.0f);
+//                value = min(value, 30.0f);
 
                 glm::vec2 position = vec2(i * bandSpacing + sideOffset, SCREEN_HEIGHT * 0.95f);
                 glm::vec2 force = vec2(myRandom() * 100.0f - 50.0f, (value + 0.5f) * -10.0f);
 
-                smokeSimulation->emit(position, force, bandSpacing * 0.9f, value * 0.005f, value * 0.02f);
+                smokeSimulation->emit(position, force, bandSpacing * 0.9f, value * 0.0065f, value * 0.02f);
             }
         }
 
-        if (mousePressed) smokeSimulation->addPulse(mousePosition);
+        if (mousePressed && !ImGui::IsMouseHoveringAnyWindow()) smokeSimulation->addPulse(mousePosition);
 
-        if (updateSmokeSimulation) smokeSimulation->update();
+        smokeSimulation->update();
 
         glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -173,23 +173,23 @@ int main(int argc, char **argv) {
 
         glm::mat4 mvp = projection * view;
 
-        if (displayDensityField) smokeSimulation->renderDensity();
-        if (displayVelocityField) smokeSimulation->renderVelocityField(mvp, mousePosition);
+        smokeSimulation->render(mvp, mousePosition);
 
-        if (updateAudioData) audioAnalyzer->update();
+        audioAnalyzer->update();
 
-        // if (displayAudioData) audioAnalyzer->renderWaveform(mvp);
-        // if (displayAudioData) audioAnalyzer->renderLinearSpectrum(mvp);
-        if (displayAudioData) audioAnalyzer->renderLogSpectrum(mvp);
-        if (displayAudioData) audioAnalyzer->renderFrequencyBands(mvp);
+        audioAnalyzer->render(mvp);
 
-        // Swap buffers
+        // Render GUI
+        if (displaySmokeSimulationGui) smokeSimulationGui->render();
+        if (displayAudioAnalyzerGui) audioAnalyzerGui->render();
+        ImGui::Render();
+
         glfwSwapBuffers(window);
-        glfwPollEvents();
     }
 
     audioAnalyzer->shutDown();
-
+    ImGui_ImplGlfwGL3_Shutdown();
     glfwTerminate();
+
     return 0;
 }
