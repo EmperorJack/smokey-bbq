@@ -62,7 +62,7 @@ AudioAnalyzer::AudioAnalyzer() {
     setDefaultToggles();
 
     // Compute band mappings
-    computeLogMapping();
+    computeBandMappings();
 
     // Attempt to open the default audio input device
     openDevice(0);
@@ -182,7 +182,7 @@ void AudioAnalyzer::computeHanningWindow() {
     }
 }
 
-void AudioAnalyzer::computeLogMapping() {
+void AudioAnalyzer::computeBandMappings() {
     float bandThresholds[NUM_BANDS];
     float sampleLinearThresholds[SAMPLE_SIZE / 2];
     float sampleLogThresholds[SAMPLE_SIZE / 2];
@@ -277,11 +277,19 @@ void AudioAnalyzer::update() {
         toBin[(logScaleBands ? logMapping : linearMapping)[i]] += magnitude * FREQUENCY_SCALE;
     }
 
+    std::cout << processedAudio[0] << std::endl;
+
     // Bin similar frequencies into discrete bands
     for (int n = 0; n < NUM_BANDS; n++) {
         frequencyBands[n] *= FREQUENCY_DAMPING;
         frequencyBands[n] = max(20.0f * log10f(toBin[n]), frequencyBands[n]);
     }
+
+    computeVolumeLevel();
+}
+
+void AudioAnalyzer::computeVolumeLevel() {
+
 }
 
 float AudioAnalyzer::getFrequencyBand(int i) {
@@ -295,6 +303,8 @@ void AudioAnalyzer::render(glm::mat4 transform) {
         else renderLinearSpectrum(transform);
     }
     if (displayFrequencyBands) renderFrequencyBands(transform);
+
+    renderVolumeLevel(transform);
 }
 
 void AudioAnalyzer::renderWaveform(glm::mat4 transform) {
@@ -380,6 +390,19 @@ void AudioAnalyzer::renderFrequencyBands(glm::mat4 transform) {
         glm::mat4 scale = glm::scale(glm::vec3(bandSpacing * 0.75f, frequencyBands[i] * -10.0f, 1.0f));
         drawSquare(transform * translate * scale, true);
     }
+}
+
+void AudioAnalyzer::renderVolumeLevel(glm::mat4 transform) {
+    glUseProgram(shader);
+
+    float color[] = {0.0f, 1.0f, 1.0f, 0.0f};
+    setColor(shader, color);
+
+    float volume = frequencyBands[9];
+
+    glm::mat4 translate = glm::translate(glm::vec3(0, SCREEN_HEIGHT / 2.0f, 0.0f));
+    glm::mat4 scale = glm::scale(glm::vec3(processedAudio[0] * 10, 100.0f, 1.0f));
+    drawSquare(transform * translate * scale, true);
 }
 
 void AudioAnalyzer::drawSquare(glm::mat4 transform, bool fill) {

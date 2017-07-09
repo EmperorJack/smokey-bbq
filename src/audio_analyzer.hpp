@@ -32,6 +32,7 @@ public:
 
     // Updating
     void update();
+    void computeVolumeLevel();
 
     // Data
     float getFrequencyBand(int i);
@@ -77,7 +78,7 @@ private:
 
     // Setup
     void computeHanningWindow();
-    void computeLogMapping();
+    void computeBandMappings();
 
     // Error handling
     bool paErrorOccured(PaError error);
@@ -87,6 +88,7 @@ private:
     void renderLinearSpectrum(glm::mat4);
     void renderLogSpectrum(glm::mat4);
     void renderFrequencyBands(glm::mat4);
+    void renderVolumeLevel(glm::mat4);
     void drawSquare(glm::mat4, bool);
 
 };
