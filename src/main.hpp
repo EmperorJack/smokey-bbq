@@ -4,7 +4,7 @@
 #include <random>
 
 // Screen settings
-#define FULL_SCREEN false
+#define FULL_SCREEN true
 
 #if FULL_SCREEN
 static const int SCREEN_WIDTH = 1920;
