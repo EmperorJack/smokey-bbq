@@ -45,15 +45,25 @@ include_directories(${PROJECT_SOURCE_DIR}/lib/glm)
 # Include and add portaudio library
 include_directories(${PROJECT_SOURCE_DIR}/lib/portaudio/include)
 link_directories(${PROJECT_SOURCE_DIR}/lib/portaudio/libs)
+if (APPLE)
+    set(PORT_AUDIO_LIBRARY portaudio_mac)
+else()
+    set(PORT_AUDIO_LIBRARY portaudio)
+endif()
 
 # Include the kiss fft library
 include_directories(${PROJECT_SOURCE_DIR}/lib/kissfft)
+
+# Incldue the imgui library
+include_directories(${PROJECT_SOURCE_DIR}/lib/imgui)
 
 # Include any external library files
 file(GLOB EXTERNAL
     lib/glm/glm/glm.hpp
     lib/kissfft/*.h
     lib/kissfft/*.c
+    lib/imgui/*.h
+    lib/imgui/*.cpp
 )
 
 # Include required frameworks
@@ -77,7 +87,7 @@ endif()
 add_executable(${PROJECT_NAME} ${SOURCES} ${COMMON} ${EXTERNAL})
 
 # Link the external libraries
-target_link_libraries(${PROJECT_NAME} glfw glew ${frameworks} portaudio ${OPENGL_LIBRARIES})
+target_link_libraries(${PROJECT_NAME} glfw glew ${frameworks} ${PORT_AUDIO_LIBRARY} ${OPENGL_LIBRARIES})
 
 # Copy shaders to the build directory
 set(SHADER_SUBDIRECTORY resources/shaders)

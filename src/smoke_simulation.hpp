@@ -1,111 +1,119 @@
 #ifndef SMOKE_SIMULATION_HPP
 #define SMOKE_SIMULATION_HPP
 
+#include <opengl.hpp>
+
 class SmokeSimulation {
 
- public:
+public:
 
-        // Constants
-        static constexpr int GRID_SIZE = 128;
-        static constexpr float TIME_STEP = 0.1f;
-        static constexpr float FLUID_DENSITY = 1.0f;
-        static constexpr float STROKE_WEIGHT = 2.0f;
-        static constexpr float PULSE_RANGE = 50.0f;
-        static constexpr float EMITTER_RANGE = 80.0f;
-        static constexpr float PULSE_FORCE = 150.0f;
-        static constexpr float VELOCITY_DISSAPATION = 0.98;
-        static constexpr float DENSITY_DISSAPATION = 0.987;
-        static constexpr float TEMPERATURE_DISSAPATION = 0.96f;
-        static constexpr int JACOBI_ITERATIONS = 40;
-        static constexpr float GRAVITY = 0.0981f;
-        static constexpr float RISE_FORCE = 1.0f;
-        static constexpr float FALL_FORCE = 1.0f;
-        static constexpr float ATMOSPHERE_TEMPERATURE = 0.0f;
+    // Constants
+    static constexpr int GRID_SIZE = 192;
 
-        // Setup
-        SmokeSimulation();
-        void resetFields();
+    // Variables
+    float TIME_STEP;
+    float FLUID_DENSITY;
+    int JACOBI_ITERATIONS;
+    float GRAVITY;
+    float PULSE_RANGE;
+    float EMITTER_RANGE;
+    float PULSE_FORCE;
+    float VELOCITY_DISSAPATION;
+    float DENSITY_DISSAPATION;
+    float TEMPERATURE_DISSAPATION;
+    float RISE_FORCE;
+    float FALL_FORCE;
+    float ATMOSPHERE_TEMPERATURE;
+    float STROKE_WEIGHT;
 
-        // Updating
-        void update();
+    // Setup
+    SmokeSimulation();
+    void setDefaultVariables();
+    void setDefaultToggles();
+    void resetFields();
 
-        // Rendering
-        void renderDensity();
-        void renderVelocityField(glm::mat4, glm::vec2);
+    // Updating
+    void update();
 
-        // Interactions
-        void addPulse(glm::vec2);
-        void emit(glm::vec2 position, glm::vec2 force, float range, float density, float temperature);
+    // Rendering
+    void render(glm::mat4 transform, glm::vec2 mousePosition);
 
-        // Toggle variables
-        bool enableEmitter = false;
-        bool enablePressureSolve = true;
-        bool randomPulseAngle = false;
-        bool enableBuoyancy = true;
-        bool wrapBorders = false;
+    // Interactions
+    void addPulse(glm::vec2);
+    void emit(glm::vec2 position, glm::vec2 force, float range, float density, float temperature);
 
-    private:
+    // Toggle variables
+    bool displayDensityField;
+    bool displayVelocityField;
+    bool updateSimulation;
+    bool enableEmitter;
+    bool enablePressureSolve;
+    bool randomPulseAngle;
+    bool enableBuoyancy;
+    bool wrapBorders;
 
-        // Structures
-        struct gridCell {
-            glm::vec2 velocity;
-            glm::vec2 advectedVelocity;
-            float divergence;
-            float pressure;
-            float newPressure;
-            float density;
-            float advectedDensity;
-            float temperature;
-            float advectedTemperatue;
-            glm::vec2 tracePosition;
-        };
+private:
 
-        // Instance variables
-        SmokeSimulation::gridCell grid[SmokeSimulation::GRID_SIZE][SmokeSimulation::GRID_SIZE];
-        float gridSpacing;
+    // Grid fields
+    glm::vec2 velocity[SmokeSimulation::GRID_SIZE][SmokeSimulation::GRID_SIZE];
+    glm::vec2 advectedVelocity[SmokeSimulation::GRID_SIZE][SmokeSimulation::GRID_SIZE];
+    float divergence[SmokeSimulation::GRID_SIZE][SmokeSimulation::GRID_SIZE];
+    float pressure[SmokeSimulation::GRID_SIZE][SmokeSimulation::GRID_SIZE];
+    float newPressure[SmokeSimulation::GRID_SIZE][SmokeSimulation::GRID_SIZE];
+    float density[SmokeSimulation::GRID_SIZE][SmokeSimulation::GRID_SIZE];
+    float advectedDensity[SmokeSimulation::GRID_SIZE][SmokeSimulation::GRID_SIZE];
+    float temperature[SmokeSimulation::GRID_SIZE][SmokeSimulation::GRID_SIZE];
+    float advectedTemperatue[SmokeSimulation::GRID_SIZE][SmokeSimulation::GRID_SIZE];
+    glm::vec2 tracePosition[SmokeSimulation::GRID_SIZE][SmokeSimulation::GRID_SIZE];
 
-        // VBOs
-        GLuint squareVBO;
-        GLuint velocityVBO;
-        GLuint densityVBO;
+    // Instance variables
+    float gridSpacing;
 
-        // Textures
-        GLuint densityTexture;
+    // VBOs
+    GLuint squareVBO;
+    GLuint velocityVBO;
+    GLuint densityVBO;
 
-        // Shaders
-        GLuint simpleShader;
-        GLuint densityShader;
+    // Textures
+    GLuint densityTexture;
 
-        // Fluid dynamics
-        glm::vec2 getVelocity(float x, float y);
-        float getDensity(float x, float y);
-        float getTemperature(float x, float y);
+    // Shaders
+    GLuint simpleShader;
+    GLuint densityShader;
 
-        glm::vec2 traceParticle(float x, float y);
+    // Fluid dynamics
+    glm::vec2 getVelocity(float x, float y);
+    float getDensity(float x, float y);
+    float getTemperature(float x, float y);
 
-        float divergenceAt(int i, int j);
-        void solvePressureField();
-        float pressureAt(int i, int j);
-        void applyPressure();
+    glm::vec2 traceParticle(float x, float y);
 
-        glm::vec2 buoyancyAt(int i, int j);
+    float divergenceAt(int i, int j);
+    void solvePressureField();
+    float pressureAt(int i, int j);
+    void applyPressure();
 
-        float getInterpolatedVelocity(float x, float y, bool xAxis);
-        float getInterpolatedDensity(float x, float y);
-        float getInterpolatedTemperature(float x, float y);
+    glm::vec2 buoyancyAt(int i, int j);
 
-        glm::vec2 getGridVelocity(int i, int j);
-        float getGridDensity(int i, int j);
-        float getGridTemperature(int i, int j);
-        float getGridPressure(int i, int j);
+    float getInterpolatedVelocity(float x, float y, bool xAxis);
+    float getInterpolatedDensity(float x, float y);
+    float getInterpolatedTemperature(float x, float y);
 
-        // Indexing
-        int wrapIndex(int i);
-        int clampIndex(int i);
-        bool clampBoundary(int &i);
+    glm::vec2 getGridVelocity(int i, int j);
+    float getGridDensity(int i, int j);
+    float getGridTemperature(int i, int j);
+    float getGridPressure(int i, int j);
 
-        // Rendering
-        void drawLine(glm::mat4);
+    // Indexing
+    int wrapIndex(int i);
+    int clampIndex(int i);
+    bool clampBoundary(int &i);
+
+    // Rendering
+    void renderDensity();
+    void renderVelocityField(glm::mat4 transform, glm::vec2 mousePosition);
+    void drawLine(glm::mat4);
+
 };
 
 #endif
