@@ -85,7 +85,7 @@ void SmokeSimulation::setDefaultVariables() {
     PULSE_FORCE = 150.0f;
 
     VELOCITY_DISSAPATION = 0.98f;
-    DENSITY_DISSAPATION = 0.95f;
+    DENSITY_DISSAPATION = 0.965f;
     TEMPERATURE_DISSAPATION = 0.92f;
 
     RISE_FORCE = 1.0f;

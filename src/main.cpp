@@ -150,14 +150,15 @@ int main(int argc, char **argv) {
 
                 float value = audioAnalyzer->getFrequencyBand(index);
 
-                if (value < 2.0f) continue;
-
-//                value = min(value, 30.0f);
+                if (value < 3.0f) continue;
 
                 glm::vec2 position = vec2(i * bandSpacing + sideOffset, SCREEN_HEIGHT * 0.95f);
-                glm::vec2 force = vec2(myRandom() * 100.0f - 50.0f, (value + 0.5f) * -10.0f);
+                glm::vec2 force = vec2(myRandom() * 100.0f - 50.0f, (value + 0.5f) * -7.0f);
+                float diameter = bandSpacing * 0.65f + value * 0.75f;
+                float density = value * 0.0065f;
+                float temperature = value * 0.02f;
 
-                smokeSimulation->emit(position, force, bandSpacing * 0.9f, value * 0.0065f, value * 0.02f);
+                smokeSimulation->emit(position, force, diameter, density, temperature);
             }
         }
 
