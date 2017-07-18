@@ -70,6 +70,7 @@ int main(int argc, char **argv) {
     GLFWwindow* window;
     glfwWindowHint(GLFW_RESIZABLE, GL_FALSE);
     glfwWindowHint(GLFW_AUTO_ICONIFY, GL_FALSE);
+    glfwWindowHint(GLFW_DECORATED, BORDERLESS ? GL_FALSE : GL_TRUE);
     window = glfwCreateWindow(SCREEN_WIDTH, SCREEN_HEIGHT, "Window", (FULL_SCREEN ? glfwGetPrimaryMonitor() : NULL), NULL);
     if (window == NULL) {
         fprintf(stderr, "Failed to open GLFW window\n");

@@ -4,14 +4,15 @@
 #include <random>
 
 // Screen settings
-#define FULL_SCREEN true
+#define FULL_SCREEN false
+#define BORDERLESS true
 
 #if FULL_SCREEN
 static const int SCREEN_WIDTH = 1920;
 static const int SCREEN_HEIGHT = 1080;
 #else
-static const int SCREEN_WIDTH = 1280;
-static const int SCREEN_HEIGHT = 720;
+static const int SCREEN_WIDTH = 1920;
+static const int SCREEN_HEIGHT = 1080;
 #endif
 
 static inline float myRandom() {
