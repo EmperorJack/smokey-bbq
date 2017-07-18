@@ -62,10 +62,10 @@ void SmokeSimulationGui::renderVariables() {
     ImGui::SliderFloat("##H", &smokeSimulation->VELOCITY_DISSAPATION, 0.8f, 1.0f, "%.3f");
 
     ImGui::Text("Density Dissipation");
-    ImGui::SliderFloat("##I", &smokeSimulation->DENSITY_DISSAPATION, 0.8f, 1.0f, "%.3f");
+    ImGui::SliderFloat("##I", &smokeSimulation->DENSITY_DISSAPATION, 0.0f, 0.5f, "%.3f");
 
     ImGui::Text("Temperature Dissipation");
-    ImGui::SliderFloat("##J", &smokeSimulation->TEMPERATURE_DISSAPATION, 0.8f, 1.0f, "%.3f");
+    ImGui::SliderFloat("##J", &smokeSimulation->TEMPERATURE_DISSAPATION, 0.0f, 0.5f, "%.3f");
 
     ImGui::Separator(); // Buoyancy variables
 
@@ -75,8 +75,8 @@ void SmokeSimulationGui::renderVariables() {
     ImGui::Text("Fall Force");
     ImGui::SliderFloat("##L", &smokeSimulation->FALL_FORCE, 0.1f, 10.0f, "%.2f");
 
-    ImGui::Text("Atmosphere Temperature");
-    ImGui::SliderFloat("##M", &smokeSimulation->ATMOSPHERE_TEMPERATURE, -10.0f, 10.0f, "%.2f");
+    // ImGui::Text("Atmosphere Temperature");
+    // ImGui::SliderFloat("##M", &smokeSimulation->ATMOSPHERE_TEMPERATURE, -10.0f, 10.0f, "%.2f");
 
     // ImGui::Separator(); // Misc variables
 

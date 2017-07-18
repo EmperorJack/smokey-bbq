@@ -63,7 +63,7 @@ private:
     float density[SmokeSimulation::GRID_SIZE][SmokeSimulation::GRID_SIZE];
     float advectedDensity[SmokeSimulation::GRID_SIZE][SmokeSimulation::GRID_SIZE];
     float temperature[SmokeSimulation::GRID_SIZE][SmokeSimulation::GRID_SIZE];
-    float advectedTemperatue[SmokeSimulation::GRID_SIZE][SmokeSimulation::GRID_SIZE];
+    float advectedTemperature[SmokeSimulation::GRID_SIZE][SmokeSimulation::GRID_SIZE];
     glm::vec2 tracePosition[SmokeSimulation::GRID_SIZE][SmokeSimulation::GRID_SIZE];
 
     // Instance variables

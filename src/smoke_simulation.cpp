@@ -68,7 +68,7 @@ void SmokeSimulation::resetFields() {
             density[i][j] = 0.0f;
             advectedDensity[i][j] = 0.0f;
             temperature[i][j] = ATMOSPHERE_TEMPERATURE;
-            advectedTemperatue[i][j] = ATMOSPHERE_TEMPERATURE;
+            advectedTemperature[i][j] = ATMOSPHERE_TEMPERATURE;
             tracePosition[i][j] = glm::vec2(0.0f, 0.0f);
         }
     }
@@ -79,14 +79,14 @@ void SmokeSimulation::setDefaultVariables() {
     FLUID_DENSITY = 1.0f;
     JACOBI_ITERATIONS = 25;
 
-    GRAVITY = 0.0981f;
+    GRAVITY = -0.0981f;
     PULSE_RANGE = 50.0f;
     EMITTER_RANGE = 80.0f;
     PULSE_FORCE = 150.0f;
 
     VELOCITY_DISSAPATION = 0.98f;
-    DENSITY_DISSAPATION = 0.965f;
-    TEMPERATURE_DISSAPATION = 0.92f;
+    DENSITY_DISSAPATION = 0.05f;
+    TEMPERATURE_DISSAPATION = 0.4f;
 
     RISE_FORCE = 1.0f;
     FALL_FORCE = 1.0f;
@@ -134,8 +134,8 @@ void SmokeSimulation::update() {
                 if (glm::distance(target, gridPosition) < EMITTER_RANGE) {
                     float horizontalForce = PULSE_FORCE * 50;
                     velocity[i][j] = glm::vec2(myRandom() * PULSE_FORCE - PULSE_FORCE / 2.0f, -PULSE_FORCE);
-                    density[i][j] += 0.2f;
-                    temperature[i][j] += 1.0f;
+                    density[i][j] += 0.25f;
+                    temperature[i][j] += 0.5f;
                 }
             }
         }
@@ -171,15 +171,15 @@ void SmokeSimulation::update() {
     // Advect density and temperature through velocity
     for (int i = 0; i < GRID_SIZE; i++) {
         for (int j = 0; j < GRID_SIZE; j++) {
-            advectedDensity[i][j] = getDensity(tracePosition[i][j].x, tracePosition[i][j].y) * DENSITY_DISSAPATION;
-            advectedTemperatue[i][j] = getTemperature(tracePosition[i][j].x, tracePosition[i][j].y) * TEMPERATURE_DISSAPATION;
+            advectedDensity[i][j] = getDensity(tracePosition[i][j].x, tracePosition[i][j].y);
+            advectedTemperature[i][j] = getTemperature(tracePosition[i][j].x, tracePosition[i][j].y);
         }
     }
 
     for (int i = 0; i < GRID_SIZE; i++) {
         for (int j = 0; j < GRID_SIZE; j++) {
-            density[i][j] = advectedDensity[i][j];
-            temperature[i][j] = advectedTemperatue[i][j];
+            density[i][j] = max(0.0f, advectedDensity[i][j] - DENSITY_DISSAPATION * TIME_STEP);
+            temperature[i][j] = max(ATMOSPHERE_TEMPERATURE, advectedTemperature[i][j] - TEMPERATURE_DISSAPATION * TIME_STEP);
         }
     }
 }
@@ -207,7 +207,7 @@ void SmokeSimulation::addPulse(glm::vec2 position) {
 
                 velocity[i][j] = PULSE_FORCE * (randomPulseAngle ? glm::normalize(force) : glm::normalize(gridPosition - position));
                 density[i][j] += 0.5f * falloffFactor;
-                temperature[i][j] += 2.5f * falloffFactor;
+                temperature[i][j] += 1.0f * falloffFactor;
             }
         }
     }
@@ -255,7 +255,7 @@ float SmokeSimulation::divergenceAt(int i, int j) {
 }
 
 glm::vec2 SmokeSimulation::buoyancyAt(int i, int j) {
-    return (FALL_FORCE * density[i][j] - RISE_FORCE * (temperature[i][j] - ATMOSPHERE_TEMPERATURE)) * glm::vec2(0.0f, GRAVITY / abs(GRAVITY));
+    return (RISE_FORCE * (temperature[i][j] - ATMOSPHERE_TEMPERATURE) + (-1 * FALL_FORCE) * density[i][j]) * glm::vec2(0.0f, GRAVITY / abs(GRAVITY));
 }
 
 void SmokeSimulation::solvePressureField() {
