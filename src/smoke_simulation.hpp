@@ -18,13 +18,14 @@ public:
     float PULSE_RANGE;
     float EMITTER_RANGE;
     float PULSE_FORCE;
-    float VELOCITY_DISSAPATION;
-    float DENSITY_DISSAPATION;
-    float TEMPERATURE_DISSAPATION;
+    float VELOCITY_DISSIPATION;
+    float DENSITY_DISSIPATION;
+    float TEMPERATURE_DISSIPATION;
     float RISE_FORCE;
     float FALL_FORCE;
     float ATMOSPHERE_TEMPERATURE;
     float STROKE_WEIGHT;
+    float VORTICITY_CONFINEMENT_FORCE;
 
     // Setup
     SmokeSimulation();
@@ -95,10 +96,10 @@ private:
     float pressureAt(int i, int j);
     void applyPressure();
 
-    glm::vec2 buoyancyAt(int i, int j);
+    glm::vec2 buoyancyForceAt(int i, int j);
 
     float curlAt(int i, int j);
-    glm::vec2 vortexConfinementForceAt(int i, int j);
+    glm::vec2 vorticityConfinementForceAt(int i, int j);
 
     float getInterpolatedVelocity(float x, float y, bool xAxis);
     float getInterpolatedDensity(float x, float y);
