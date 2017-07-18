@@ -22,6 +22,7 @@ void SmokeSimulationGui::renderToggles() {
     ImGui::Checkbox("Enable Emitter", &smokeSimulation->enableEmitter);
     ImGui::Checkbox("Random Impulse Angle", &smokeSimulation->randomPulseAngle);
     ImGui::Checkbox("Enable Buoyancy Force", &smokeSimulation->enableBuoyancy);
+    ImGui::Checkbox("Enable Vorticity Confinement", &smokeSimulation->enableVorticityConfinement);
     ImGui::Checkbox("Wrap Borders", &smokeSimulation->wrapBorders);
     ImGui::Checkbox("Enable Pressure Solver", &smokeSimulation->enablePressureSolve);
 
@@ -59,13 +60,13 @@ void SmokeSimulationGui::renderVariables() {
     ImGui::Separator(); // Dissipation variables
 
     ImGui::Text("Velocity Dissipation");
-    ImGui::SliderFloat("##H", &smokeSimulation->VELOCITY_DISSAPATION, 0.8f, 1.0f, "%.3f");
+    ImGui::SliderFloat("##H", &smokeSimulation->VELOCITY_DISSIPATION, 0.8f, 1.0f, "%.3f");
 
     ImGui::Text("Density Dissipation");
-    ImGui::SliderFloat("##I", &smokeSimulation->DENSITY_DISSAPATION, 0.8f, 1.0f, "%.3f");
+    ImGui::SliderFloat("##I", &smokeSimulation->DENSITY_DISSIPATION, 0.8f, 1.0f, "%.3f");
 
     ImGui::Text("Temperature Dissipation");
-    ImGui::SliderFloat("##J", &smokeSimulation->TEMPERATURE_DISSAPATION, 0.8f, 1.0f, "%.3f");
+    ImGui::SliderFloat("##J", &smokeSimulation->TEMPERATURE_DISSIPATION, 0.8f, 1.0f, "%.3f");
 
     ImGui::Separator(); // Buoyancy variables
 
@@ -78,10 +79,15 @@ void SmokeSimulationGui::renderVariables() {
     ImGui::Text("Atmosphere Temperature");
     ImGui::SliderFloat("##M", &smokeSimulation->ATMOSPHERE_TEMPERATURE, -10.0f, 10.0f, "%.2f");
 
+    ImGui::Separator(); // Vortex confinement
+
+    ImGui::Text("Vorticity Confinement Force");
+    ImGui::SliderFloat("##N", &smokeSimulation->VORTICITY_CONFINEMENT_FORCE, 0.0f, 10.0f, "%.2f");
+
     // ImGui::Separator(); // Misc variables
 
     // ImGui::Text("Stroke Weight");
-    // ImGui::SliderFloat("##N", &smokeSimulation->STROKE_WEIGHT, 0.1f, 10.0f, "%.2f");
+    // ImGui::SliderFloat("##O", &smokeSimulation->STROKE_WEIGHT, 0.1f, 10.0f, "%.2f");
 
     ImGui::Separator(); // Reset variables
 
