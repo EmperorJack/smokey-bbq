@@ -22,6 +22,7 @@ void SmokeSimulationGui::renderToggles() {
     ImGui::Checkbox("Enable Emitter", &smokeSimulation->enableEmitter);
     ImGui::Checkbox("Random Impulse Angle", &smokeSimulation->randomPulseAngle);
     ImGui::Checkbox("Enable Buoyancy Force", &smokeSimulation->enableBuoyancy);
+    ImGui::Checkbox("Enable Vorticity Confinement", &smokeSimulation->enableVorticityConfinement);
     ImGui::Checkbox("Wrap Borders", &smokeSimulation->wrapBorders);
     ImGui::Checkbox("Enable Pressure Solver", &smokeSimulation->enablePressureSolve);
 

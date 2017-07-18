@@ -51,6 +51,7 @@ public:
     bool randomPulseAngle;
     bool enableBuoyancy;
     bool wrapBorders;
+    bool enableVorticityConfinement;
 
 private:
 
@@ -65,6 +66,7 @@ private:
     float temperature[SmokeSimulation::GRID_SIZE][SmokeSimulation::GRID_SIZE];
     float advectedTemperatue[SmokeSimulation::GRID_SIZE][SmokeSimulation::GRID_SIZE];
     glm::vec2 tracePosition[SmokeSimulation::GRID_SIZE][SmokeSimulation::GRID_SIZE];
+    float curl[SmokeSimulation::GRID_SIZE][SmokeSimulation::GRID_SIZE];
 
     // Instance variables
     float gridSpacing;
@@ -95,6 +97,9 @@ private:
 
     glm::vec2 buoyancyAt(int i, int j);
 
+    float curlAt(int i, int j);
+    glm::vec2 vortexConfinementForceAt(int i, int j);
+
     float getInterpolatedVelocity(float x, float y, bool xAxis);
     float getInterpolatedDensity(float x, float y);
     float getInterpolatedTemperature(float x, float y);
@@ -103,6 +108,7 @@ private:
     float getGridDensity(int i, int j);
     float getGridTemperature(int i, int j);
     float getGridPressure(int i, int j);
+    float getGridCurl(int i, int j);
 
     // Indexing
     int wrapIndex(int i);

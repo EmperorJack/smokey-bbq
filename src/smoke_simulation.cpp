@@ -60,6 +60,9 @@ SmokeSimulation::SmokeSimulation() {
 void SmokeSimulation::resetFields() {
     for (int i = 0; i < GRID_SIZE; i++) {
         for (int j = 0; j < GRID_SIZE; j++) {
+            float x = (i / (float) GRID_SIZE - 0.5f) * 2.0f;
+            float y = (j / (float) GRID_SIZE - 0.5f) * 2.0f;
+            // velocity[i][j] = glm::vec2(sin(2 * M_PI * y), sin(2 * M_PI * x));
             velocity[i][j] = glm::vec2(0.0f, 0.0f);
             advectedVelocity[i][j] = glm::vec2(0.0f, 0.0f);
             divergence[i][j] = 0.0f;
@@ -70,6 +73,7 @@ void SmokeSimulation::resetFields() {
             temperature[i][j] = ATMOSPHERE_TEMPERATURE;
             advectedTemperatue[i][j] = ATMOSPHERE_TEMPERATURE;
             tracePosition[i][j] = glm::vec2(0.0f, 0.0f);
+            curl[i][j] = 0.0f;
         }
     }
 }
@@ -104,6 +108,7 @@ void SmokeSimulation::setDefaultToggles() {
     randomPulseAngle = false;
     enableBuoyancy = true;
     wrapBorders = false;
+    enableVorticityConfinement = false;
 }
 
 void SmokeSimulation::update() {
@@ -150,6 +155,23 @@ void SmokeSimulation::update() {
         }
     }
 
+    // Vorticity confinement
+    if (enableVorticityConfinement) {
+
+        // Compute curl
+        for (int i = 0; i < GRID_SIZE; i++) {
+            for (int j = 0; j < GRID_SIZE; j++) {
+                curl[i][j] = curlAt(i, j);
+            }
+        }
+
+        for (int i = 0; i < GRID_SIZE; i++) {
+            for (int j = 0; j < GRID_SIZE; j++) {
+                velocity[i][j] += vortexConfinementForceAt(i, j);
+            }
+        }
+    }
+
     // Compute divergence
     for (int i = 0; i < GRID_SIZE; i++) {
         for (int j = 0; j < GRID_SIZE; j++) {
@@ -182,6 +204,22 @@ void SmokeSimulation::update() {
             temperature[i][j] = advectedTemperatue[i][j];
         }
     }
+}
+
+float SmokeSimulation::curlAt(int i, int j) {
+    float pdx = (getInterpolatedVelocity(i + 1, j, false) -
+                 getInterpolatedVelocity(i - 1, j, false)) * 0.5f;
+    float pdy = (getInterpolatedVelocity(i, j + 1, true) -
+                 getInterpolatedVelocity(i, j - 1, true)) * 0.5f;
+
+    return pdx - pdy;
+}
+
+glm::vec2 SmokeSimulation::vortexConfinementForceAt(int i, int j) {
+    float c = curl[i][j];
+//    float cLeft = curl[w]
+
+    return glm::vec2(-5.0f, 0.0f);
 }
 
 void SmokeSimulation::addPulse(glm::vec2 position) {
@@ -296,8 +334,8 @@ void SmokeSimulation::applyPressure() {
 
     for (int i = 0; i < GRID_SIZE; i++) {
         for (int j = 0; j < GRID_SIZE; j++) {
-            float xChange = getGridPressure(clampIndex(i + 1),j) - getGridPressure(clampIndex(i - 1),j);
-            float yChange = getGridPressure(i, clampIndex(j + 1)) - getGridPressure(i ,clampIndex(j - 1));
+            float xChange = getGridPressure(clampIndex(i + 1), j) - getGridPressure(clampIndex(i - 1), j);
+            float yChange = getGridPressure(i, clampIndex(j + 1)) - getGridPressure(i,clampIndex(j - 1));
 
             velocity[i][j].x += a * xChange;
             velocity[i][j].y += a * yChange;
@@ -397,6 +435,15 @@ float SmokeSimulation::getGridPressure(int i, int j) {
     } else {
         bool boundary = clampBoundary(i) || clampBoundary(j);
         return pressure[i][j] * (boundary ? 0.0f : 1.0f);
+    }
+}
+
+float SmokeSimulation::getGridCurl(int i, int j) {
+    if (wrapBorders) {
+        return curl[wrapIndex(i)][wrapIndex(j)];
+    } else {
+        bool boundary = clampBoundary(i) || clampBoundary(j);
+        return curl[i][j] * (boundary ? 0.0f : 1.0f);
     }
 }
 
