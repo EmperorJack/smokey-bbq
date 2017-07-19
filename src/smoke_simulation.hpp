@@ -8,7 +8,7 @@ class SmokeSimulation {
 public:
 
     // Constants
-    static constexpr int GRID_SIZE = 192;
+    static constexpr int GRID_SIZE = 128;
 
     // Variables
     float TIME_STEP;
@@ -82,7 +82,9 @@ private:
 
     // Shaders
     GLuint simpleShader;
-    GLuint densityShader;
+    GLuint smokeShader;
+    GLuint temperatureShader;
+    GLuint curlShader;
 
     // Fluid dynamics
     glm::vec2 getVelocity(float x, float y);

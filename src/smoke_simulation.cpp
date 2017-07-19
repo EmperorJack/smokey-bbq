@@ -54,7 +54,9 @@ SmokeSimulation::SmokeSimulation() {
 
     // Setup shaders
     simpleShader = loadShaders("resources/shaders/SimpleVertexShader.glsl", "resources/shaders/SimpleFragmentShader.glsl");
-    densityShader = loadShaders("resources/shaders/DensityVertexShader.glsl", "resources/shaders/DensityFragmentShader.glsl");
+    smokeShader = loadShaders("resources/shaders/SmokeVertexShader.glsl", "resources/shaders/SmokeFragmentShader.glsl");
+    temperatureShader = loadShaders("resources/shaders/SimpleVertexShader.glsl", "resources/shaders/TemperatureFragmentShader.glsl");
+    curlShader = loadShaders("resources/shaders/SmokeVertexShader.glsl", "resources/shaders/CurlFragmentShader.glsl");
 }
 
 void SmokeSimulation::resetFields() {
@@ -490,9 +492,9 @@ void SmokeSimulation::render(glm::mat4 transform, glm::vec2 mousePosition) {
 }
 
 void SmokeSimulation::renderDensity() {
-    glUseProgram(densityShader);
+    glUseProgram(smokeShader);
 
-    passScreenSize(densityShader);
+    passScreenSize(smokeShader);
 
     float densityField[SmokeSimulation::GRID_SIZE][SmokeSimulation::GRID_SIZE][2];
     for (int i = 0; i < GRID_SIZE; i++) {
