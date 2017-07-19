@@ -32,10 +32,10 @@ public:
 
     // Updating
     void update();
-    void computeVolumeLevel();
 
     // Data
     float getFrequencyBand(int i);
+    float getOverallVolume();
 
     // Rendering
     void render(glm::mat4 transform);
@@ -44,6 +44,7 @@ public:
     bool displayWaveform;
     bool displaySpectrum;
     bool displayFrequencyBands;
+    bool displayVolumeLevel;
     bool updateAnalyzer;
     bool logScaleBands;
 
@@ -70,6 +71,7 @@ private:
     float frequencyBands[AudioAnalyzer::NUM_BANDS];
     int linearMapping[SAMPLE_SIZE / 2];
     int logMapping[SAMPLE_SIZE / 2];
+    float volume;
 
     // FFT variables
     kiss_fftr_cfg fft_cfg;

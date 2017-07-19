@@ -36,6 +36,7 @@ void AudioAnalyzerGui::renderToggles() {
     ImGui::Checkbox("Display Waveform", &audioAnalyzer->displayWaveform);
     ImGui::Checkbox("Display Frequency Spectrum", &audioAnalyzer->displaySpectrum);
     ImGui::Checkbox("Display Frequency Bands", &audioAnalyzer->displayFrequencyBands);
+    ImGui::Checkbox("Display Volume Level", &audioAnalyzer->displayVolumeLevel);
     ImGui::Checkbox("Update Analyzer", &audioAnalyzer->updateAnalyzer);
     ImGui::Checkbox("Log Scale Bands", &audioAnalyzer->logScaleBands);
 

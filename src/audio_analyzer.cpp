@@ -81,6 +81,7 @@ void AudioAnalyzer::resetBuffers() {
     for (int i = 0; i < NUM_BANDS; i++) {
         frequencyBands[i] = 0.0f;
     }
+    volume = 0.0f;
 }
 
 void AudioAnalyzer::setDefaultVariables() {
@@ -92,6 +93,7 @@ void AudioAnalyzer::setDefaultToggles() {
     displayWaveform = false;
     displaySpectrum = false;
     displayFrequencyBands = false;
+    displayVolumeLevel = false;
     updateAnalyzer = true;
     logScaleBands = true;
 }
@@ -277,23 +279,26 @@ void AudioAnalyzer::update() {
         toBin[(logScaleBands ? logMapping : linearMapping)[i]] += magnitude * FREQUENCY_SCALE;
     }
 
-    std::cout << processedAudio[0] << std::endl;
+    float newVolume = 0.0f;
 
     // Bin similar frequencies into discrete bands
     for (int n = 0; n < NUM_BANDS; n++) {
         frequencyBands[n] *= FREQUENCY_DAMPING;
         frequencyBands[n] = max(20.0f * log10f(toBin[n]), frequencyBands[n]);
+        newVolume += frequencyBands[n];
     }
 
-    computeVolumeLevel();
-}
-
-void AudioAnalyzer::computeVolumeLevel() {
-
+    // Compute new overall volume level
+    volume *= FREQUENCY_DAMPING;
+    volume = max(newVolume, volume);
 }
 
 float AudioAnalyzer::getFrequencyBand(int i) {
     return frequencyBands[i];
+}
+
+float AudioAnalyzer::getOverallVolume() {
+    return volume;
 }
 
 void AudioAnalyzer::render(glm::mat4 transform) {
@@ -303,8 +308,7 @@ void AudioAnalyzer::render(glm::mat4 transform) {
         else renderLinearSpectrum(transform);
     }
     if (displayFrequencyBands) renderFrequencyBands(transform);
-
-    renderVolumeLevel(transform);
+    if (displayVolumeLevel) renderVolumeLevel(transform);
 }
 
 void AudioAnalyzer::renderWaveform(glm::mat4 transform) {
@@ -398,10 +402,8 @@ void AudioAnalyzer::renderVolumeLevel(glm::mat4 transform) {
     float color[] = {0.0f, 1.0f, 1.0f, 0.0f};
     setColor(shader, color);
 
-    float volume = frequencyBands[9];
-
     glm::mat4 translate = glm::translate(glm::vec3(0, SCREEN_HEIGHT / 2.0f, 0.0f));
-    glm::mat4 scale = glm::scale(glm::vec3(processedAudio[0] * 10, 100.0f, 1.0f));
+    glm::mat4 scale = glm::scale(glm::vec3(volume * 5.0f, 100.0f, 1.0f));
     drawSquare(transform * translate * scale, true);
 }
 
