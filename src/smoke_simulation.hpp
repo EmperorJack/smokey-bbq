@@ -33,6 +33,9 @@ public:
     void setDefaultToggles();
     void resetFields();
 
+    // Display toggle
+    int currentShader;
+
     // Updating
     void update();
 
@@ -82,7 +85,7 @@ private:
 
     // Shaders
     GLuint simpleShader;
-    GLuint densityShader;
+    std::vector<GLuint> smokeShaders;
 
     // Fluid dynamics
     glm::vec2 getVelocity(float x, float y);
@@ -117,7 +120,7 @@ private:
     bool clampBoundary(int &i);
 
     // Rendering
-    void renderDensity();
+    void renderField();
     void renderVelocityField(glm::mat4 transform, glm::vec2 mousePosition);
     void drawLine(glm::mat4);
 
