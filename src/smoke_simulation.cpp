@@ -107,7 +107,7 @@ void SmokeSimulation::setDefaultVariables() {
 
     STROKE_WEIGHT = 2.0f;
 
-    VORTICITY_CONFINEMENT_FORCE = 4.0f;
+    VORTICITY_CONFINEMENT_FORCE = 3.0f;
 }
 
 void SmokeSimulation::setDefaultToggles() {
