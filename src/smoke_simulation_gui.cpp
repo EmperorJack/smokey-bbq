@@ -40,10 +40,11 @@ void SmokeSimulationGui::renderDisplaySelector() {
 
     ImGui::RadioButton("Smoke", &select, 0);
     ImGui::RadioButton("Density", &select, 1);
-    ImGui::RadioButton("Temperature", &select, 2);
-    ImGui::RadioButton("Curl", &select, 3);
+    ImGui::RadioButton("Velocity", &select, 2);
+    ImGui::RadioButton("Temperature", &select, 3);
+    ImGui::RadioButton("Curl", &select, 4);
 
-    if (ImGui::Button("Apply")) smokeSimulation->switchDisplay(select);
+    if (ImGui::Button("Apply")) smokeSimulation->currentShader = select;
 }
 
 void SmokeSimulationGui::renderVariables() {

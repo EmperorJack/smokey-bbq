@@ -34,8 +34,7 @@ public:
     void resetFields();
 
     // Display toggle
-    void switchDisplay(int index);
-    GLuint currentShader;
+    int currentShader;
 
     // Updating
     void update();
@@ -86,10 +85,7 @@ private:
 
     // Shaders
     GLuint simpleShader;
-    GLuint smokeShader;
-    GLuint densityShader;
-    GLuint temperatureShader;
-    GLuint curlShader;
+    std::vector<GLuint> smokeShaders;
 
     // Fluid dynamics
     glm::vec2 getVelocity(float x, float y);

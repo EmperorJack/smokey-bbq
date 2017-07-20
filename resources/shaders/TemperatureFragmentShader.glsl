@@ -18,7 +18,7 @@ float remap(float minVal, float maxVal, float curVal) {
 }
 
 void main() {
-    float temperature = texture(temperatureTexture, UV).g;
+    float temperature = texture(temperatureTexture, UV).r;
 
     temperature = clamp(temperature, 0.0, 1.0);
     if(temperature > 0.5) {

@@ -10,13 +10,13 @@ uniform int screenHeight;
 uniform sampler2D curlTexture;
 
 void main() {
-    float curl = texture(curlTexture, UV).b;
+    float curl = texture(curlTexture, UV).r;
 
-    if (curl > 0.0f) {
+    if (curl > 0.0) {
         // Clockwise
-        color = vec4(curl, 0.0f, 0.0f, 1.0);
+        color = vec4(curl, 0.0, 0.0, 1.0);
     } else {
         // Anti-clockwise
-        color = vec4(0.0f, abs(curl), 0.0f, 1.0);
+        color = vec4(0.0, abs(curl), 0.0, 1.0);
     }
 }
