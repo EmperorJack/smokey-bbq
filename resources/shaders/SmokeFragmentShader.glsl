@@ -2,7 +2,7 @@
 
 in vec2 UV;
 
-out vec3 color;
+out vec4 color;
 
 uniform int screenWidth;
 uniform int screenHeight;
@@ -17,5 +17,5 @@ void main() {
     float ny = gl_FragCoord.y / float(screenHeight);
 
     //color = vec3(ny, nx, temperature) * (density * 5.0f);
-    color = vec3(temperature, density, density);
+    color = vec4(temperature, density, density, 1.0);
 }

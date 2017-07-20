@@ -10,6 +10,8 @@ void SmokeSimulationGui::render() {
 
     renderToggles();
     ImGui::Separator();
+    renderDisplaySelector();
+    ImGui::Separator();
     renderVariables();
 
     ImGui::End();
@@ -29,6 +31,19 @@ void SmokeSimulationGui::renderToggles() {
     ImGui::Separator(); // Reset toggles
 
     if (ImGui::Button("Reset Toggles")) smokeSimulation->setDefaultToggles();
+}
+
+void SmokeSimulationGui::renderDisplaySelector() {
+    ImGui::Text("Display Fields");
+
+    static int select = 0;
+
+    ImGui::RadioButton("Smoke", &select, 0);
+    ImGui::RadioButton("Density", &select, 1);
+    ImGui::RadioButton("Temperature", &select, 2);
+    ImGui::RadioButton("Curl", &select, 3);
+
+    if (ImGui::Button("Apply")) smokeSimulation->switchDisplay(select);
 }
 
 void SmokeSimulationGui::renderVariables() {

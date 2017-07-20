@@ -33,6 +33,10 @@ public:
     void setDefaultToggles();
     void resetFields();
 
+    // Display toggle
+    void switchDisplay(int index);
+    GLuint currentShader;
+
     // Updating
     void update();
 
@@ -83,6 +87,7 @@ private:
     // Shaders
     GLuint simpleShader;
     GLuint smokeShader;
+    GLuint densityShader;
     GLuint temperatureShader;
     GLuint curlShader;
 
@@ -119,7 +124,7 @@ private:
     bool clampBoundary(int &i);
 
     // Rendering
-    void renderDensity();
+    void renderField();
     void renderVelocityField(glm::mat4 transform, glm::vec2 mousePosition);
     void drawLine(glm::mat4);
 

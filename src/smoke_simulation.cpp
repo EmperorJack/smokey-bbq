@@ -55,8 +55,11 @@ SmokeSimulation::SmokeSimulation() {
     // Setup shaders
     simpleShader = loadShaders("resources/shaders/SimpleVertexShader.glsl", "resources/shaders/SimpleFragmentShader.glsl");
     smokeShader = loadShaders("resources/shaders/SmokeVertexShader.glsl", "resources/shaders/SmokeFragmentShader.glsl");
-    temperatureShader = loadShaders("resources/shaders/SimpleVertexShader.glsl", "resources/shaders/TemperatureFragmentShader.glsl");
+    densityShader = loadShaders("resources/shaders/SmokeVertexShader.glsl", "resources/shaders/DensityFragmentShader.glsl");
+    temperatureShader = loadShaders("resources/shaders/SmokeVertexShader.glsl", "resources/shaders/TemperatureFragmentShader.glsl");
     curlShader = loadShaders("resources/shaders/SmokeVertexShader.glsl", "resources/shaders/CurlFragmentShader.glsl");
+
+    currentShader = smokeShader;
 }
 
 void SmokeSimulation::resetFields() {
@@ -115,6 +118,26 @@ void SmokeSimulation::setDefaultToggles() {
     enableVorticityConfinement = true;
 }
 
+void SmokeSimulation::switchDisplay(int index) {
+    switch(index) {
+        case 0:
+            currentShader = smokeShader;
+            break;
+        case 1:
+            currentShader = densityShader;
+            break;
+        case 2:
+            currentShader = temperatureShader;
+            break;
+        case 3:
+            currentShader = curlShader;
+            break;
+        default:
+            currentShader = smokeShader;
+            break;
+    }
+}
+
 void SmokeSimulation::update() {
     if (!updateSimulation) return;
 
@@ -159,16 +182,15 @@ void SmokeSimulation::update() {
         }
     }
 
+    // Compute curl
+    for (int i = 0; i < GRID_SIZE; i++) {
+        for (int j = 0; j < GRID_SIZE; j++) {
+            curl[i][j] = curlAt(i, j);
+        }
+    }
+
     // Vorticity confinement
     if (enableVorticityConfinement) {
-
-        // Compute curl
-        for (int i = 0; i < GRID_SIZE; i++) {
-            for (int j = 0; j < GRID_SIZE; j++) {
-                curl[i][j] = curlAt(i, j);
-            }
-        }
-
         for (int i = 0; i < GRID_SIZE; i++) {
             for (int j = 0; j < GRID_SIZE; j++) {
                 velocity[i][j] += vorticityConfinementForceAt(i, j);
@@ -487,24 +509,25 @@ bool SmokeSimulation::clampBoundary(int &i) {
 }
 
 void SmokeSimulation::render(glm::mat4 transform, glm::vec2 mousePosition) {
-    if (displayDensityField) renderDensity();
+    if (displayDensityField) renderField();
     if (displayVelocityField) renderVelocityField(transform, mousePosition);
 }
 
-void SmokeSimulation::renderDensity() {
-    glUseProgram(smokeShader);
+void SmokeSimulation::renderField() {
+    glUseProgram(currentShader);
 
-    passScreenSize(smokeShader);
+    passScreenSize(currentShader);
 
-    float densityField[SmokeSimulation::GRID_SIZE][SmokeSimulation::GRID_SIZE][2];
+    float densityField[SmokeSimulation::GRID_SIZE][SmokeSimulation::GRID_SIZE][3];
     for (int i = 0; i < GRID_SIZE; i++) {
         for (int j = 0; j < GRID_SIZE; j++) {
-            densityField[i][j][0] = density[j][i]; // grid[j][i].pressure / 1000.0f;
-            densityField[i][j][1] = temperature[j][i]; // grid[j][i].divergence / 1000.0f;
+            densityField[i][j][0] = density[j][i];
+            densityField[i][j][1] = temperature[j][i];
+            densityField[i][j][2] = curl[j][i];
         }
     }
 
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA32F, GRID_SIZE, GRID_SIZE, 0, GL_RG, GL_FLOAT, &densityField[0][0][0]);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA32F, GRID_SIZE, GRID_SIZE, 0, GL_RGB, GL_FLOAT, &densityField[0][0][0]);
 
     // Bind vertices
     glEnableVertexAttribArray(0);

@@ -2,7 +2,7 @@
 
 in vec2 UV;
 
-out vec3 color;
+out vec4 color;
 
 uniform int screenWidth;
 uniform int screenHeight;
@@ -10,13 +10,13 @@ uniform int screenHeight;
 uniform sampler2D curlTexture;
 
 void main() {
-    float curl = texture(curlTexture, UV).r;
+    float curl = texture(curlTexture, UV).b;
 
     if (curl > 0.0f) {
         // Clockwise
-        color = vec3(curl, 0.0f, 0.0f);
+        color = vec4(curl, 0.0f, 0.0f, 1.0);
     } else {
         // Anti-clockwise
-        color = vec3(0.0f, abs(curl), 0.0f);
+        color = vec4(0.0f, abs(curl), 0.0f, 1.0);
     }
 }
