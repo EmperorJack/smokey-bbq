@@ -10,6 +10,8 @@ void SmokeSimulationGui::render() {
 
     renderToggles();
     ImGui::Separator();
+    renderDisplaySelector();
+    ImGui::Separator();
     renderVariables();
 
     ImGui::End();
@@ -31,60 +33,77 @@ void SmokeSimulationGui::renderToggles() {
     if (ImGui::Button("Reset Toggles")) smokeSimulation->setDefaultToggles();
 }
 
+void SmokeSimulationGui::renderDisplaySelector() {
+    ImGui::Text("Display Fields");
+
+    static int select = 0;
+
+    ImGui::RadioButton("Smoke", &select, 0);
+    ImGui::RadioButton("Density", &select, 1);
+    ImGui::RadioButton("Velocity", &select, 2);
+    ImGui::RadioButton("Temperature", &select, 3);
+    ImGui::RadioButton("Curl", &select, 4);
+
+    if (ImGui::Button("Apply")) smokeSimulation->currentShader = select;
+}
+
 void SmokeSimulationGui::renderVariables() {
-    // Core equation variables
 
-    ImGui::Text("Time Step");
-    ImGui::SliderFloat("##A", &smokeSimulation->TIME_STEP, 0.01f, 1.0f, "%.3f");
+    if (ImGui::CollapsingHeader("Core variables")) {
 
-    // ImGui::Text("Fluid Density");
-    // ImGui::SliderFloat("##B", &smokeSimulation->FLUID_DENSITY, 0.0f, 1.0f, "%.3f");
+        ImGui::Text("Time Step");
+        ImGui::SliderFloat("##TIME_STEP", &smokeSimulation->TIME_STEP, 0.01f, 1.0f, "%.3f");
 
-    ImGui::Text("Jacobi Iterations");
-    ImGui::SliderInt("##C", &smokeSimulation->JACOBI_ITERATIONS, 0, 100, "%.0f");
+        // ImGui::Text("Fluid Density");
+        // ImGui::SliderFloat("##FLUID_DENSITY", &smokeSimulation->FLUID_DENSITY, 0.0f, 1.0f, "%.3f");
 
-    ImGui::Separator(); // Force variables
+        ImGui::Text("Jacobi Iterations");
+        ImGui::SliderInt("##JACOBI_ITERATIONS", &smokeSimulation->JACOBI_ITERATIONS, 0, 100, "%.0f");
+    }
 
-    // ImGui::Text("Gravity");
-    // ImGui::SliderFloat("##D", &smokeSimulation->GRAVITY, -5.0f, 5.0f, "%.3f");
+    if (ImGui::CollapsingHeader("Force Variables")) {
 
-    ImGui::Text("Pulse Range");
-    ImGui::SliderFloat("##E", &smokeSimulation->PULSE_RANGE, 0.0f, 500.0f, "%.1f");
+        // ImGui::Text("Gravity");
+        // ImGui::SliderFloat("##GRAVITY", &smokeSimulation->GRAVITY, -5.0f, 5.0f, "%.3f");
 
-    ImGui::Text("Emitter Range");
-    ImGui::SliderFloat("##F", &smokeSimulation->EMITTER_RANGE, 0.0f, 500.0f, "%.1f");
+        ImGui::Text("Pulse Range");
+        ImGui::SliderFloat("##PULSE_RANGE", &smokeSimulation->PULSE_RANGE, 0.0f, 500.0f, "%.1f");
 
-    ImGui::Text("Pulse Force");
-    ImGui::SliderFloat("##G", &smokeSimulation->PULSE_FORCE, 0.0f, 500.0f, "%.1f");
+        ImGui::Text("Emitter Range");
+        ImGui::SliderFloat("##EMITTER_RANGE", &smokeSimulation->EMITTER_RANGE, 0.0f, 500.0f, "%.1f");
 
-    ImGui::Separator(); // Dissipation variables
+        ImGui::Text("Pulse Force");
+        ImGui::SliderFloat("##PULSE_FORCE", &smokeSimulation->PULSE_FORCE, 0.0f, 500.0f, "%.1f");
 
-    ImGui::Text("Velocity Dissipation");
-    ImGui::SliderFloat("##H", &smokeSimulation->VELOCITY_DISSIPATION, 0.8f, 1.0f, "%.3f");
+        ImGui::Text("Vorticity Confinement Force");
+        ImGui::SliderFloat("##VORTICITY_CONFINEMENT_FORCE", &smokeSimulation->VORTICITY_CONFINEMENT_FORCE, 0.0f, 10.0f, "%.2f");
+    }
 
-    ImGui::Text("Density Dissipation");
-    ImGui::SliderFloat("##I", &smokeSimulation->DENSITY_DISSIPATION, 0.8f, 1.0f, "%.3f");
+    if (ImGui::CollapsingHeader("Dissipation variables")) {
 
-    ImGui::Text("Temperature Dissipation");
-    ImGui::SliderFloat("##J", &smokeSimulation->TEMPERATURE_DISSIPATION, 0.8f, 1.0f, "%.3f");
+        ImGui::Text("Velocity Dissipation");
+        ImGui::SliderFloat("##VELOCITY_DISSIPATION", &smokeSimulation->VELOCITY_DISSIPATION, 0.8f, 1.0f, "%.3f");
 
-    ImGui::Separator(); // Buoyancy variables
+        ImGui::Text("Density Dissipation");
+        ImGui::SliderFloat("##DENSITY_DISSIPATION", &smokeSimulation->DENSITY_DISSIPATION, 0.8f, 1.0f, "%.3f");
 
-    ImGui::Text("Rise Force");
-    ImGui::SliderFloat("##K", &smokeSimulation->RISE_FORCE, 0.1f, 10.0f, "%.2f");
+        ImGui::Text("Temperature Dissipation");
+        ImGui::SliderFloat("##TEMPERATURE_DISSIPATION", &smokeSimulation->TEMPERATURE_DISSIPATION, 0.8f, 1.0f, "%.3f");
 
-    ImGui::Text("Fall Force");
-    ImGui::SliderFloat("##L", &smokeSimulation->FALL_FORCE, 0.1f, 10.0f, "%.2f");
+    }
 
-    ImGui::Text("Atmosphere Temperature");
-    ImGui::SliderFloat("##M", &smokeSimulation->ATMOSPHERE_TEMPERATURE, -10.0f, 10.0f, "%.2f");
+    if (ImGui::CollapsingHeader("Buoyancy variables")) {
 
-    ImGui::Separator(); // Vortex confinement
+        ImGui::Text("Rise Force");
+        ImGui::SliderFloat("##RISE_FORCE", &smokeSimulation->RISE_FORCE, 0.1f, 10.0f, "%.2f");
 
-    ImGui::Text("Vorticity Confinement Force");
-    ImGui::SliderFloat("##N", &smokeSimulation->VORTICITY_CONFINEMENT_FORCE, 0.0f, 10.0f, "%.2f");
+        ImGui::Text("Fall Force");
+        ImGui::SliderFloat("##FALL_FORCE", &smokeSimulation->FALL_FORCE, 0.1f, 10.0f, "%.2f");
 
-    // ImGui::Separator(); // Misc variables
+        ImGui::Text("Atmosphere Temperature");
+        ImGui::SliderFloat("##ATMOSPHERE_TEMPERATURE", &smokeSimulation->ATMOSPHERE_TEMPERATURE, -10.0f, 10.0f, "%.2f");
+
+    }
 
     // ImGui::Text("Stroke Weight");
     // ImGui::SliderFloat("##O", &smokeSimulation->STROKE_WEIGHT, 0.1f, 10.0f, "%.2f");

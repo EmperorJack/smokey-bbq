@@ -20,6 +20,7 @@ private:
 
     // Rendering
     void renderToggles();
+    void renderDisplaySelector();
     void renderVariables();
 
 };

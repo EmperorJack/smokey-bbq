@@ -47,10 +47,10 @@ void AudioAnalyzerGui::renderToggles() {
 
 void AudioAnalyzerGui::renderVariables() {
     ImGui::Text("Frequency Damping");
-    ImGui::SliderFloat("##A", &audioAnalyzer->FREQUENCY_DAMPING, 0.5f, 1.0f, "%.3f");
+    ImGui::SliderFloat("##FREQUENCY_DAMPING", &audioAnalyzer->FREQUENCY_DAMPING, 0.5f, 1.0f, "%.3f");
 
     ImGui::Text("Frequency Band Scale");
-    ImGui::SliderFloat("##B", &audioAnalyzer->FREQUENCY_SCALE, 0.01f, 1.0f, "%.3f");
+    ImGui::SliderFloat("##FREQUENCY_SCALE", &audioAnalyzer->FREQUENCY_SCALE, 0.01f, 1.0f, "%.3f");
 
     ImGui::Separator(); // Reset variables
 

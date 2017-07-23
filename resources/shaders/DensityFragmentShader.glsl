@@ -2,20 +2,16 @@
 
 in vec2 UV;
 
-out vec3 color;
+out vec4 color;
 
 uniform int screenWidth;
 uniform int screenHeight;
 
-uniform sampler2D densityTexture;
+uniform sampler2D temperatureTexture;
 
 void main() {
-    float density = texture(densityTexture, UV).r;
-    float temperature = texture(densityTexture, UV).g;
+    float density = texture(temperatureTexture, UV).r;
+    density = 1.0 - clamp(density, 0.0, 1.0);
 
-    float nx = gl_FragCoord.x / float(screenWidth);
-    float ny = gl_FragCoord.y / float(screenHeight);
-
-    //color = vec3(ny, nx, temperature) * (density * 5.0f);
-    color = vec3(temperature, density, density);
+    color = vec4(density, density, density, 1.0);
 }
