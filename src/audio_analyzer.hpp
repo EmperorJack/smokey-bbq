@@ -17,6 +17,7 @@ public:
     // Variables
     float FREQUENCY_DAMPING;
     float FREQUENCY_SCALE;
+    float VOLUME_SCALE;
 
     // Setup
     AudioAnalyzer();
@@ -35,6 +36,7 @@ public:
 
     // Data
     float getFrequencyBand(int i);
+    float getOverallVolume();
 
     // Rendering
     void render(glm::mat4 transform);
@@ -43,6 +45,7 @@ public:
     bool displayWaveform;
     bool displaySpectrum;
     bool displayFrequencyBands;
+    bool displayVolumeLevel;
     bool updateAnalyzer;
     bool logScaleBands;
 
@@ -69,6 +72,7 @@ private:
     float frequencyBands[AudioAnalyzer::NUM_BANDS];
     int linearMapping[SAMPLE_SIZE / 2];
     int logMapping[SAMPLE_SIZE / 2];
+    float volume;
 
     // FFT variables
     kiss_fftr_cfg fft_cfg;
@@ -77,7 +81,7 @@ private:
 
     // Setup
     void computeHanningWindow();
-    void computeLogMapping();
+    void computeBandMappings();
 
     // Error handling
     bool paErrorOccured(PaError error);
@@ -87,6 +91,7 @@ private:
     void renderLinearSpectrum(glm::mat4);
     void renderLogSpectrum(glm::mat4);
     void renderFrequencyBands(glm::mat4);
+    void renderVolumeLevel(glm::mat4);
     void drawSquare(glm::mat4, bool);
 
 };

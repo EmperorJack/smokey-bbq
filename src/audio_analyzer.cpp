@@ -62,7 +62,7 @@ AudioAnalyzer::AudioAnalyzer() {
     setDefaultToggles();
 
     // Compute band mappings
-    computeLogMapping();
+    computeBandMappings();
 
     // Attempt to open the default audio input device
     openDevice(0);
@@ -81,17 +81,20 @@ void AudioAnalyzer::resetBuffers() {
     for (int i = 0; i < NUM_BANDS; i++) {
         frequencyBands[i] = 0.0f;
     }
+    volume = 0.0f;
 }
 
 void AudioAnalyzer::setDefaultVariables() {
     FREQUENCY_DAMPING = 0.72f;
     FREQUENCY_SCALE = 0.25f;
+    VOLUME_SCALE = 0.35f;
 }
 
 void AudioAnalyzer::setDefaultToggles() {
     displayWaveform = false;
     displaySpectrum = false;
     displayFrequencyBands = false;
+    displayVolumeLevel = false;
     updateAnalyzer = true;
     logScaleBands = true;
 }
@@ -182,7 +185,7 @@ void AudioAnalyzer::computeHanningWindow() {
     }
 }
 
-void AudioAnalyzer::computeLogMapping() {
+void AudioAnalyzer::computeBandMappings() {
     float bandThresholds[NUM_BANDS];
     float sampleLinearThresholds[SAMPLE_SIZE / 2];
     float sampleLogThresholds[SAMPLE_SIZE / 2];
@@ -277,15 +280,27 @@ void AudioAnalyzer::update() {
         toBin[(logScaleBands ? logMapping : linearMapping)[i]] += magnitude * FREQUENCY_SCALE;
     }
 
+    float newVolume = 0.0f;
+
     // Bin similar frequencies into discrete bands
     for (int n = 0; n < NUM_BANDS; n++) {
         frequencyBands[n] *= FREQUENCY_DAMPING;
         frequencyBands[n] = max(20.0f * log10f(toBin[n]), frequencyBands[n]);
+        newVolume = max(newVolume, frequencyBands[n]);
     }
+    newVolume *= VOLUME_SCALE;
+
+    // Compute new overall volume level
+    volume *= FREQUENCY_DAMPING;
+    volume = max(newVolume, volume);
 }
 
 float AudioAnalyzer::getFrequencyBand(int i) {
     return frequencyBands[i];
+}
+
+float AudioAnalyzer::getOverallVolume() {
+    return volume;
 }
 
 void AudioAnalyzer::render(glm::mat4 transform) {
@@ -295,6 +310,7 @@ void AudioAnalyzer::render(glm::mat4 transform) {
         else renderLinearSpectrum(transform);
     }
     if (displayFrequencyBands) renderFrequencyBands(transform);
+    if (displayVolumeLevel) renderVolumeLevel(transform);
 }
 
 void AudioAnalyzer::renderWaveform(glm::mat4 transform) {
@@ -380,6 +396,17 @@ void AudioAnalyzer::renderFrequencyBands(glm::mat4 transform) {
         glm::mat4 scale = glm::scale(glm::vec3(bandSpacing * 0.75f, frequencyBands[i] * -10.0f, 1.0f));
         drawSquare(transform * translate * scale, true);
     }
+}
+
+void AudioAnalyzer::renderVolumeLevel(glm::mat4 transform) {
+    glUseProgram(shader);
+
+    float color[] = {0.0f, 1.0f, 1.0f, 0.0f};
+    setColor(shader, color);
+
+    glm::mat4 translate = glm::translate(glm::vec3(0, SCREEN_HEIGHT / 2.0f, 0.0f));
+    glm::mat4 scale = glm::scale(glm::vec3(volume * 25.0f, 100.0f, 1.0f));
+    drawSquare(transform * translate * scale, true);
 }
 
 void AudioAnalyzer::drawSquare(glm::mat4 transform, bool fill) {
