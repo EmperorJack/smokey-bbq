@@ -8,6 +8,7 @@
 SmokeSimulation::SmokeSimulation() {
     float size = (float) min(SCREEN_WIDTH, SCREEN_HEIGHT);
     gridSpacing = size / GRID_SIZE;
+
     resetFields();
     setDefaultVariables();
     setDefaultToggles();

@@ -17,6 +17,7 @@ public:
     // Variables
     float FREQUENCY_DAMPING;
     float FREQUENCY_SCALE;
+    float VOLUME_SCALE;
 
     // Setup
     AudioAnalyzer();

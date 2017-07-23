@@ -87,6 +87,7 @@ void AudioAnalyzer::resetBuffers() {
 void AudioAnalyzer::setDefaultVariables() {
     FREQUENCY_DAMPING = 0.72f;
     FREQUENCY_SCALE = 0.25f;
+    VOLUME_SCALE = 0.35f;
 }
 
 void AudioAnalyzer::setDefaultToggles() {
@@ -285,8 +286,9 @@ void AudioAnalyzer::update() {
     for (int n = 0; n < NUM_BANDS; n++) {
         frequencyBands[n] *= FREQUENCY_DAMPING;
         frequencyBands[n] = max(20.0f * log10f(toBin[n]), frequencyBands[n]);
-        newVolume += frequencyBands[n];
+        newVolume = max(newVolume, frequencyBands[n]);
     }
+    newVolume *= VOLUME_SCALE;
 
     // Compute new overall volume level
     volume *= FREQUENCY_DAMPING;
@@ -403,7 +405,7 @@ void AudioAnalyzer::renderVolumeLevel(glm::mat4 transform) {
     setColor(shader, color);
 
     glm::mat4 translate = glm::translate(glm::vec3(0, SCREEN_HEIGHT / 2.0f, 0.0f));
-    glm::mat4 scale = glm::scale(glm::vec3(volume * 5.0f, 100.0f, 1.0f));
+    glm::mat4 scale = glm::scale(glm::vec3(volume * 25.0f, 100.0f, 1.0f));
     drawSquare(transform * translate * scale, true);
 }
 

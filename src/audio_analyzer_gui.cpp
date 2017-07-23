@@ -52,6 +52,9 @@ void AudioAnalyzerGui::renderVariables() {
     ImGui::Text("Frequency Band Scale");
     ImGui::SliderFloat("##FREQUENCY_SCALE", &audioAnalyzer->FREQUENCY_SCALE, 0.01f, 1.0f, "%.3f");
 
+    ImGui::Text("Overall Volume Scale");
+    ImGui::SliderFloat("##VOLUME_SCALE", &audioAnalyzer->VOLUME_SCALE, 0.01f, 1.0f, "%.3f");
+
     ImGui::Separator(); // Reset variables
 
     if (ImGui::Button("Reset Variables")) audioAnalyzer->setDefaultVariables();
