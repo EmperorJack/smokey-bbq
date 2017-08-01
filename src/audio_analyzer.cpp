@@ -248,7 +248,7 @@ static int paCallback(const void *inputBuffer,
     for(unsigned int i = 0; i < framesPerBuffer; i++) {
         // Input buffer interleaves left and right channels
         // Mixing left and right channels into one mono channel
-        rawAudio[i] = (in[i*2] + in[i*2+1]) * 0.5f * hanningWindow[i];
+        rawAudio[i] = (in[i*2] + in[i*2+1]) * 0.5f;
     }
 
     return 0;
@@ -259,7 +259,7 @@ void AudioAnalyzer::update() {
 
     // Apply window function to raw audio data
     for (int i = 0; i < SAMPLE_SIZE; i++) {
-        fft_in[i] = rawAudio[i];
+        fft_in[i] = rawAudio[i] * hanningWindow[i];
     }
 
     // Perform the fft
@@ -323,7 +323,7 @@ void AudioAnalyzer::renderWaveform(glm::mat4 transform) {
 
     for (int i = 0; i < SAMPLE_SIZE; i++) {
         waveformVertices[i*2] = i * spacing;
-        waveformVertices[i*2+1] = rawAudio[i] * 350.0f + (SCREEN_HEIGHT * 0.5f);
+        waveformVertices[i*2+1] = fft_in[i] * 350.0f + (SCREEN_HEIGHT * 0.5f);
     }
 
     GLint transformID = glGetUniformLocation(3, "MVP");
