@@ -48,8 +48,8 @@ AudioAnalyzer::AudioAnalyzer() {
     }
 
     // Initialize kiss fft
-    cfg = kiss_fftr_alloc(AudioAnalyzer::SAMPLE_SIZE, false, 0,0);
-    if (cfg == NULL) {
+    fft_cfg = kiss_fftr_alloc(AudioAnalyzer::SAMPLE_SIZE, false, 0,0);
+    if (fft_cfg == NULL) {
         fprintf(stderr, "Failed to initialize kiss fft");
         return;
     }
@@ -58,60 +58,14 @@ AudioAnalyzer::AudioAnalyzer() {
     computeHanningWindow();
 
     resetBuffers();
+    setDefaultVariables();
+    setDefaultToggles();
 
-    // Compute log mapping
-    computeLogMapping();
+    // Compute band mappings
+    computeBandMappings();
 
-    printAudioDevices();
-
-    int inDevNum = 0;
-    int outDevNum = 0;
-
-    #ifdef __APPLE__
-    inDevNum = 3;
-    outDevNum = 3;
-    #endif
-
-    #ifdef __MINGW32__
-    inDevNum = 1;
-    outDevNum = 3;
-    #endif
-
-    #ifdef __linux__
-    inDevNum = 7;
-    outDevNum = 7;
-    #endif
-
-    int inChan = 2;
-    int outChan = 2;
-
-    memset(&inputParameters, 0, sizeof(inputParameters));
-    inputParameters.channelCount = inChan;
-    inputParameters.device = inDevNum;
-    inputParameters.hostApiSpecificStreamInfo = NULL;
-    inputParameters.sampleFormat = paFloat32;
-    inputParameters.suggestedLatency = Pa_GetDeviceInfo(inDevNum)->defaultLowInputLatency ;
-
-    memset(&outputParameters, 0, sizeof(outputParameters));
-    outputParameters.channelCount = outChan;
-    outputParameters.device = outDevNum;
-    outputParameters.hostApiSpecificStreamInfo = NULL;
-    outputParameters.sampleFormat = paFloat32;
-    outputParameters.suggestedLatency = Pa_GetDeviceInfo(outDevNum)->defaultLowOutputLatency ;
-    err = Pa_OpenStream(
-            &stream,
-            &inputParameters,
-            &outputParameters,
-            SAMPLE_RATE,
-            SAMPLE_SIZE,
-            paNoFlag,
-            paCallback,
-            (void*) this
-    );
-    if (paErrorOccured(err)) return;
-
-    err = Pa_StartStream(stream);
-    if (paErrorOccured(err)) return;
+    // Attempt to open the default audio input device
+    openDevice(0);
 }
 
 void AudioAnalyzer::resetBuffers() {
@@ -127,21 +81,100 @@ void AudioAnalyzer::resetBuffers() {
     for (int i = 0; i < NUM_BANDS; i++) {
         frequencyBands[i] = 0.0f;
     }
+    volume = 0.0f;
+}
+
+void AudioAnalyzer::setDefaultVariables() {
+    FREQUENCY_DAMPING = 0.72f;
+    FREQUENCY_SCALE = 0.25f;
+    VOLUME_SCALE = 0.35f;
+}
+
+void AudioAnalyzer::setDefaultToggles() {
+    displayWaveform = false;
+    displaySpectrum = false;
+    displayFrequencyBands = false;
+    displayVolumeLevel = false;
+    updateAnalyzer = true;
+    logScaleBands = true;
 }
 
 void AudioAnalyzer::shutDown() {
-    free(cfg);
+    free(fft_cfg);
 
     if (!paInitSuccessful) return;
 
-    PaError err = Pa_StopStream(stream);
-    if (paErrorOccured(err)) return;
+    if (stream != nullptr) {
+        PaError err = Pa_StopStream(stream);
+        if (paErrorOccured(err)) return;
 
-    err = Pa_CloseStream(stream);
-    if (paErrorOccured(err)) return;
+        err = Pa_CloseStream(stream);
+        if (paErrorOccured(err)) return;
+    }
 
-    err = Pa_Terminate();
+    PaError err = Pa_Terminate();
     if (paErrorOccured(err)) return;
+}
+
+std::vector<std::pair<int, const char*>> AudioAnalyzer::getInputDevices() {
+    std::vector<std::pair<int, const char*>> inputs;
+
+    int numDevices;
+    numDevices = Pa_GetDeviceCount();
+    if (numDevices < 0) {
+        fprintf(stderr, "ERROR: Pa_CountDevices returned 0x%x\n", numDevices);
+        PaError err = numDevices;
+        paErrorOccured(err);
+        return inputs;
+    }
+
+    // Print out information for each device
+    const PaDeviceInfo *deviceInfo;
+    for(int i = 0; i < numDevices; i++) {
+        deviceInfo = Pa_GetDeviceInfo(i);
+        if (deviceInfo->maxInputChannels > 0) {
+            inputs.push_back(std::make_pair(i, deviceInfo->name));
+        }
+    }
+
+    return inputs;
+};
+
+bool AudioAnalyzer::openDevice(int deviceIndex) {
+
+    // Close the existing stream if there is one
+    if (stream != nullptr) {
+        PaError err = Pa_CloseStream(stream);
+        if (paErrorOccured(err)) return false;
+    }
+
+    resetBuffers();
+
+    int inputChannels = 2;
+
+    memset(&inputParameters, 0, sizeof(inputParameters));
+    inputParameters.channelCount = inputChannels;
+    inputParameters.device = deviceIndex;
+    inputParameters.hostApiSpecificStreamInfo = NULL;
+    inputParameters.sampleFormat = paFloat32;
+    inputParameters.suggestedLatency = Pa_GetDeviceInfo(deviceIndex)->defaultLowInputLatency ;
+
+    PaError err = Pa_OpenStream(
+            &stream,
+            &inputParameters,
+            NULL,
+            SAMPLE_RATE,
+            SAMPLE_SIZE,
+            paNoFlag,
+            paCallback,
+            (void*) this
+    );
+    if (paErrorOccured(err)) return false;
+
+    err = Pa_StartStream(stream);
+    if (paErrorOccured(err)) return false;
+
+    return true;
 }
 
 void AudioAnalyzer::computeHanningWindow() {
@@ -152,23 +185,24 @@ void AudioAnalyzer::computeHanningWindow() {
     }
 }
 
-void AudioAnalyzer::computeLogMapping() {
+void AudioAnalyzer::computeBandMappings() {
     float bandThresholds[NUM_BANDS];
+    float sampleLinearThresholds[SAMPLE_SIZE / 2];
+    float sampleLogThresholds[SAMPLE_SIZE / 2];
 
     for (int i = 0; i < NUM_BANDS; i++) {
         float pct = i / (float) NUM_BANDS;
-        // float val = log10f(i) / log10f(NUM_BANDS);
-        // std::cout << "band (" << i << ") = " << val << std::endl;
         bandThresholds[i] = pct;
     }
 
-    float sampleThresholds[SAMPLE_SIZE / 2];
+    for (int i = 0; i < SAMPLE_SIZE / 2; i++) {
+        float pct = i / (float) (SAMPLE_SIZE / 2);
+        sampleLinearThresholds[i] = pct;
+    }
 
     for (int i = 0; i < SAMPLE_SIZE / 2; i++) {
-        // float pct = i / (float) (SAMPLE_SIZE / 2);
-        float val = log10f(i) / log10f(SAMPLE_SIZE / 2);
-        // std::cout << "sample (" << i << ") = " << pct << std::endl;
-        sampleThresholds[i] = val;
+        float pct = log10f(i) / log10f(SAMPLE_SIZE / 2);
+        sampleLogThresholds[i] = pct;
     }
 
     std::vector<int> mappings[NUM_BANDS];
@@ -178,20 +212,25 @@ void AudioAnalyzer::computeLogMapping() {
         float maxValue = (i+1 == NUM_BANDS ? 1.0f : bandThresholds[i+1]);
 
         for (int j = 0; j < SAMPLE_SIZE / 2; j++) {
-            if (minValue <= sampleThresholds[j] && sampleThresholds[j] < maxValue) {
-                mappings[i].push_back(j);
-                mapping[j] = i;
+            if (minValue <= sampleLinearThresholds[j] && sampleLinearThresholds[j] <= maxValue) {
+                // mappings[i].push_back(j);
+                linearMapping[j] = i;
+            }
+
+            if (minValue <= sampleLogThresholds[j] && sampleLogThresholds[j] < maxValue) {
+                // mappings[i].push_back(j);
+                logMapping[j] = i;
             }
         }
     }
 
-    //    for (int i = 0; i < NUM_BANDS; i++) {
-    //        std::cout << "(" << i << ") : [";
-    //        for (int j : mappings[i]) {
-    //            std::cout << " " << j << ", ";
-    //        }
-    //        std::cout << "]" << std::endl;
-    //    }
+//    for (int i = 0; i < NUM_BANDS; i++) {
+//        std::cout << "(" << i << ") " << mappings[i].size() << " long : [";
+//        for (int j : mappings[i]) {
+//            std::cout << " " << j << ", ";
+//        }
+//        std::cout << "]" << std::endl;
+//    }
 }
 
 static int paCallback(const void *inputBuffer,
@@ -216,6 +255,7 @@ static int paCallback(const void *inputBuffer,
 }
 
 void AudioAnalyzer::update() {
+    if (!updateAnalyzer) return;
 
     // Apply window function to raw audio data
     for (int i = 0; i < SAMPLE_SIZE; i++) {
@@ -223,11 +263,10 @@ void AudioAnalyzer::update() {
     }
 
     // Perform the fft
-    kiss_fftr(cfg, fft_in, fft_out);
+    kiss_fftr(fft_cfg, fft_in, fft_out);
 
     // To store the processed audio before it's converted to decibels
     float toBin[NUM_BANDS] = {};
-    // float toBin[SAMPLE_SIZE / 2];
 
     // Process the fft output
     for (int i = 0; i < SAMPLE_SIZE / 2; i++) {
@@ -238,27 +277,40 @@ void AudioAnalyzer::update() {
         processedAudio[i] *= FREQUENCY_DAMPING;
         processedAudio[i] = max(20.0f * log10f(magnitude), processedAudio[i]);
 
-        toBin[mapping[i]] = magnitude;
-        // toBin[i] = magnitude;
+        toBin[(logScaleBands ? logMapping : linearMapping)[i]] += magnitude * FREQUENCY_SCALE;
     }
+
+    float newVolume = 0.0f;
 
     // Bin similar frequencies into discrete bands
-//    float samplesPerBand = SAMPLE_SIZE / NUM_BANDS / 2.0f;
     for (int n = 0; n < NUM_BANDS; n++) {
-//        float value = 0.0f;
-//
-//        for (int i = 0; i < samplesPerBand; i++) {
-//            value += toBin[i + (int) (n * samplesPerBand)];
-//        }
-
         frequencyBands[n] *= FREQUENCY_DAMPING;
         frequencyBands[n] = max(20.0f * log10f(toBin[n]), frequencyBands[n]);
-        // frequencyBands[n] = max(20.0f * log10f(value), frequencyBands[n]);
+        newVolume = max(newVolume, frequencyBands[n]);
     }
+    newVolume *= VOLUME_SCALE;
+
+    // Compute new overall volume level
+    volume *= FREQUENCY_DAMPING;
+    volume = max(newVolume, volume);
 }
 
 float AudioAnalyzer::getFrequencyBand(int i) {
     return frequencyBands[i];
+}
+
+float AudioAnalyzer::getOverallVolume() {
+    return volume;
+}
+
+void AudioAnalyzer::render(glm::mat4 transform) {
+    if (displayWaveform) renderWaveform(transform);
+    if (displaySpectrum) {
+        if (logScaleBands) renderLogSpectrum(transform);
+        else renderLinearSpectrum(transform);
+    }
+    if (displayFrequencyBands) renderFrequencyBands(transform);
+    if (displayVolumeLevel) renderVolumeLevel(transform);
 }
 
 void AudioAnalyzer::renderWaveform(glm::mat4 transform) {
@@ -292,7 +344,6 @@ void AudioAnalyzer::renderWaveform(glm::mat4 transform) {
     glDrawArrays(GL_LINE_STRIP, 0, SAMPLE_SIZE);
     glDisableVertexAttribArray(0);
 }
-
 
 void AudioAnalyzer::renderLinearSpectrum(glm::mat4 transform) {
     glUseProgram(shader);
@@ -347,6 +398,17 @@ void AudioAnalyzer::renderFrequencyBands(glm::mat4 transform) {
     }
 }
 
+void AudioAnalyzer::renderVolumeLevel(glm::mat4 transform) {
+    glUseProgram(shader);
+
+    float color[] = {0.0f, 1.0f, 1.0f, 0.0f};
+    setColor(shader, color);
+
+    glm::mat4 translate = glm::translate(glm::vec3(0, SCREEN_HEIGHT / 2.0f, 0.0f));
+    glm::mat4 scale = glm::scale(glm::vec3(volume * 25.0f, 100.0f, 1.0f));
+    drawSquare(transform * translate * scale, true);
+}
+
 void AudioAnalyzer::drawSquare(glm::mat4 transform, bool fill) {
     GLint transformID = glGetUniformLocation(3, "MVP");
     glUniformMatrix4fv(transformID, 1, GL_FALSE, &transform[0][0]);
@@ -376,9 +438,9 @@ void AudioAnalyzer::printAudioDevices() {
     int numDevices;
     numDevices = Pa_GetDeviceCount();
     if (numDevices < 0) {
-        printf("ERROR: Pa_CountDevices returned 0x%x\n", numDevices);
+        fprintf(stderr, "ERROR: Pa_CountDevices returned 0x%x\n", numDevices);
         PaError err = numDevices;
-        if (paErrorOccured(err)) return;
+        paErrorOccured(err);
         return;
     }
 

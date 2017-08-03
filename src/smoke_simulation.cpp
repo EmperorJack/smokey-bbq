@@ -1,4 +1,5 @@
 #include <iostream>
+#include <vector>
 #include <main.hpp>
 #include <opengl.hpp>
 #include <smoke_simulation.hpp>
@@ -7,7 +8,10 @@
 SmokeSimulation::SmokeSimulation() {
     float size = (float) min(SCREEN_WIDTH, SCREEN_HEIGHT);
     gridSpacing = size / GRID_SIZE;
+
     resetFields();
+    setDefaultVariables();
+    setDefaultToggles();
 
     // Setup VBOs
     float squareVertices[] = {
@@ -52,7 +56,15 @@ SmokeSimulation::SmokeSimulation() {
 
     // Setup shaders
     simpleShader = loadShaders("SimpleVertexShader", "SimpleFragmentShader");
-    densityShader = loadShaders("DensityVertexShader", "DensityFragmentShader");
+
+    smokeShaders = std::vector<GLuint>();
+    smokeShaders.push_back(loadShaders("SmokeVertexShader", "SmokeFragmentShader"));
+    smokeShaders.push_back(loadShaders("SmokeVertexShader", "DensityFragmentShader"));
+    smokeShaders.push_back(loadShaders("SmokeVertexShader", "VelocityFragmentShader"));
+    smokeShaders.push_back(loadShaders("SmokeVertexShader", "TemperatureFragmentShader"));
+    smokeShaders.push_back(loadShaders("SmokeVertexShader", "CurlFragmentShader"));
+
+    currentShader = 0;
 
     init();
 }
@@ -60,6 +72,9 @@ SmokeSimulation::SmokeSimulation() {
 void SmokeSimulation::resetFields() {
     for (int i = 0; i < GRID_SIZE; i++) {
         for (int j = 0; j < GRID_SIZE; j++) {
+            float x = (i / (float) GRID_SIZE - 0.5f) * 2.0f;
+            float y = (j / (float) GRID_SIZE - 0.5f) * 2.0f;
+            // velocity[i][j] = glm::vec2(sin(2 * M_PI * y), sin(2 * M_PI * x));
             velocity[i][j] = glm::vec2(0.0f, 0.0f);
             advectedVelocity[i][j] = glm::vec2(0.0f, 0.0f);
             divergence[i][j] = 0.0f;
@@ -70,6 +85,7 @@ void SmokeSimulation::resetFields() {
             temperature[i][j] = ATMOSPHERE_TEMPERATURE;
             advectedTemperatue[i][j] = ATMOSPHERE_TEMPERATURE;
             tracePosition[i][j] = glm::vec2(0.0f, 0.0f);
+            curl[i][j] = 0.0f;
         }
     }
 
@@ -77,7 +93,44 @@ void SmokeSimulation::resetFields() {
     clearSurface(velocitySlab.pong, 0);
 }
 
+void SmokeSimulation::setDefaultVariables() {
+    TIME_STEP = 0.1f;
+    FLUID_DENSITY = 1.0f;
+    JACOBI_ITERATIONS = 25;
+
+    GRAVITY = 0.0981f;
+    PULSE_RANGE = 50.0f;
+    EMITTER_RANGE = 80.0f;
+    PULSE_FORCE = 150.0f;
+
+    VELOCITY_DISSIPATION = 0.98f;
+    DENSITY_DISSIPATION = 0.965f;
+    TEMPERATURE_DISSIPATION = 0.92f;
+
+    RISE_FORCE = 1.0f;
+    FALL_FORCE = 1.0f;
+    ATMOSPHERE_TEMPERATURE = 0.0f;
+
+    STROKE_WEIGHT = 2.0f;
+
+    VORTICITY_CONFINEMENT_FORCE = 3.0f;
+}
+
+void SmokeSimulation::setDefaultToggles() {
+    displayDensityField = true;
+    displayVelocityField = false;
+    updateSimulation = true;
+    enableEmitter = false;
+    enablePressureSolve = true;
+    randomPulseAngle = false;
+    enableBuoyancy = true;
+    wrapBorders = false;
+    enableVorticityConfinement = true;
+}
+
 void SmokeSimulation::update() {
+    if (!updateSimulation) return;
+
     glViewport(0, 0, GRID_SIZE, GRID_SIZE);
 
     // Advect velocity through velocity
@@ -132,7 +185,23 @@ void SmokeSimulation::update() {
     if (enableBuoyancy) {
         for (int i = 0; i < GRID_SIZE; i++) {
             for (int j = 0; j < GRID_SIZE; j++) {
-                velocity[i][j] += buoyancyAt(i, j);
+                velocity[i][j] += buoyancyForceAt(i, j);
+            }
+        }
+    }
+
+    // Compute curl
+    for (int i = 0; i < GRID_SIZE; i++) {
+        for (int j = 0; j < GRID_SIZE; j++) {
+            curl[i][j] = curlAt(i, j);
+        }
+    }
+
+    // Vorticity confinement
+    if (enableVorticityConfinement) {
+        for (int i = 0; i < GRID_SIZE; i++) {
+            for (int j = 0; j < GRID_SIZE; j++) {
+                velocity[i][j] += vorticityConfinementForceAt(i, j);
             }
         }
     }
@@ -241,8 +310,35 @@ float SmokeSimulation::divergenceAt(int i, int j) {
     return a * b;
 }
 
-glm::vec2 SmokeSimulation::buoyancyAt(int i, int j) {
+glm::vec2 SmokeSimulation::buoyancyForceAt(int i, int j) {
     return (FALL_FORCE * density[i][j] - RISE_FORCE * (temperature[i][j] - ATMOSPHERE_TEMPERATURE)) * glm::vec2(0.0f, GRAVITY / abs(GRAVITY));
+}
+
+float SmokeSimulation::curlAt(int i, int j) {
+    float pdx = (getInterpolatedVelocity(i + 1, j, false) -
+                 getInterpolatedVelocity(i - 1, j, false)) * 0.5f;
+    float pdy = (getInterpolatedVelocity(i, j + 1, true) -
+                 getInterpolatedVelocity(i, j - 1, true)) * 0.5f;
+
+    return pdx - pdy;
+}
+
+glm::vec2 SmokeSimulation::vorticityConfinementForceAt(int i, int j) {
+    float curl = getGridCurl(i, j);
+    float curlLeft = getGridCurl(i - 1, j);
+    float curlRight = getGridCurl(i + 1, j);
+    float curlBottom = getGridCurl(i, j - 1);
+    float curlTop = getGridCurl(i, j + 1);
+
+    glm::vec3 magnitude = glm::vec3(abs(curlRight) - abs(curlLeft), abs(curlTop) - abs(curlBottom), 0.0f);
+
+    float length = glm::length(magnitude);
+    magnitude = length > 0.0f ? (magnitude / length) : glm::vec3();
+
+    glm::vec3 curlVector = glm::vec3(0.0f, 0.0f, curl);
+    glm::vec3 force = TIME_STEP * VORTICITY_CONFINEMENT_FORCE * glm::cross(magnitude, curlVector);
+
+    return glm::vec2(force);
 }
 
 void SmokeSimulation::solvePressureField() {
@@ -283,8 +379,8 @@ void SmokeSimulation::applyPressure() {
 
     for (int i = 0; i < GRID_SIZE; i++) {
         for (int j = 0; j < GRID_SIZE; j++) {
-            float xChange = getGridPressure(clampIndex(i + 1),j) - getGridPressure(clampIndex(i - 1),j);
-            float yChange = getGridPressure(i, clampIndex(j + 1)) - getGridPressure(i ,clampIndex(j - 1));
+            float xChange = getGridPressure(clampIndex(i + 1), j) - getGridPressure(clampIndex(i - 1), j);
+            float yChange = getGridPressure(i, clampIndex(j + 1)) - getGridPressure(i,clampIndex(j - 1));
 
             velocity[i][j].x += a * xChange;
             velocity[i][j].y += a * yChange;
@@ -387,6 +483,15 @@ float SmokeSimulation::getGridPressure(int i, int j) {
     }
 }
 
+float SmokeSimulation::getGridCurl(int i, int j) {
+    if (wrapBorders) {
+        return curl[wrapIndex(i)][wrapIndex(j)];
+    } else {
+        bool boundary = clampBoundary(i) || clampBoundary(j);
+        return curl[i][j] * (boundary ? 0.0f : 1.0f);
+    }
+}
+
 int SmokeSimulation::wrapIndex(int i) {
     if (i < 0) i = GRID_SIZE + (i % GRID_SIZE);
     else i = i >= GRID_SIZE ? i % GRID_SIZE : i;
@@ -413,13 +518,18 @@ bool SmokeSimulation::clampBoundary(int &i) {
     return false;
 }
 
-void SmokeSimulation::renderDensity() {
+void SmokeSimulation::render(glm::mat4 transform, glm::vec2 mousePosition) {
+    if (displayDensityField) renderField();
+    if (displayVelocityField) renderVelocityField(transform, mousePosition);
+}
+
+
+void SmokeSimulation::renderField() {
     glViewport(0, 0, SCREEN_WIDTH, SCREEN_HEIGHT);
 
-    glUseProgram(densityShader);
+    glUseProgram(smokeShaders[currentShader]);
 
-    passScreenSize(densityShader);
-
+/*
 //    glActiveTexture(GL_TEXTURE0);
 //    glBindTexture(GL_TEXTURE_2D, velocitySlab.pong.textureHandle);
 //    drawFullscreenQuad();
@@ -435,6 +545,39 @@ void SmokeSimulation::renderDensity() {
 
     glBindTexture(GL_TEXTURE_2D, densityTexture);
     glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA32F, GRID_SIZE, GRID_SIZE, 0, GL_RG, GL_FLOAT, &densityField[0][0][0]);
+*/
+    passScreenSize(smokeShaders[currentShader]);
+
+    float textureField[SmokeSimulation::GRID_SIZE][SmokeSimulation::GRID_SIZE][2];
+    for (int i = 0; i < GRID_SIZE; i++) {
+        for (int j = 0; j < GRID_SIZE; j++) {
+            switch (currentShader) {
+                case 0:
+                    textureField[i][j][0] = density[j][i];
+                    textureField[i][j][1] = temperature[j][i];
+                    break;
+                case 1:
+                    textureField[i][j][0] = density[j][i];
+                    break;
+                case 2:
+                    textureField[i][j][0] = velocity[j][i].x / 10.0f;
+                    textureField[i][j][1] = velocity[j][i].y / 10.0f;
+                    break;
+                case 3:
+                    textureField[i][j][0] = temperature[j][i];
+                    break;
+                case 4:
+                    textureField[i][j][0] = curl[j][i];
+                    break;
+                default:
+                    textureField[i][j][0] = 0.0f;
+                    textureField[i][j][1] = 0.0f;
+                    break;
+            }
+        }
+    }
+
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA32F, GRID_SIZE, GRID_SIZE, 0, GL_RG, GL_FLOAT, &textureField[0][0][0]);
 
     // Bind vertices
     glEnableVertexAttribArray(0);

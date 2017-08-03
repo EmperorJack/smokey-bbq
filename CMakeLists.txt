@@ -54,11 +54,16 @@ endif()
 # Include the kiss fft library
 include_directories(${PROJECT_SOURCE_DIR}/lib/kissfft)
 
+# Incldue the imgui library
+include_directories(${PROJECT_SOURCE_DIR}/lib/imgui)
+
 # Include any external library files
 file(GLOB EXTERNAL
     lib/glm/glm/glm.hpp
     lib/kissfft/*.h
     lib/kissfft/*.c
+    lib/imgui/*.h
+    lib/imgui/*.cpp
 )
 
 # Include required frameworks
