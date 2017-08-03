@@ -44,9 +44,9 @@ SmokeSimulation::SmokeSimulation() {
     glBufferData(GL_ARRAY_BUFFER, sizeof(densityVertices), densityVertices, GL_STATIC_DRAW);
 
     // Setup density texture
-    glGenTextures(1, &densityTexture);
+    glGenTextures(1, &texture);
 
-    glBindTexture(GL_TEXTURE_2D, densityTexture);
+    glBindTexture(GL_TEXTURE_2D, texture);
 
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
@@ -64,7 +64,7 @@ SmokeSimulation::SmokeSimulation() {
     smokeShaders.push_back(loadShaders("SmokeVertexShader", "TemperatureFragmentShader"));
     smokeShaders.push_back(loadShaders("SmokeVertexShader", "CurlFragmentShader"));
 
-    currentShader = 0;
+    currentShader = 1;
 
     init();
 }
@@ -103,7 +103,7 @@ void SmokeSimulation::setDefaultVariables() {
     EMITTER_RANGE = 80.0f;
     PULSE_FORCE = 150.0f;
 
-    VELOCITY_DISSIPATION = 0.98f;
+    VELOCITY_DISSIPATION = 0.998f;
     DENSITY_DISSIPATION = 0.965f;
     TEMPERATURE_DISSIPATION = 0.92f;
 
@@ -118,14 +118,14 @@ void SmokeSimulation::setDefaultVariables() {
 
 void SmokeSimulation::setDefaultToggles() {
     displayDensityField = true;
-    displayVelocityField = false;
+    displayVelocityField = true;
     updateSimulation = true;
     enableEmitter = false;
-    enablePressureSolve = true;
+    enablePressureSolve = false;
     randomPulseAngle = false;
-    enableBuoyancy = true;
+    enableBuoyancy = false;
     wrapBorders = false;
-    enableVorticityConfinement = true;
+    enableVorticityConfinement = false;
 }
 
 void SmokeSimulation::update() {
@@ -140,7 +140,7 @@ void SmokeSimulation::update() {
         glBindTexture(GL_TEXTURE_2D, velocitySlab.pong.textureHandle);
         glTexImage2D(GL_TEXTURE_2D, 0, GL_RG32F, GRID_SIZE, GRID_SIZE, 0, GL_RG, GL_FLOAT, &velocity[0][0][0]);
 
-        int targetIndex = GRID_SIZE / 2;
+        // int targetIndex = GRID_SIZE / 2;
         // std::cout << "(" << velocity[targetIndex][targetIndex].x << ", " << velocity[targetIndex][targetIndex].y << ")";
 
         advect(velocitySlab.ping, velocitySlab.ping, velocitySlab.pong, VELOCITY_DISSIPATION);
@@ -529,23 +529,11 @@ void SmokeSimulation::renderField() {
 
     glUseProgram(smokeShaders[currentShader]);
 
-/*
 //    glActiveTexture(GL_TEXTURE0);
 //    glBindTexture(GL_TEXTURE_2D, velocitySlab.pong.textureHandle);
 //    drawFullscreenQuad();
 //    return;
 
-    float densityField[SmokeSimulation::GRID_SIZE][SmokeSimulation::GRID_SIZE][2];
-    for (int i = 0; i < GRID_SIZE; i++) {
-        for (int j = 0; j < GRID_SIZE; j++) {
-            densityField[i][j][0] = density[i][j]; // densityField[j][i].x; // grid[j][i].pressure / 1000.0f;
-            densityField[i][j][1] = temperature[i][j]; // densityField[j][i].y; // grid[j][i].divergence / 1000.0f;
-        }
-    }
-
-    glBindTexture(GL_TEXTURE_2D, densityTexture);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA32F, GRID_SIZE, GRID_SIZE, 0, GL_RG, GL_FLOAT, &densityField[0][0][0]);
-*/
     passScreenSize(smokeShaders[currentShader]);
 
     float textureField[SmokeSimulation::GRID_SIZE][SmokeSimulation::GRID_SIZE][2];
@@ -577,6 +565,7 @@ void SmokeSimulation::renderField() {
         }
     }
 
+    glBindTexture(GL_TEXTURE_2D, texture);
     glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA32F, GRID_SIZE, GRID_SIZE, 0, GL_RG, GL_FLOAT, &textureField[0][0][0]);
 
     // Bind vertices

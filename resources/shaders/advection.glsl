@@ -12,12 +12,10 @@ uniform float timeStep;
 uniform float dissipation;
 
 vec2 getGridVelocity(sampler2D source, float i, float j) {
-    if (i < 0 || i >= gridSize) {
-        i = 0;
-    }
-    if (j < 0 || j >= gridSize) {
-        j = 0;
-    }
+    if (i < 0) i = 0;
+    if (i >= gridSize) i = gridSize - 1;
+    if (j < 0) j = 0;
+    if (j >= gridSize) j = gridSize - 1;
 
     vec2 texcoord = vec2(i, j) / float(gridSize);
     return texture(source, texcoord).xy;

@@ -49,7 +49,7 @@ class SmokeSimulation {
 public:
 
     // Constants
-    static constexpr int GRID_SIZE = 192;
+    static constexpr int GRID_SIZE = 32;
 
     // Variables
     float TIME_STEP;
@@ -124,7 +124,7 @@ private:
     GLuint densityVBO;
 
     // Textures
-    GLuint densityTexture;
+    GLuint texture;
 
     // Shaders
     GLuint simpleShader;
