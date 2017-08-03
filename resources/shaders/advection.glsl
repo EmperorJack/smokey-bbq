@@ -1,7 +1,7 @@
 #version 330 core
 
 //layout(origin_upper_left) in vec4 gl_FragCoord;
-layout(location = 0) out vec3 color;
+layout(location = 0) out vec4 color;
 
 uniform sampler2D velocityTexture;
 uniform sampler2D sourceTexture;
@@ -11,40 +11,50 @@ uniform float gridSpacing;
 uniform float timeStep;
 uniform float dissipation;
 
-vec2 getGridVelocity(sampler2D source, float i, float j) {
-    if (i < 0) i = 0;
-    if (i >= gridSize) i = gridSize - 1;
-    if (j < 0) j = 0;
-    if (j >= gridSize) j = gridSize - 1;
+bool clampBoundary(float i) {
+    if (i < 0) {
+        return true;
+    }  else if (i >= gridSize) {
+        return true;
+    }
 
-    vec2 texcoord = vec2(i, j) / float(gridSize);
-    return texture(source, texcoord).xy;
+    return false;
 }
 
-float getInterpolatedVelocity(sampler2D source, float x, float y, bool xAxis) {
+vec2 getGridVelocity(sampler2D source, float i, float j) {
+//    if (i < 0) i = 0;
+//    if (i >= gridSize) i = gridSize - 1;
+//    if (j < 0) j = 0;
+//    if (j >= gridSize) j = gridSize - 1;
+
+    vec2 texcoord = vec2(i, j) / float(gridSize);
+    bool boundary = clampBoundary(i) || clampBoundary(j);
+    return texture(source, texcoord).xy * (boundary ? 0.0f : 1.0f);
+}
+
+vec2 getInterpolatedVelocity(sampler2D source, float x, float y) {
     int i = (int(x + gridSize)) - gridSize;
     int j = (int(y + gridSize)) - gridSize;
+//    float i = x;
+//    float j = y;
 
-    return (i+1-x) * (j+1-y) * (xAxis ? getGridVelocity(source, i, j).x : getGridVelocity(source, i, j).y) +
-           (x-i) * (j+1-y)   * (xAxis ? getGridVelocity(source, i+1, j).x : getGridVelocity(source, i+1, j).y) +
-           (i+1-x) * (y-j)   * (xAxis ? getGridVelocity(source, i, j+1).x : getGridVelocity(source, i, j+1).y) +
-           (x-i) * (y-j)     * (xAxis ? getGridVelocity(source, i+1, j+1).x : getGridVelocity(source, i+1, j+1).y);
+    return (i+1-x) * (j+1-y) * getGridVelocity(source, i, j) +
+           (x-i) * (j+1-y)   * getGridVelocity(source, i+1, j) +
+           (i+1-x) * (y-j)   * getGridVelocity(source, i, j+1) +
+           (x-i) * (y-j)     * getGridVelocity(source, i+1, j+1);
 }
 
 vec2 getVelocity(sampler2D source, float x, float y) {
-    float normX = x / gridSpacing;
-    float normY = y / gridSpacing;
+    float normX = x / float(gridSpacing);
+    float normY = y / float(gridSpacing);
 
     vec2 v = vec2(0.0f, 0.0f);
 
     // Evaluating staggered grid velocities using central differences
-    v.x = (getInterpolatedVelocity(source, normX - 0.5f, normY, true) +
-           getInterpolatedVelocity(source, normX + 0.5f, normY, true)) * 0.5f;
-    v.y = (getInterpolatedVelocity(source, normX, normY - 0.5f, false) +
-           getInterpolatedVelocity(source, normX, normY + 0.5f, false)) * 0.5f;
-
-//    v.x = getInterpolatedVelocity(normX, normY-0.5f, true);
-//    v.y = getInterpolatedVelocity(normX-0.5f, normY, false);
+    v.x = (getInterpolatedVelocity(source, normX - 0.5f, normY).x +
+           getInterpolatedVelocity(source, normX + 0.5f, normY).x) * 0.5f;
+    v.y = (getInterpolatedVelocity(source, normX, normY - 0.5f).y +
+           getInterpolatedVelocity(source, normX, normY + 0.5f).y) * 0.5f;
 
     return v;
 }
@@ -64,16 +74,26 @@ void main() {
     int i = int(pos.x);
     int j = int(pos.y);
 
-//    if ((gridSize / 2 - 8) < pos.x && pos.x < (gridSize / 2 + 8) &&
-//        (gridSize / 2 - 8) < pos.y && pos.y < (gridSize / 2 + 8)) {
-//        color = vec3(75.0f, 25.0f, 0.0f);
+//    if ((gridSize / 2 - 4) < pos.x && pos.x < (gridSize / 2 + 4) &&
+//        (gridSize / 2 - 4) < pos.y && pos.y < (gridSize / 2 + 4)) {
+//        color = vec4(100.0f, 0.0f, 0.0f, 0.0f);
 //        return;
 //    }
 
-//    vec2 tracePosition = traceParticle(pos.x * gridSpacing, pos.y * gridSpacing);
-    vec2 tracePosition = traceParticle(i * gridSpacing, j * gridSpacing);
+    vec2 tracePosition = traceParticle(pos.x * gridSpacing, pos.y * gridSpacing);
+//    vec2 tracePosition = traceParticle(i * gridSpacing, j * gridSpacing);
     vec2 newValue = getVelocity(sourceTexture, tracePosition.x, tracePosition.y);
-    color = vec3(newValue.xy * dissipation, 0.0f);
+    color = vec4(newValue.xy * dissipation, 0.0f, 0.0f);
+//    color = vec4(pos.x * gridSpacing, tracePosition.x, 0.0f, 0.0f);
+//    color = vec4(1.0f, 0.0f, 0.0f, 0.0f);
+
+//    float inverseSize = 1.0f / float(gridSize);
+//    vec2 u = texture(velocityTexture, pos * inverseSize).xy;
+//    vec2 coord = inverseSize * (pos - timeStep * u);
+//    vec2 uNew = texture(sourceTexture, coord).xy;// * dissipation;
+//    color = vec4(uNew.x, uNew.y, 0.0f, 0.0f);
+//    color = vec3(10.0f, 0.0f, 0.0f);
+//    color = vec3(u.y, u.x, 0);
 
 //    float inverseSize = 1.0f / float(gridSize);
 //    vec2 u = texture(velocityTexture, inverseSize * pos).xy;

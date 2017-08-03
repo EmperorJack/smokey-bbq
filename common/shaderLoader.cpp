@@ -74,6 +74,7 @@ GLuint loadShaders(std::string vertex_file_path_s, std::string fragment_file_pat
         std::vector<char> FragmentShaderErrorMessage(InfoLogLength+1);
         glGetShaderInfoLog(FragmentShaderID, InfoLogLength, NULL, &FragmentShaderErrorMessage[0]);
         printf("%s\n", &FragmentShaderErrorMessage[0]);
+        exit(-1);
     }
 
     // Link the program
@@ -90,6 +91,7 @@ GLuint loadShaders(std::string vertex_file_path_s, std::string fragment_file_pat
         std::vector<char> ProgramErrorMessage(InfoLogLength+1);
         glGetProgramInfoLog(ProgramID, InfoLogLength, NULL, &ProgramErrorMessage[0]);
         printf("%s\n", &ProgramErrorMessage[0]);
+        exit(-1);
     }
 
     glDetachShader(ProgramID, VertexShaderID);

@@ -8,6 +8,9 @@
 #include <smoke_simulation_gui.hpp>
 #include <audio_analyzer_gui.hpp>
 
+#include <chrono>
+#include <thread>
+
 // Object instances
 SmokeSimulation* smokeSimulation = nullptr;
 AudioAnalyzer* audioAnalyzer = nullptr;
@@ -134,10 +137,12 @@ int main(int argc, char **argv) {
 
         // Print the frame time every second
         if (currentTime - lastTime >= 1.0) {
-            printf("%f ms/frame\n", 1000.0 / (double) frameCount);
+            //printf("%f ms/frame\n", 1000.0 / (double) frameCount);
             frameCount = 0;
             lastTime += 1.0;
         }
+
+//        std::this_thread::sleep_for(std::chrono::milliseconds(100));
 
         glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);

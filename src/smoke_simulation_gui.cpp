@@ -27,6 +27,7 @@ void SmokeSimulationGui::renderToggles() {
     ImGui::Checkbox("Enable Vorticity Confinement", &smokeSimulation->enableVorticityConfinement);
     ImGui::Checkbox("Wrap Borders", &smokeSimulation->wrapBorders);
     ImGui::Checkbox("Enable Pressure Solver", &smokeSimulation->enablePressureSolve);
+    ImGui::Checkbox("GPU Implementation", &smokeSimulation->gpuImplementation);
 
     ImGui::Separator(); // Reset toggles
 

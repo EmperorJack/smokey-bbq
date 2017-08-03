@@ -12,7 +12,7 @@ void SmokeSimulation::init() {
 }
 
 void SmokeSimulation::initPrograms() {
-    advectProgram = loadShaders("DensityVertexShader", "advection");
+    advectProgram = loadShaders("SmokeVertexShader", "advection");
     //applyImpulseProgram = loadShaders("")
     //applyBuoyancyProgram = loadShaders("")
     //computeDivergenceProgram = loadShaders("")
@@ -24,7 +24,7 @@ void SmokeSimulation::initSlabs() {
     velocitySlab = createSlab(GRID_SIZE, GRID_SIZE, 2);
 //    divergenceSlab = createSlab(GRID_SIZE, GRID_SIZE, 1);
 //    pressureSlab = createSlab(GRID_SIZE, GRID_SIZE, 1);
-//    densitySlab = createSlab(GRID_SIZE, GRID_SIZE, 1);
+    densitySlab = createSlab(GRID_SIZE, GRID_SIZE, 1);
 //    temperatureSlab = createSlab(GRID_SIZE, GRID_SIZE, 1);
 
 //    swapSurfaces(&velocitySlab);
@@ -100,12 +100,14 @@ void SmokeSimulation::advect(Surface velocitySurface, Surface source, Surface de
     GLint gridSpacingLoc = glGetUniformLocation(p, "gridSpacing");
     GLint timeStep = glGetUniformLocation(p, "timeStep");
     GLint dissLoc = glGetUniformLocation(p, "dissipation");
+    GLint velocityTexture = glGetUniformLocation(p, "velocityTexture");
     GLint sourceTexture = glGetUniformLocation(p, "sourceTexture");
 
     glUniform1i(gridSizeLoc, GRID_SIZE);
     glUniform1f(gridSpacingLoc, gridSpacing);
     glUniform1f(timeStep, TIME_STEP);
     glUniform1f(dissLoc, dissipation);
+    glUniform1i(velocityTexture, 0);
     glUniform1i(sourceTexture, 1);
 
     glBindFramebuffer(GL_FRAMEBUFFER, destination.fboHandle);
@@ -115,13 +117,13 @@ void SmokeSimulation::advect(Surface velocitySurface, Surface source, Surface de
     glBindTexture(GL_TEXTURE_2D, source.textureHandle);
 
     drawFullscreenQuad();
+}
 
-    // Dup
-
+void SmokeSimulation::copyVelocityIntoField() {
     GLfloat* pixels = new GLfloat[GRID_SIZE * GRID_SIZE * 2];
 
     glActiveTexture(GL_TEXTURE0);
-    glBindTexture(GL_TEXTURE_2D, destination.textureHandle);
+    glBindTexture(GL_TEXTURE_2D, velocitySlab.pong.textureHandle);
     glGetTexImage(GL_TEXTURE_2D, 0, GL_RG, GL_FLOAT, pixels);
 
     for (int i = 0; i < GRID_SIZE; i++) {
@@ -134,6 +136,26 @@ void SmokeSimulation::advect(Surface velocitySurface, Surface source, Surface de
 
             velocity[i][j].x = xValue;
             velocity[i][j].y = yValue;
+        }
+    }
+
+    resetState();
+}
+
+void SmokeSimulation::copyDensityIntoField() {
+    GLfloat* pixels = new GLfloat[GRID_SIZE * GRID_SIZE];
+
+    glActiveTexture(GL_TEXTURE0);
+    glBindTexture(GL_TEXTURE_2D, densitySlab.pong.textureHandle);
+    glGetTexImage(GL_TEXTURE_2D, 0, GL_R, GL_FLOAT, pixels);
+
+    for (int i = 0; i < GRID_SIZE; i++) {
+        for (int j = 0; j < GRID_SIZE; j++) {
+            float value = pixels[(GRID_SIZE * i + j)];
+
+            if (isnan(value)) value = 0.0f;
+
+            density[i][j] = value;
         }
     }
 

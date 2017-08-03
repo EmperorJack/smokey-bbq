@@ -44,12 +44,14 @@ class SmokeSimulation {
 
     void advect(Surface velocity, Surface source, Surface destination, float dissipation);
 
+    void copyVelocityIntoField();
+    void copyDensityIntoField();
     void loadVelocityIntoTexture();
 
 public:
 
     // Constants
-    static constexpr int GRID_SIZE = 32;
+    static constexpr int GRID_SIZE = 192;
 
     // Variables
     float TIME_STEP;
@@ -97,8 +99,7 @@ public:
     bool enableBuoyancy;
     bool wrapBorders;
     bool enableVorticityConfinement;
-
-    bool gpuImplementation = false;
+    bool gpuImplementation;
 
 private:
 
