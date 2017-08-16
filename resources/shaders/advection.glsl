@@ -10,6 +10,7 @@ uniform int gridSize;
 uniform float gridSpacing;
 uniform float timeStep;
 uniform float dissipation;
+uniform float inverseSize;
 
 bool clampBoundary(float i) {
     if (i < 0) {
@@ -68,15 +69,13 @@ vec2 traceParticle(float x, float y) {
 void main() {
     vec2 pos = gl_FragCoord.xy;
 
-//    color = vec3(pos.x, pos.y, 0.0f);
-//    return;
-
     int i = int(pos.x);
     int j = int(pos.y);
 
 //    if ((gridSize / 2 - 4) < pos.x && pos.x < (gridSize / 2 + 4) &&
 //        (gridSize / 2 - 4) < pos.y && pos.y < (gridSize / 2 + 4)) {
-//        color = vec4(100.0f, 0.0f, 0.0f, 0.0f);
+//    if (i == gridSize / 2 && j == gridSize / 2) {
+//        color = vec4(-1.0f, 0.0f, 0.0f, 0.0f);
 //        return;
 //    }
 
@@ -95,20 +94,13 @@ void main() {
 //    color = vec3(10.0f, 0.0f, 0.0f);
 //    color = vec3(u.y, u.x, 0);
 
-//    float inverseSize = 1.0f / float(gridSize);
-//    vec2 u = texture(velocityTexture, inverseSize * pos).xy;
-//    vec2 coord = inverseSize * (pos - timeStep * u);
-//    color = vec3(texture(sourceTexture, coord).xy, 0.0f) * dissipation;
-
-//    color = vec3(1.0f, 0.0f, 0.0f);
-
-//    color = vec3(getVelocity(i * gridSpacing, j * gridSpacing), 0.0f);
-
-//    vec2 pos = coords - timeStep * (1 / float(gridSize)) * texture(velocityTexture, coords).xy;
-//    color = vec3(getVelocity(sourceTexture, pos.x, pos.y), 0.0f);
-
-//    vec2 fragCoord = gl_FragCoord.xy;
-//    vec2 u = texture(velocityTexture, rdx * fragCoord).xy;
-//    vec2 tracePosition = rdx * (fragCoord - timeStep * u);
-//    color = vec3(getVelocity(sourceTexture, tracePosition.x, tracePosition.y), 0.0f);
+//    vec2 u = texture(velocityTexture, pos * inverseSize).rg;
+//    vec2 coord = (pos - timeStep * u) * inverseSize;
+//
+//    color = dissipation * texture(sourceTexture, coord);
+//
+    if (i == gridSize / 2 && j == gridSize / 2) {
+        color += vec4(100.0f, 100.0f, 0.0f, 0.0f);
+        return;
+    }
 }

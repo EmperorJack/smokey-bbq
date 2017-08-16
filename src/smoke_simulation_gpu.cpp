@@ -28,8 +28,12 @@ void SmokeSimulation::initSlabs() {
 //    temperatureSlab = createSlab(GRID_SIZE, GRID_SIZE, 1);
 
 //    swapSurfaces(&velocitySlab);
-//    clearSurface(velocitySlab.ping, 1);
-//    clearSurface(velocitySlab.pong, 1);
+//    std::cout << velocitySlab.ping.textureHandle << " " << velocitySlab.pong.textureHandle << std::endl;
+    clearSurface(velocitySlab.ping, 0.0f);
+    clearSurface(velocitySlab.pong, 0.0f);
+
+    clearSurface(densitySlab.ping, 0.0f);
+    clearSurface(densitySlab.pong, 0.0f);
 }
 
 SmokeSimulation::Slab SmokeSimulation::createSlab(int width, int height, int numComponents) {
@@ -53,10 +57,10 @@ SmokeSimulation::Surface SmokeSimulation::createSurface(int width, int height, i
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
     switch (numComponents) {
-        case 1: glTexImage2D(GL_TEXTURE_2D, 0, GL_R32F, width, height, 0, GL_RED, GL_FLOAT, 0); break;
-        case 2: glTexImage2D(GL_TEXTURE_2D, 0, GL_RG32F, width, height, 0, GL_RG, GL_FLOAT, 0); break;
+        case 1: glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB32F, width, height, 0, GL_RED, GL_FLOAT, 0); break;
+        case 2: glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB32F, width, height, 0, GL_RG, GL_FLOAT, 0); break;
         case 3: glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB32F, width, height, 0, GL_RGB, GL_FLOAT, 0); break;
-        case 4: glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA32F, width, height, 0, GL_RGBA, GL_FLOAT, 0); break;
+        case 4: glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB32F, width, height, 0, GL_RGBA, GL_FLOAT, 0); break;
         default: fprintf(stderr, "Invalid slab format."); exit(1);
     }
 
@@ -79,10 +83,12 @@ SmokeSimulation::Surface SmokeSimulation::createSurface(int width, int height, i
     return surface;
 }
 
-void SmokeSimulation::swapSurfaces(Slab* slab) {
-    Surface temp = slab->ping;
-    slab->ping = slab->pong;
-    slab->pong = temp;
+void SmokeSimulation::swapSurfaces(Slab &slab) {
+//    std::cout << "PING HANDLE WAS " << slab.ping.textureHandle << " AND IS NOW ";
+    Surface temp = slab.ping;
+    slab.ping = slab.pong;
+    slab.pong = temp;
+//    std::cout << slab.ping.textureHandle << std::endl;
 }
 
 void SmokeSimulation::clearSurface(Surface s, float v) {
@@ -100,6 +106,7 @@ void SmokeSimulation::advect(Surface velocitySurface, Surface source, Surface de
     GLint gridSpacingLoc = glGetUniformLocation(p, "gridSpacing");
     GLint timeStep = glGetUniformLocation(p, "timeStep");
     GLint dissLoc = glGetUniformLocation(p, "dissipation");
+    GLint inverseSize = glGetUniformLocation(p, "inverseSize");
     GLint velocityTexture = glGetUniformLocation(p, "velocityTexture");
     GLint sourceTexture = glGetUniformLocation(p, "sourceTexture");
 
@@ -109,6 +116,7 @@ void SmokeSimulation::advect(Surface velocitySurface, Surface source, Surface de
     glUniform1f(dissLoc, dissipation);
     glUniform1i(velocityTexture, 0);
     glUniform1i(sourceTexture, 1);
+    glUniform1f(inverseSize, 1.0f / GRID_SIZE);
 
     glBindFramebuffer(GL_FRAMEBUFFER, destination.fboHandle);
     glActiveTexture(GL_TEXTURE0);
@@ -126,10 +134,19 @@ void SmokeSimulation::copyVelocityIntoField() {
     glBindTexture(GL_TEXTURE_2D, velocitySlab.pong.textureHandle);
     glGetTexImage(GL_TEXTURE_2D, 0, GL_RG, GL_FLOAT, pixels);
 
+    bool printTable = false;
+    if (printTable) std::cout << "[";
     for (int i = 0; i < GRID_SIZE; i++) {
+        if (printTable) std::cout << "[";
         for (int j = 0; j < GRID_SIZE; j++) {
             float xValue = pixels[(GRID_SIZE * i + j) * 2];
             float yValue = pixels[(GRID_SIZE * i + j) * 2 + 1];
+
+//            if (i == GRID_SIZE / 2 && j == GRID_SIZE / 2) {
+//                std::cout << "Copying value " << xValue << " " << yValue << std::endl;
+//            }
+
+           if (printTable) std::cout << "(" << xValue << ", " << yValue << ")";
 
             if (isnan(xValue)) xValue = 0.0f;
             if (isnan(yValue)) yValue = 0.0f;
@@ -137,7 +154,9 @@ void SmokeSimulation::copyVelocityIntoField() {
             velocity[i][j].x = xValue;
             velocity[i][j].y = yValue;
         }
+        if (printTable) std::cout << "]" << std::endl;
     }
+    if (printTable) std::cout << "]" << std::endl;
 
     resetState();
 }
@@ -147,7 +166,7 @@ void SmokeSimulation::copyDensityIntoField() {
 
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_2D, densitySlab.pong.textureHandle);
-    glGetTexImage(GL_TEXTURE_2D, 0, GL_R, GL_FLOAT, pixels);
+    glGetTexImage(GL_TEXTURE_2D, 0, GL_RED, GL_FLOAT, pixels);
 
     for (int i = 0; i < GRID_SIZE; i++) {
         for (int j = 0; j < GRID_SIZE; j++) {

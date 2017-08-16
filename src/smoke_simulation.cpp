@@ -89,8 +89,7 @@ void SmokeSimulation::resetFields() {
         }
     }
 
-    clearSurface(velocitySlab.ping, 0);
-    clearSurface(velocitySlab.pong, 0);
+    initSlabs();
 }
 
 void SmokeSimulation::setDefaultVariables() {
@@ -118,7 +117,7 @@ void SmokeSimulation::setDefaultVariables() {
 
 void SmokeSimulation::setDefaultToggles() {
     displayDensityField = true;
-    displayVelocityField = true;
+    displayVelocityField = false;
     updateSimulation = true;
     enableEmitter = false;
     enablePressureSolve = false;
@@ -126,31 +125,43 @@ void SmokeSimulation::setDefaultToggles() {
     enableBuoyancy = false;
     wrapBorders = false;
     enableVorticityConfinement = false;
-    gpuImplementation = false;
+    gpuImplementation = true;
 }
+
+int numFrames = 0;
 
 void SmokeSimulation::update() {
     if (!updateSimulation) return;
 
     glViewport(0, 0, GRID_SIZE, GRID_SIZE);
 
-    int targetIndex = 0;//GRID_SIZE / 2;
-//    std::cout << "(" << velocity[targetIndex][targetIndex].x << ", " << velocity[targetIndex][targetIndex].y << ")";
+    int targetIndex = GRID_SIZE / 2;
+    std::cout << "(" << velocity[targetIndex][targetIndex].x << ", " << velocity[targetIndex][targetIndex].y << ")";
 
     // Advect velocity through velocity
     if (gpuImplementation) {
-        glBindTexture(GL_TEXTURE_2D, velocitySlab.ping.textureHandle);
-        glTexImage2D(GL_TEXTURE_2D, 0, GL_RG32F, GRID_SIZE, GRID_SIZE, 0, GL_RG, GL_FLOAT, &velocity[0][0][0]);
+//        glBindTexture(GL_TEXTURE_2D, velocitySlab.ping.textureHandle);
+//        glTexImage2D(GL_TEXTURE_2D, 0, GL_RG32F, GRID_SIZE, GRID_SIZE, 0, GL_RG, GL_FLOAT, &velocity[0][0][0]);
 //        glBindTexture(GL_TEXTURE_2D, velocitySlab.pong.textureHandle);
 //        glTexImage2D(GL_TEXTURE_2D, 0, GL_RG32F, GRID_SIZE, GRID_SIZE, 0, GL_RG, GL_FLOAT, &velocity[0][0][0]);
-
-        advect(velocitySlab.ping, velocitySlab.ping, velocitySlab.pong, VELOCITY_DISSIPATION);
-        copyVelocityIntoField();
-        swapSurfaces(&velocitySlab);
+        numFrames++;
+        if (numFrames % 1 == 0) {
+            advect(velocitySlab.ping, velocitySlab.ping, velocitySlab.pong, VELOCITY_DISSIPATION);
+            copyVelocityIntoField();
+            swapSurfaces(velocitySlab);
+//        copyVelocityIntoField();
+            resetState();
+        }
     } else {
         for (int i = 0; i < GRID_SIZE; i++) {
             for (int j = 0; j < GRID_SIZE; j++) {
-                advectedVelocity[i][j] = getVelocity(tracePosition[i][j].x, tracePosition[i][j].y) * VELOCITY_DISSIPATION;
+//                if (i == GRID_SIZE / 2 && j == GRID_SIZE / 2) {
+//                    advectedVelocity[i][j].x = 0.0f;
+//                    advectedVelocity[i][j].y = -100.0f;
+//                } else {
+                    advectedVelocity[i][j] =
+                            getVelocity(tracePosition[i][j].x, tracePosition[i][j].y) * VELOCITY_DISSIPATION;
+//                }
             }
         }
 
@@ -161,7 +172,7 @@ void SmokeSimulation::update() {
         }
     }
 
-//    std::cout << " -> (" << velocity[targetIndex][targetIndex].x << ", " << velocity[targetIndex][targetIndex].y << ")" << std::endl;
+    std::cout << " -> (" << velocity[targetIndex][targetIndex].x << ", " << velocity[targetIndex][targetIndex].y << ")" << std::endl;
 
     // Smoke emitter
     if (enableEmitter) {
@@ -228,13 +239,14 @@ void SmokeSimulation::update() {
 //    std::cout << "(" << density[targetIndex][targetIndex] << ")";
 
     // Advect density and temperature through velocity
-    if (gpuImplementation && false) {
-        glBindTexture(GL_TEXTURE_2D, densitySlab.ping.textureHandle);
-        glTexImage2D(GL_TEXTURE_2D, 0, GL_R32F, GRID_SIZE, GRID_SIZE, 0, GL_RED, GL_FLOAT, &density[0][0]);
+    if (gpuImplementation) {
+//        glBindTexture(GL_TEXTURE_2D, densitySlab.ping.textureHandle);
+//        glTexImage2D(GL_TEXTURE_2D, 0, GL_R32F, GRID_SIZE, GRID_SIZE, 0, GL_RED, GL_FLOAT, &density[0][0]);
 
         advect(velocitySlab.ping, densitySlab.ping, densitySlab.pong, DENSITY_DISSIPATION);
+        swapSurfaces(densitySlab);
         copyDensityIntoField();
-        swapSurfaces(&densitySlab);
+        resetState();
     } else {
         for (int i = 0; i < GRID_SIZE; i++) {
             for (int j = 0; j < GRID_SIZE; j++) {
@@ -558,11 +570,11 @@ void SmokeSimulation::renderField() {
                     textureField[i][j][1] = temperature[j][i];
                     break;
                 case 1:
-                    textureField[i][j][0] = density[j][i];
+                    textureField[i][j][0] = density[i][j];
                     break;
                 case 2:
-                    textureField[i][j][0] = velocity[j][i].x / 10.0f;
-                    textureField[i][j][1] = velocity[j][i].y / 10.0f;
+                    textureField[i][j][0] = velocity[i][j].x / 10.0f;
+                    textureField[i][j][1] = velocity[i][j].y / 10.0f;
                     break;
                 case 3:
                     textureField[i][j][0] = temperature[j][i];

@@ -26,7 +26,7 @@ bool mousePressed = false;
 // Toggles
 bool displaySmokeSimulationGui = false;
 bool displayAudioAnalyzerGui = false;
-bool smokeAudio = true;
+bool smokeAudio = false;
 
 // Mouse Position callback
 void mouseMovedCallback(GLFWwindow* win, double xPos, double yPos) {

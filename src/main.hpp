@@ -11,8 +11,8 @@
 static const int SCREEN_WIDTH = 1920;
 static const int SCREEN_HEIGHT = 1080;
 #else
-static const int SCREEN_WIDTH = 800;
-static const int SCREEN_HEIGHT = 800;
+static const int SCREEN_WIDTH = 1000;
+static const int SCREEN_HEIGHT = 1000;
 #endif
 
 // Paths
