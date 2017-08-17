@@ -11,6 +11,7 @@ uniform float gridSpacing;
 uniform float timeStep;
 uniform float dissipation;
 uniform float inverseSize;
+uniform float offset;
 
 bool clampBoundary(float i) {
     if (i < 0) {
@@ -30,7 +31,7 @@ vec2 getGridVelocity(sampler2D source, float i, float j) {
 
     vec2 texcoord = vec2(i, j) / float(gridSize);
     bool boundary = clampBoundary(i) || clampBoundary(j);
-    return texture(source, texcoord).xy * (boundary ? 0.0f : 1.0f);
+    return texture(source, texcoord).xy;// * (boundary ? 0.0f : 1.0f);
 }
 
 vec2 getInterpolatedVelocity(sampler2D source, float x, float y) {
@@ -98,9 +99,11 @@ void main() {
 //    vec2 coord = (pos - timeStep * u) * inverseSize;
 //
 //    color = dissipation * texture(sourceTexture, coord);
-//
-    if (i == gridSize / 2 && j == gridSize / 2) {
-        color += vec4(100.0f, 100.0f, 0.0f, 0.0f);
+
+    if ((gridSize / 2 - 4) < pos.x && pos.x < (gridSize / 2 + 4) &&
+        (gridSize * 0.95f - 4) < pos.y && pos.y < (gridSize * 0.95f + 4)) {
+//    if (i == gridSize / 2 && j == gridSize / 2) {
+        color += vec4(-1.0f * offset, -10.0f, 0.0f, 0.0f);
         return;
     }
 }

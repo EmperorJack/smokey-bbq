@@ -57,10 +57,10 @@ SmokeSimulation::Surface SmokeSimulation::createSurface(int width, int height, i
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
     switch (numComponents) {
-        case 1: glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB32F, width, height, 0, GL_RED, GL_FLOAT, 0); break;
-        case 2: glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB32F, width, height, 0, GL_RG, GL_FLOAT, 0); break;
+        case 1: glTexImage2D(GL_TEXTURE_2D, 0, GL_R32F, width, height, 0, GL_RED, GL_FLOAT, 0); break;
+        case 2: glTexImage2D(GL_TEXTURE_2D, 0, GL_RG32F, width, height, 0, GL_RG, GL_FLOAT, 0); break;
         case 3: glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB32F, width, height, 0, GL_RGB, GL_FLOAT, 0); break;
-        case 4: glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB32F, width, height, 0, GL_RGBA, GL_FLOAT, 0); break;
+        case 4: glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA32F, width, height, 0, GL_RGBA, GL_FLOAT, 0); break;
         default: fprintf(stderr, "Invalid slab format."); exit(1);
     }
 
@@ -107,16 +107,19 @@ void SmokeSimulation::advect(Surface velocitySurface, Surface source, Surface de
     GLint timeStep = glGetUniformLocation(p, "timeStep");
     GLint dissLoc = glGetUniformLocation(p, "dissipation");
     GLint inverseSize = glGetUniformLocation(p, "inverseSize");
+    GLint offset = glGetUniformLocation(p, "offset");
+
     GLint velocityTexture = glGetUniformLocation(p, "velocityTexture");
     GLint sourceTexture = glGetUniformLocation(p, "sourceTexture");
 
     glUniform1i(gridSizeLoc, GRID_SIZE);
     glUniform1f(gridSpacingLoc, gridSpacing);
-    glUniform1f(timeStep, TIME_STEP);
+    glUniform1f(timeStep, TIME_STEP * 10.0f);
     glUniform1f(dissLoc, dissipation);
     glUniform1i(velocityTexture, 0);
     glUniform1i(sourceTexture, 1);
     glUniform1f(inverseSize, 1.0f / GRID_SIZE);
+    glUniform1f(offset, myRandom() * 2.0f - 1.0f);
 
     glBindFramebuffer(GL_FRAMEBUFFER, destination.fboHandle);
     glActiveTexture(GL_TEXTURE0);
