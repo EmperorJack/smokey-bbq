@@ -62,17 +62,7 @@ vec2 traceParticle(float x, float y) {
 void main() {
     vec2 pos = gl_FragCoord.xy;
 
-    int i = int(pos.x);
-    int j = int(pos.y);
-
     vec2 tracePosition = traceParticle(pos.x * gridSpacing, pos.y * gridSpacing);
     vec2 newValue = getVelocity(sourceTexture, tracePosition.x, tracePosition.y);
     color = vec4(newValue.xy * dissipation, 0.0f, 0.0f);
-
-    if ((gridSize / 2 - 4) < pos.x && pos.x < (gridSize / 2 + 4) &&
-        (gridSize * 0.95f - 4) < pos.y && pos.y < (gridSize * 0.95f + 4)) {
-//    if (i == gridSize / 2 && j == gridSize / 2) {
-        color += vec4(-1.0f * offset, -20.0f, 0.0f, 0.0f);
-        return;
-    }
 }

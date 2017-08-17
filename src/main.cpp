@@ -115,7 +115,7 @@ int main(int argc, char **argv) {
 
     // Setup GUI instances
     smokeSimulationGui = new SmokeSimulationGui(smokeSimulation);
-    audioAnalyzerGui = new AudioAnalyzerGui(audioAnalyzer);
+    //audioAnalyzerGui = new AudioAnalyzerGui(audioAnalyzer);
 
     // printf("\n~~~\n\n");
     // audioAnalyzer->printAudioDevices();
@@ -141,8 +141,6 @@ int main(int argc, char **argv) {
             frameCount = 0;
             lastTime += 1.0;
         }
-
-//        std::this_thread::sleep_for(std::chrono::milliseconds(100));
 
         glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -186,13 +184,13 @@ int main(int argc, char **argv) {
 
         smokeSimulation->render(mvp, mousePosition);
 
-        audioAnalyzer->update();
+        //audioAnalyzer->update();
 
-        audioAnalyzer->render(mvp);
+        //audioAnalyzer->render(mvp);
 
         // Render GUI
         if (displaySmokeSimulationGui) smokeSimulationGui->render();
-        if (displayAudioAnalyzerGui) audioAnalyzerGui->render();
+        //if (displayAudioAnalyzerGui) audioAnalyzerGui->render();
         ImGui::Render();
 
         glfwSwapBuffers(window);

@@ -51,8 +51,8 @@ SmokeSimulation::Surface SmokeSimulation::createSurface(int width, int height, i
     GLuint textureHandle;
     glGenTextures(1, &textureHandle);
     glBindTexture(GL_TEXTURE_2D, textureHandle);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_WRAP_BORDER);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_WRAP_BORDER);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE); //GL_WRAP_BORDER
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE); //GL_WRAP_BORDER
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
@@ -112,7 +112,7 @@ void SmokeSimulation::advect(Surface velocitySurface, Surface source, Surface de
 
     glUniform1i(gridSizeLoc, GRID_SIZE);
     glUniform1f(gridSpacingLoc, gridSpacing);
-    glUniform1f(timeStep, TIME_STEP * 10.0f);
+    glUniform1f(timeStep, TIME_STEP * 5.0f); //gridSpacing);
     glUniform1f(dissLoc, dissipation);
     glUniform1i(velocityTexture, 0);
     glUniform1i(sourceTexture, 1);
@@ -143,8 +143,8 @@ void SmokeSimulation::copyVelocityIntoField() {
             if (isnan(xValue)) xValue = 0.0f;
             if (isnan(yValue)) yValue = 0.0f;
 
-            velocity[i][j].x = xValue;
-            velocity[i][j].y = yValue;
+            velocity[j][i].x = xValue;
+            velocity[j][i].y = yValue;
         }
     }
 

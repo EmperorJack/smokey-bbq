@@ -36,8 +36,8 @@ SmokeSimulation::SmokeSimulation() {
 
     float densityVertices[] = {
         -1.0f, -1.0f, 0.0f, 1.0f,
-        -1.0f, 3.0, 0.0, 1.0,
-        3.0, -1.0, 0.0, 1.0
+        -1.0f, 3.0f, 0.0f, 1.0f,
+        3.0f, -1.0f, 0.0f, 1.0f
     };
     glGenBuffers(1, &densityVBO);
     glBindBuffer(GL_ARRAY_BUFFER, densityVBO);
@@ -64,7 +64,7 @@ SmokeSimulation::SmokeSimulation() {
     smokeShaders.push_back(loadShaders("SmokeVertexShader", "TemperatureFragmentShader"));
     smokeShaders.push_back(loadShaders("SmokeVertexShader", "CurlFragmentShader"));
 
-    currentShader = 2;
+    currentShader = 0;
 
     init();
 }
@@ -136,9 +136,9 @@ void SmokeSimulation::update() {
     // Advect velocity through velocity
     if (gpuImplementation) {
         glBindTexture(GL_TEXTURE_2D, velocitySlab.ping.textureHandle);
-        glTexImage2D(GL_TEXTURE_2D, 0, GL_RG32F, GRID_SIZE, GRID_SIZE, 0, GL_RG, GL_FLOAT, &velocity[0][0][0]);
+        loadVelocityIntoTexture();
         glBindTexture(GL_TEXTURE_2D, velocitySlab.pong.textureHandle);
-        glTexImage2D(GL_TEXTURE_2D, 0, GL_RG32F, GRID_SIZE, GRID_SIZE, 0, GL_RG, GL_FLOAT, &velocity[0][0][0]);
+        loadVelocityIntoTexture();
 
         advect(velocitySlab.ping, velocitySlab.ping, velocitySlab.pong, VELOCITY_DISSIPATION);
         copyVelocityIntoField();
@@ -253,8 +253,6 @@ void SmokeSimulation::update() {
 
 void SmokeSimulation::addPulse(glm::vec2 position) {
     position -= glm::vec2(gridSpacing / 2.0f, gridSpacing / 2.0f);
-
-    position = glm::vec2(position.y, position.x);
 
     glm::vec2 force = glm::vec2(0.0f, 0.0f);
     if (randomPulseAngle) {
@@ -543,31 +541,26 @@ void SmokeSimulation::renderField() {
     glUseProgram(smokeShaders[currentShader]);
     passScreenSize(smokeShaders[currentShader]);
 
-//    glActiveTexture(GL_TEXTURE0);
-//    glBindTexture(GL_TEXTURE_2D, densitySlab.ping.textureHandle);
-//    drawFullscreenQuad();
-//    return;
-
     float textureField[SmokeSimulation::GRID_SIZE][SmokeSimulation::GRID_SIZE][2];
     for (int i = 0; i < GRID_SIZE; i++) {
         for (int j = 0; j < GRID_SIZE; j++) {
             switch (currentShader) {
                 case 0:
-                    textureField[i][j][0] = density[i][j];
-                    textureField[i][j][1] = temperature[i][j];
+                    textureField[i][j][0] = density[j][i];
+                    textureField[i][j][1] = temperature[j][i];
                     break;
                 case 1:
-                    textureField[i][j][0] = density[i][j];
+                    textureField[i][j][0] = density[j][i];
                     break;
                 case 2:
-                    textureField[i][j][0] = velocity[i][j].x / 10.0f;
-                    textureField[i][j][1] = velocity[i][j].y / 10.0f;
+                    textureField[i][j][0] = velocity[j][i].x / 10.0f;
+                    textureField[i][j][1] = velocity[j][i].y / 10.0f;
                     break;
                 case 3:
-                    textureField[i][j][0] = temperature[i][j];
+                    textureField[i][j][0] = temperature[j][i];
                     break;
                 case 4:
-                    textureField[i][j][0] = curl[i][j];
+                    textureField[i][j][0] = curl[j][i];
                     break;
                 default:
                     textureField[i][j][0] = 0.0f;
