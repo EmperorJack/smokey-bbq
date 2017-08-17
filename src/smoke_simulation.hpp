@@ -39,14 +39,17 @@ class SmokeSimulation {
     Surface createSurface(int width, int height, int numComponents);
     void swapSurfaces(Slab &slab);
     void clearSurface(Surface s, float v);
+    void clearSlabs();
     void resetState();
     void drawFullscreenQuad();
 
     void advect(Surface velocity, Surface source, Surface destination, float dissipation);
+    void applyImpulse(Surface destination, glm::vec2 position, float radius, glm::vec3 fill);
 
     void copyVelocityIntoField();
     void copyDensityIntoField();
     void loadVelocityIntoTexture();
+    void loadDensityIntoTexture();
 
 public:
 

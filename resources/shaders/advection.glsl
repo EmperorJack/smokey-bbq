@@ -10,7 +10,6 @@ uniform float gridSpacing;
 uniform float timeStep;
 uniform float dissipation;
 uniform float inverseSize;
-uniform float offset;
 
 bool clampBoundary(float i) {
     if (i < 0) {
@@ -23,7 +22,7 @@ bool clampBoundary(float i) {
 }
 
 vec2 getGridVelocity(sampler2D source, float i, float j) {
-    vec2 texcoord = vec2(i, j) / float(gridSize);
+    vec2 texcoord = vec2(i, j) * inverseSize;
     // bool boundary = clampBoundary(i) || clampBoundary(j);
     return texture(source, texcoord).xy; // * (boundary ? 0.0f : 1.0f);
 }

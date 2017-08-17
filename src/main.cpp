@@ -111,7 +111,7 @@ int main(int argc, char **argv) {
 
     // Setup object instances
     smokeSimulation = new SmokeSimulation();
-    audioAnalyzer = new AudioAnalyzer();
+    //audioAnalyzer = new AudioAnalyzer();
 
     // Setup GUI instances
     smokeSimulationGui = new SmokeSimulationGui(smokeSimulation);
@@ -137,7 +137,7 @@ int main(int argc, char **argv) {
 
         // Print the frame time every second
         if (currentTime - lastTime >= 1.0) {
-            //printf("%f ms/frame\n", 1000.0 / (double) frameCount);
+            printf("%f ms/frame\n", 1000.0 / (double) frameCount);
             frameCount = 0;
             lastTime += 1.0;
         }

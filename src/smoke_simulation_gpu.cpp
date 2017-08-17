@@ -8,12 +8,12 @@ void SmokeSimulation::init() {
     initPrograms();
     initSlabs();
 
-//    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 }
 
 void SmokeSimulation::initPrograms() {
     advectProgram = loadShaders("SmokeVertexShader", "advection");
-    //applyImpulseProgram = loadShaders("")
+    applyImpulseProgram = loadShaders("SmokeVertexShader", "applyImpulse");
     //applyBuoyancyProgram = loadShaders("")
     //computeDivergenceProgram = loadShaders("")
     //jacobiProgram = loadShaders("")
@@ -27,8 +27,10 @@ void SmokeSimulation::initSlabs() {
     densitySlab = createSlab(GRID_SIZE, GRID_SIZE, 1);
 //    temperatureSlab = createSlab(GRID_SIZE, GRID_SIZE, 1);
 
-//    swapSurfaces(&velocitySlab);
-//    std::cout << velocitySlab.ping.textureHandle << " " << velocitySlab.pong.textureHandle << std::endl;
+    clearSlabs();
+}
+
+void SmokeSimulation::clearSlabs() {
     clearSurface(velocitySlab.ping, 0.0f);
     clearSurface(velocitySlab.pong, 0.0f);
 
@@ -97,27 +99,24 @@ void SmokeSimulation::clearSurface(Surface s, float v) {
 }
 
 void SmokeSimulation::advect(Surface velocitySurface, Surface source, Surface destination, float dissipation) {
-    GLuint p = advectProgram;
-    glUseProgram(p);
+    GLuint program = advectProgram;
+    glUseProgram(program);
 
-    GLint gridSizeLoc = glGetUniformLocation(p, "gridSize");
-    GLint gridSpacingLoc = glGetUniformLocation(p, "gridSpacing");
-    GLint timeStep = glGetUniformLocation(p, "timeStep");
-    GLint dissLoc = glGetUniformLocation(p, "dissipation");
-    GLint inverseSize = glGetUniformLocation(p, "inverseSize");
-    GLint offset = glGetUniformLocation(p, "offset");
+    GLint gridSizeLocation = glGetUniformLocation(program, "gridSize");
+    GLint gridSpacingLocation = glGetUniformLocation(program, "gridSpacing");
+    GLint timeStepLocation = glGetUniformLocation(program, "timeStep");
+    GLint dissipationLocation = glGetUniformLocation(program, "dissipation");
+    GLint inverseSizeLocation = glGetUniformLocation(program, "inverseSize");
+    GLint velocityTextureLocation = glGetUniformLocation(program, "velocityTexture");
+    GLint sourceTextureLocation = glGetUniformLocation(program, "sourceTexture");
 
-    GLint velocityTexture = glGetUniformLocation(p, "velocityTexture");
-    GLint sourceTexture = glGetUniformLocation(p, "sourceTexture");
-
-    glUniform1i(gridSizeLoc, GRID_SIZE);
-    glUniform1f(gridSpacingLoc, gridSpacing);
-    glUniform1f(timeStep, TIME_STEP * 5.0f); //gridSpacing);
-    glUniform1f(dissLoc, dissipation);
-    glUniform1i(velocityTexture, 0);
-    glUniform1i(sourceTexture, 1);
-    glUniform1f(inverseSize, 1.0f / GRID_SIZE);
-    glUniform1f(offset, myRandom() * 2.0f - 1.0f);
+    glUniform1i(gridSizeLocation, GRID_SIZE);
+    glUniform1f(gridSpacingLocation, gridSpacing);
+    glUniform1f(timeStepLocation, TIME_STEP * 5.0f); //gridSpacing);
+    glUniform1f(dissipationLocation, dissipation);
+    glUniform1f(inverseSizeLocation, 1.0f / GRID_SIZE);
+    glUniform1i(velocityTextureLocation, 0);
+    glUniform1i(sourceTextureLocation, 1);
 
     glBindFramebuffer(GL_FRAMEBUFFER, destination.fboHandle);
     glActiveTexture(GL_TEXTURE0);
@@ -126,6 +125,25 @@ void SmokeSimulation::advect(Surface velocitySurface, Surface source, Surface de
     glBindTexture(GL_TEXTURE_2D, source.textureHandle);
 
     drawFullscreenQuad();
+}
+
+void SmokeSimulation::applyImpulse(Surface destination, glm::vec2 position, float radius, glm::vec3 fill) {
+    GLuint program = applyImpulseProgram;
+    glUseProgram(program);
+
+    GLint positionLocation = glGetUniformLocation(program, "position");
+    GLint radiusLocation = glGetUniformLocation(program, "radius");
+    GLint fillLocation = glGetUniformLocation(program, "fill");
+
+    glUniform2f(positionLocation, position.x, position.y);
+    glUniform1f(radiusLocation, radius);
+    glUniform3f(fillLocation, fill.x, fill.y, fill.z);
+
+    glBindFramebuffer(GL_FRAMEBUFFER, destination.fboHandle);
+
+    glEnable(GL_BLEND);
+    drawFullscreenQuad();
+    glDisable(GL_BLEND);
 }
 
 void SmokeSimulation::copyVelocityIntoField() {
@@ -164,7 +182,7 @@ void SmokeSimulation::copyDensityIntoField() {
 
             if (isnan(value)) value = 0.0f;
 
-            density[i][j] = value;
+            density[j][i] = value;
         }
     }
 
@@ -176,7 +194,6 @@ void SmokeSimulation::resetState() {
     glActiveTexture(GL_TEXTURE1); glBindTexture(GL_TEXTURE_2D, 0);
     glActiveTexture(GL_TEXTURE0); glBindTexture(GL_TEXTURE_2D, 0);
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
-    glDisable(GL_BLEND);
 }
 
 void SmokeSimulation::drawFullscreenQuad() {
@@ -208,4 +225,15 @@ void SmokeSimulation::loadVelocityIntoTexture() {
     }
 
     glTexImage2D(GL_TEXTURE_2D, 0, GL_RG32F, GRID_SIZE, GRID_SIZE, 0, GL_RG, GL_FLOAT, &field[0][0][0]);
+}
+
+void SmokeSimulation::loadDensityIntoTexture() {
+    float field[SmokeSimulation::GRID_SIZE][SmokeSimulation::GRID_SIZE];
+    for (int i = 0; i < GRID_SIZE; i++) {
+        for (int j = 0; j < GRID_SIZE; j++) {
+            field[i][j] = density[j][i];
+        }
+    }
+
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_R32F, GRID_SIZE, GRID_SIZE, 0, GL_R, GL_FLOAT, &density[0][0]);
 }

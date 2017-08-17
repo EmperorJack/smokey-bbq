@@ -64,7 +64,7 @@ SmokeSimulation::SmokeSimulation() {
     smokeShaders.push_back(loadShaders("SmokeVertexShader", "TemperatureFragmentShader"));
     smokeShaders.push_back(loadShaders("SmokeVertexShader", "CurlFragmentShader"));
 
-    currentShader = 0;
+    currentShader = 2;
 
     init();
 }
@@ -89,7 +89,7 @@ void SmokeSimulation::resetFields() {
         }
     }
 
-    initSlabs();
+    clearSlabs();
 }
 
 void SmokeSimulation::setDefaultVariables() {
@@ -141,8 +141,10 @@ void SmokeSimulation::update() {
         loadVelocityIntoTexture();
 
         advect(velocitySlab.ping, velocitySlab.ping, velocitySlab.pong, VELOCITY_DISSIPATION);
-        copyVelocityIntoField();
-        swapSurfaces(velocitySlab);
+        if (!enableEmitter) {
+            copyVelocityIntoField();
+            swapSurfaces(velocitySlab);
+        }
         resetState();
     } else {
         for (int i = 0; i < GRID_SIZE; i++) {
@@ -161,17 +163,24 @@ void SmokeSimulation::update() {
     // Smoke emitter
     if (enableEmitter) {
         glm::vec2 target = glm::vec2(GRID_SIZE / 2 * gridSpacing, GRID_SIZE * gridSpacing - 2);
+        glm::vec2 force = glm::vec2(myRandom() * PULSE_FORCE - PULSE_FORCE / 2.0f, -PULSE_FORCE);
 
-        for (int i = 0; i < GRID_SIZE; i++) {
-            for (int j = 0; j < GRID_SIZE; j++) {
-                float x = i * gridSpacing;
-                float y = j * gridSpacing;
-                glm::vec2 gridPosition = glm::vec2(x, y);
-                if (glm::distance(target, gridPosition) < EMITTER_RANGE) {
-                    float horizontalForce = PULSE_FORCE * 50;
-                    velocity[i][j] = glm::vec2(myRandom() * PULSE_FORCE - PULSE_FORCE / 2.0f, -PULSE_FORCE);
-                    density[i][j] += 0.2f;
-                    temperature[i][j] += 1.0f;
+        if (gpuImplementation) {
+            applyImpulse(velocitySlab.pong, target / gridSpacing, EMITTER_RANGE / gridSpacing, glm::vec3(force, 0.0f));
+            copyVelocityIntoField();
+            swapSurfaces(velocitySlab);
+            resetState();
+        } else {
+            for (int i = 0; i < GRID_SIZE; i++) {
+                for (int j = 0; j < GRID_SIZE; j++) {
+                    float x = i * gridSpacing;
+                    float y = j * gridSpacing;
+                    glm::vec2 gridPosition = glm::vec2(x, y);
+                    if (glm::distance(target, gridPosition) < EMITTER_RANGE) {
+                        velocity[i][j] = force;
+                        density[i][j] += 0.2f;
+                        temperature[i][j] += 1.0f;
+                    }
                 }
             }
         }
@@ -225,13 +234,16 @@ void SmokeSimulation::update() {
 
     // Advect density and temperature through velocity
     if (gpuImplementation && false) {
-        // glBindTexture(GL_TEXTURE_2D, densitySlab.ping.textureHandle);
+        glBindTexture(GL_TEXTURE_2D, densitySlab.ping.textureHandle);
+        loadDensityIntoTexture();
+        // glTexImage2D(GL_TEXTURE_2D, 0, GL_R32F, GRID_SIZE, GRID_SIZE, 0, GL_RED, GL_FLOAT, &density[0][0]);
+        glBindTexture(GL_TEXTURE_2D, densitySlab.pong.textureHandle);
+        loadDensityIntoTexture();
         // glTexImage2D(GL_TEXTURE_2D, 0, GL_R32F, GRID_SIZE, GRID_SIZE, 0, GL_RED, GL_FLOAT, &density[0][0]);
 
         advect(velocitySlab.ping, densitySlab.ping, densitySlab.pong, DENSITY_DISSIPATION);
-        swapSurfaces(densitySlab);
         copyDensityIntoField();
-        resetState();
+        swapSurfaces(densitySlab);
     } else {
         for (int i = 0; i < GRID_SIZE; i++) {
             for (int j = 0; j < GRID_SIZE; j++) {
