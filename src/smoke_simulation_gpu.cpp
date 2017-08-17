@@ -137,14 +137,12 @@ void SmokeSimulation::computeDivergence(Surface velocitySurface, Surface diverge
     GLint gridSizeLocation = glGetUniformLocation(program, "gridSize");
     GLint inverseSizeLocation = glGetUniformLocation(program, "inverseSize");
     GLint gridSpacingLocation = glGetUniformLocation(program, "gridSpacing");
-    GLint timeStepLocation = glGetUniformLocation(program, "timeStep");
-    GLint fluidDensityLocation = glGetUniformLocation(program, "fluidDensity");
+    GLint gradientScaleLocation = glGetUniformLocation(program, "gradientScale");
 
     glUniform1i(gridSizeLocation, GRID_SIZE);
     glUniform1f(inverseSizeLocation, 1.0f / GRID_SIZE);
     glUniform1f(gridSpacingLocation, gridSpacing);
-    glUniform1f(timeStepLocation, TIME_STEP);
-    glUniform1f(fluidDensityLocation, FLUID_DENSITY);
+    glUniform1f(gradientScaleLocation, -((2 * gridSpacing * FLUID_DENSITY) / TIME_STEP));
 
     glBindFramebuffer(GL_FRAMEBUFFER, divergenceSurface.fboHandle);
     glActiveTexture(GL_TEXTURE0);
@@ -153,7 +151,7 @@ void SmokeSimulation::computeDivergence(Surface velocitySurface, Surface diverge
     drawFullscreenQuad();
 }
 
-void SmokeSimulation::jacobi(Surface divergenceSurface, Surface pressureSource, Surface pressureDesination) {
+void SmokeSimulation::jacobi(Surface divergenceSurface, Surface pressureSource, Surface pressureDestination) {
     GLuint program = jacobiProgram;
     glUseProgram(program);
 
@@ -167,7 +165,7 @@ void SmokeSimulation::jacobi(Surface divergenceSurface, Surface pressureSource, 
     glUniform1f(fluidDensityLocation, FLUID_DENSITY);
     glUniform1i(pressureTextureLocation, 1);
 
-    glBindFramebuffer(GL_FRAMEBUFFER, pressureDesination.fboHandle);
+    glBindFramebuffer(GL_FRAMEBUFFER, pressureDestination.fboHandle);
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_2D, divergenceSurface.textureHandle);
     glActiveTexture(GL_TEXTURE1);
@@ -175,6 +173,30 @@ void SmokeSimulation::jacobi(Surface divergenceSurface, Surface pressureSource, 
 
     drawFullscreenQuad();
 }
+
+void SmokeSimulation::applyPressure(Surface pressureSurface, Surface velocitySource, Surface velocityDestination) {
+    GLuint program = applyPressureProgram;
+    glUseProgram(program);
+
+    GLint gridSizeLocation = glGetUniformLocation(program, "gridSize");
+    GLint inverseSizeLocation = glGetUniformLocation(program, "inverseSize");
+    GLint gradientScaleLocation = glGetUniformLocation(program, "gradientScale");
+    GLint velocityTextureLocation = glGetUniformLocation(program, "velocityTexture");
+
+    glUniform1i(gridSizeLocation, GRID_SIZE);
+    glUniform1f(inverseSizeLocation, 1.0f / GRID_SIZE);
+    glUniform1f(gradientScaleLocation, -(TIME_STEP / (2 * FLUID_DENSITY * gridSpacing)));
+    glUniform1i(velocityTextureLocation, 1);
+
+    glBindFramebuffer(GL_FRAMEBUFFER, velocityDestination.fboHandle);
+    glActiveTexture(GL_TEXTURE0);
+    glBindTexture(GL_TEXTURE_2D, pressureSurface.textureHandle);
+    glActiveTexture(GL_TEXTURE1);
+    glBindTexture(GL_TEXTURE_2D, velocitySource.textureHandle);
+
+    drawFullscreenQuad();
+}
+
 
 void SmokeSimulation::applyImpulse(Surface destination, glm::vec2 position, float radius, glm::vec3 fill) {
     GLuint program = applyImpulseProgram;

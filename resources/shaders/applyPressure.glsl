@@ -2,20 +2,41 @@
 
 layout(location = 0) out vec4 color;
 
+uniform sampler2D pressureTexture;
 uniform sampler2D velocityTexture;
-uniform sampler2D sourceTexture;
 
 uniform int gridSize;
 uniform float inverseSize;
-uniform float gridSpacing;
-uniform float timeStep;
-uniform float dissipation;
+uniform float gradientScale;
+
+bool clampBoundary(float i) {
+    if (i < 0) {
+        return true;
+    }  else if (i >= gridSize) {
+        return true;
+    }
+
+    return false;
+}
+
+float getGridPressure(float i, float j) {
+    vec2 texcoord = vec2(i, j) * inverseSize;
+    bool boundary = clampBoundary(i) || clampBoundary(j);
+    return texture(pressureTexture, texcoord).x * (boundary ? 0.0f : 1.0f);
+}
 
 void main() {
-//    vec2 pos = gl_FragCoord.xy;
-//
-//    vec2 tracePosition = traceParticle(pos.x * gridSpacing, pos.y * gridSpacing);
-//    vec2 newValue = getVelocity(sourceTexture, tracePosition.x, tracePosition.y);
-//    color = vec4(newValue.xy * dissipation, 0.0f, 0.0f);
-    color = vec4(0.0f);
+    vec2 pos = gl_FragCoord.xy;
+    float i = float(pos.x);
+    float j = float(pos.y);
+
+    float xChange = getGridPressure(i + 1, j) - getGridPressure(i - 1, j);
+    float yChange = getGridPressure(i, j + 1) - getGridPressure(i, j - 1);
+
+//    color = vec4(vec2(gradientScale * xChange, gradientScale * yChange), 0.0f, 1.0f);
+
+    vec2 vel = texture(velocityTexture, pos * inverseSize).xy;
+    vec2 newVel = vel + vec2(gradientScale * xChange, gradientScale * yChange);
+
+    color = vec4(newVel, 0.0f, 0.0f);
 }

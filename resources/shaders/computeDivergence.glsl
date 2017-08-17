@@ -7,8 +7,7 @@ uniform sampler2D velocityTexture;
 uniform int gridSize;
 uniform float inverseSize;
 uniform float gridSpacing;
-uniform float timeStep;
-uniform float fluidDensity;
+uniform float gradientScale;
 
 bool clampBoundary(float i) {
     if (i < 0) {
@@ -22,13 +21,15 @@ bool clampBoundary(float i) {
 
 vec2 getGridVelocity(sampler2D source, float i, float j) {
     vec2 texcoord = vec2(i, j) * inverseSize;
-    // bool boundary = clampBoundary(i) || clampBoundary(j);
-    return texture(source, texcoord).xy; // * (boundary ? 0.0f : 1.0f);
+    bool boundary = clampBoundary(i) || clampBoundary(j);
+    return texture(source, texcoord).xy * (boundary ? 0.0f : 1.0f);
 }
 
 vec2 getInterpolatedVelocity(sampler2D source, float x, float y) {
-    int i = (int(x + gridSize)) - gridSize;
-    int j = (int(y + gridSize)) - gridSize;
+//    int i = (int(x + gridSize)) - gridSize;
+//    int j = (int(y + gridSize)) - gridSize;
+    float i = x;
+    float j = y;
 
     return (i+1-x) * (j+1-y) * getGridVelocity(source, i, j) +
            (x-i) * (j+1-y)   * getGridVelocity(source, i+1, j) +
@@ -56,12 +57,10 @@ void main() {
     float i = float(pos.x);
     float j = float(pos.y);
 
-    float a = -((2 * gridSpacing * fluidDensity) / timeStep);
-
-    float b = getVelocity(velocityTexture, (i + 1) * gridSpacing, j * gridSpacing).x -
+    float d = getVelocity(velocityTexture, (i + 1) * gridSpacing, j * gridSpacing).x -
               getVelocity(velocityTexture, (i - 1) * gridSpacing, j * gridSpacing).x +
               getVelocity(velocityTexture, i * gridSpacing, (j + 1) * gridSpacing).y -
               getVelocity(velocityTexture, i * gridSpacing, (j - 1) * gridSpacing).y;
 
-    color = vec4(a * b, 0.0f, 0.0f, 0.0f);
+    color = vec4(gradientScale * d, 0.0f, 0.0f, 0.0f);
 }

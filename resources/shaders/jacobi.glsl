@@ -21,7 +21,7 @@ bool clampBoundary(float i) {
 
 float getGridPressure(float i, float j) {
     vec2 texcoord = vec2(i, j) * inverseSize;
-     bool boundary = clampBoundary(i) || clampBoundary(j);
+    bool boundary = clampBoundary(i) || clampBoundary(j);
     return texture(pressureTexture, texcoord).x * (boundary ? 0.0f : 1.0f);
 }
 

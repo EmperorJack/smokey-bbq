@@ -138,10 +138,8 @@ void SmokeSimulation::update() {
         loadFieldIntoVectorTexture(velocitySlab.ping.textureHandle, velocity);
 
         advect(velocitySlab.ping, velocitySlab.ping, velocitySlab.pong, VELOCITY_DISSIPATION);
-        if (!enableEmitter) {
-            copyVectorTextureIntoField(velocitySlab.pong.textureHandle, velocity);
-            swapSurfaces(velocitySlab);
-        }
+        copyVectorTextureIntoField(velocitySlab.pong.textureHandle, velocity);
+        swapSurfaces(velocitySlab);
         resetState();
     } else {
         for (int i = 0; i < GRID_SIZE; i++) {
@@ -163,16 +161,19 @@ void SmokeSimulation::update() {
         glm::vec2 force = glm::vec2(myRandom() * PULSE_FORCE - PULSE_FORCE / 2.0f, -PULSE_FORCE);
 
         if (gpuImplementation) {
+            swapSurfaces(velocitySlab);
             applyImpulse(velocitySlab.pong, target / gridSpacing, EMITTER_RANGE / gridSpacing, glm::vec3(force / 5.0f, 0.0f));
             copyVectorTextureIntoField(velocitySlab.pong.textureHandle, velocity);
             swapSurfaces(velocitySlab);
             resetState();
 
+            swapSurfaces(densitySlab);
             applyImpulse(densitySlab.pong, target / gridSpacing, EMITTER_RANGE / gridSpacing, glm::vec3(1.0f, 0.0f, 0.0f));
             copyScalarTextureIntoField(densitySlab.pong.textureHandle, density);
             swapSurfaces(densitySlab);
             resetState();
 
+            swapSurfaces(temperatureSlab);
             applyImpulse(temperatureSlab.pong, target / gridSpacing, EMITTER_RANGE / gridSpacing, glm::vec3(5.0f, 0.0f, 0.0f));
             copyScalarTextureIntoField(temperatureSlab.pong.textureHandle, temperature);
             swapSurfaces(temperatureSlab);
@@ -243,19 +244,15 @@ void SmokeSimulation::update() {
         loadFieldIntoScalarTexture(densitySlab.ping.textureHandle, density);
 
         advect(velocitySlab.ping, densitySlab.ping, densitySlab.pong, DENSITY_DISSIPATION);
-        if (!enableEmitter) {
-            copyScalarTextureIntoField(densitySlab.pong.textureHandle, density);
-            swapSurfaces(densitySlab);
-        }
+        copyScalarTextureIntoField(densitySlab.pong.textureHandle, density);
+        swapSurfaces(densitySlab);
         resetState();
 
         loadFieldIntoScalarTexture(temperatureSlab.ping.textureHandle, temperature);
 
         advect(velocitySlab.ping, temperatureSlab.ping, temperatureSlab.pong, TEMPERATURE_DISSIPATION);
-        if (!enableEmitter) {
-            copyScalarTextureIntoField(temperatureSlab.pong.textureHandle, temperature);
-            swapSurfaces(temperatureSlab);
-        }
+        copyScalarTextureIntoField(temperatureSlab.pong.textureHandle, temperature);
+        swapSurfaces(temperatureSlab);
         resetState();
     } else {
         // Compute the trace position
@@ -436,15 +433,23 @@ float SmokeSimulation::pressureAt(int i, int j) {
 }
 
 void SmokeSimulation::applyPressure() {
-    float a = -(TIME_STEP / (2 * FLUID_DENSITY * gridSpacing));
+    if (gpuImplementation && false) {
+        swapSurfaces(velocitySlab);
+        applyPressure(pressureSlab.ping, velocitySlab.ping, velocitySlab.pong);
+        copyVectorTextureIntoField(velocitySlab.pong.textureHandle, velocity);
+        swapSurfaces(velocitySlab);
+        resetState();
+    } else {
+        float a = -(TIME_STEP / (2 * FLUID_DENSITY * gridSpacing));
 
-    for (int i = 0; i < GRID_SIZE; i++) {
-        for (int j = 0; j < GRID_SIZE; j++) {
-            float xChange = getGridPressure(i + 1, j) - getGridPressure(i - 1, j);
-            float yChange = getGridPressure(i, j + 1) - getGridPressure(i, j - 1);
+        for (int i = 0; i < GRID_SIZE; i++) {
+            for (int j = 0; j < GRID_SIZE; j++) {
+                float xChange = getGridPressure(i + 1, j) - getGridPressure(i - 1, j);
+                float yChange = getGridPressure(i, j + 1) - getGridPressure(i, j - 1);
 
-            velocity[i][j].x += a * xChange;
-            velocity[i][j].y += a * yChange;
+                velocity[i][j].x += a * xChange;
+                velocity[i][j].y += a * yChange;
+            }
         }
     }
 }

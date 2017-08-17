@@ -23,13 +23,15 @@ bool clampBoundary(float i) {
 
 vec2 getGridVelocity(sampler2D source, float i, float j) {
     vec2 texcoord = vec2(i, j) * inverseSize;
-    // bool boundary = clampBoundary(i) || clampBoundary(j);
-    return texture(source, texcoord).xy; // * (boundary ? 0.0f : 1.0f);
+    bool boundary = clampBoundary(i) || clampBoundary(j);
+    return texture(source, texcoord).xy * (boundary ? 0.0f : 1.0f);
 }
 
 vec2 getInterpolatedVelocity(sampler2D source, float x, float y) {
-    int i = (int(x + gridSize)) - gridSize;
-    int j = (int(y + gridSize)) - gridSize;
+//    int i = (int(x + gridSize)) - gridSize;
+//    int j = (int(y + gridSize)) - gridSize;
+    float i = x;
+    float j = y;
 
     return (i+1-x) * (j+1-y) * getGridVelocity(source, i, j) +
            (x-i) * (j+1-y)   * getGridVelocity(source, i+1, j) +

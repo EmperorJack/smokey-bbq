@@ -46,7 +46,8 @@ class SmokeSimulation {
     void advect(Surface velocitySurface, Surface source, Surface destination, float dissipation);
     void applyImpulse(Surface destination, glm::vec2 position, float radius, glm::vec3 fill);
     void computeDivergence(Surface velocitySurface, Surface divergenceSurface);
-    void jacobi(Surface divergenceSurface, Surface pressureSource, Surface pressureDesination);
+    void jacobi(Surface divergenceSurface, Surface pressureSource, Surface pressureDestination);
+    void applyPressure(Surface pressureSurface, Surface velocitySource, Surface velocityDestination);
 
 public:
 
