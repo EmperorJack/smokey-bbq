@@ -233,8 +233,10 @@ void SmokeSimulation::update() {
     }
 
     // Solve and apply pressure
-    solvePressureField();
-    if (enablePressureSolve) applyPressure();
+    if (enablePressureSolve) {
+        solvePressureField();
+        applyPressure();
+    }
 
     // Advect density and temperature through velocity
     if (gpuImplementation) {
@@ -387,24 +389,38 @@ glm::vec2 SmokeSimulation::vorticityConfinementForceAt(int i, int j) {
 }
 
 void SmokeSimulation::solvePressureField() {
-    // Reset the pressure field
-    for (int i = 0; i < GRID_SIZE; i++) {
-        for (int j = 0; j < GRID_SIZE; j++) {
-            pressure[i][j] = 0.0f;
-        }
-    }
+    if (gpuImplementation) {
+        clearSurface(pressureSlab.ping, 0.0f);
+        clearSurface(pressureSlab.pong, 0.0f);
 
-    // Iteratively solve the new pressure field
-    for (int iteration = 0; iteration < JACOBI_ITERATIONS; iteration++) {
+        // Iteratively solve the new pressure field
+        for (int iteration = 0; iteration < JACOBI_ITERATIONS; iteration++) {
+            jacobi(divergenceSlab.ping, pressureSlab.ping, pressureSlab.pong);
+            swapSurfaces(pressureSlab);
+        }
+
+        copyScalarTextureIntoField(pressureSlab.ping.textureHandle, pressure);
+        resetState();
+    } else {
+        // Reset the pressure field
         for (int i = 0; i < GRID_SIZE; i++) {
             for (int j = 0; j < GRID_SIZE; j++) {
-                newPressure[i][j] = pressureAt(i, j);
+                pressure[i][j] = 0.0f;
             }
         }
 
-        for (int i = 0; i < GRID_SIZE; i++) {
-            for (int j = 0; j < GRID_SIZE; j++) {
-                pressure[i][j] = newPressure[i][j];
+        // Iteratively solve the new pressure field
+        for (int iteration = 0; iteration < JACOBI_ITERATIONS; iteration++) {
+            for (int i = 0; i < GRID_SIZE; i++) {
+                for (int j = 0; j < GRID_SIZE; j++) {
+                    newPressure[i][j] = pressureAt(i, j);
+                }
+            }
+
+            for (int i = 0; i < GRID_SIZE; i++) {
+                for (int j = 0; j < GRID_SIZE; j++) {
+                    pressure[i][j] = newPressure[i][j];
+                }
             }
         }
     }
@@ -412,10 +428,10 @@ void SmokeSimulation::solvePressureField() {
 
 float SmokeSimulation::pressureAt(int i, int j) {
     float d = divergence[i][j];
-    float p = getGridPressure(clampIndex(i + 2), j) +
-              getGridPressure(clampIndex(i - 2), j) +
-              getGridPressure(i, clampIndex(j + 2)) +
-              getGridPressure(i, clampIndex(j - 2));
+    float p = getGridPressure(i + 2, j) +
+              getGridPressure(i - 2, j) +
+              getGridPressure(i, j + 2) +
+              getGridPressure(i, j - 2);
     return (d + p) * 0.25f;
 }
 
@@ -424,8 +440,8 @@ void SmokeSimulation::applyPressure() {
 
     for (int i = 0; i < GRID_SIZE; i++) {
         for (int j = 0; j < GRID_SIZE; j++) {
-            float xChange = getGridPressure(clampIndex(i + 1), j) - getGridPressure(clampIndex(i - 1), j);
-            float yChange = getGridPressure(i, clampIndex(j + 1)) - getGridPressure(i,clampIndex(j - 1));
+            float xChange = getGridPressure(i + 1, j) - getGridPressure(i - 1, j);
+            float yChange = getGridPressure(i, j + 1) - getGridPressure(i, j - 1);
 
             velocity[i][j].x += a * xChange;
             velocity[i][j].y += a * yChange;
@@ -540,13 +556,6 @@ float SmokeSimulation::getGridCurl(int i, int j) {
 int SmokeSimulation::wrapIndex(int i) {
     if (i < 0) i = GRID_SIZE + (i % GRID_SIZE);
     else i = i >= GRID_SIZE ? i % GRID_SIZE : i;
-
-    return i;
-}
-
-int SmokeSimulation::clampIndex(int i) {
-    if (i < 0) i = 0;
-    else if (i >= GRID_SIZE) i = GRID_SIZE - 1;
 
     return i;
 }

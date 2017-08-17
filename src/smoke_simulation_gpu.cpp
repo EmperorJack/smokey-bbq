@@ -16,16 +16,16 @@ void SmokeSimulation::initPrograms() {
     applyImpulseProgram = loadShaders("SmokeVertexShader", "applyImpulse");
     //applyBuoyancyProgram = loadShaders("")
     computeDivergenceProgram = loadShaders("SmokeVertexShader", "computeDivergence");
-    //jacobiProgram = loadShaders("")
-    //applyPressureProgram = loadShaders("")
+    jacobiProgram = loadShaders("SmokeVertexShader", "jacobi");
+    applyPressureProgram = loadShaders("SmokeVertexShader", "applyPressure");
 }
 
 void SmokeSimulation::initSlabs() {
     velocitySlab = createSlab(GRID_SIZE, GRID_SIZE, 2);
-    divergenceSlab = createSlab(GRID_SIZE, GRID_SIZE, 1);
-//    pressureSlab = createSlab(GRID_SIZE, GRID_SIZE, 1);
     densitySlab = createSlab(GRID_SIZE, GRID_SIZE, 1);
     temperatureSlab = createSlab(GRID_SIZE, GRID_SIZE, 1);
+    divergenceSlab = createSlab(GRID_SIZE, GRID_SIZE, 1);
+    pressureSlab = createSlab(GRID_SIZE, GRID_SIZE, 1);
 
     clearSlabs();
 }
@@ -33,9 +33,14 @@ void SmokeSimulation::initSlabs() {
 void SmokeSimulation::clearSlabs() {
     clearSurface(velocitySlab.ping, 0.0f);
     clearSurface(velocitySlab.pong, 0.0f);
-
     clearSurface(densitySlab.ping, 0.0f);
     clearSurface(densitySlab.pong, 0.0f);
+    clearSurface(temperatureSlab.ping, 0.0f);
+    clearSurface(temperatureSlab.pong, 0.0f);
+    clearSurface(divergenceSlab.ping, 0.0f);
+    clearSurface(divergenceSlab.pong, 0.0f);
+    clearSurface(pressureSlab.ping, 0.0f);
+    clearSurface(pressureSlab.pong, 0.0f);
 }
 
 SmokeSimulation::Slab SmokeSimulation::createSlab(int width, int height, int numComponents) {
@@ -148,6 +153,29 @@ void SmokeSimulation::computeDivergence(Surface velocitySurface, Surface diverge
     drawFullscreenQuad();
 }
 
+void SmokeSimulation::jacobi(Surface divergenceSurface, Surface pressureSource, Surface pressureDesination) {
+    GLuint program = jacobiProgram;
+    glUseProgram(program);
+
+    GLint gridSizeLocation = glGetUniformLocation(program, "gridSize");
+    GLint inverseSizeLocation = glGetUniformLocation(program, "inverseSize");
+    GLint fluidDensityLocation = glGetUniformLocation(program, "fluidDensity");
+    GLint pressureTextureLocation = glGetUniformLocation(program, "pressureTexture");
+
+    glUniform1i(gridSizeLocation, GRID_SIZE);
+    glUniform1f(inverseSizeLocation, 1.0f / GRID_SIZE);
+    glUniform1f(fluidDensityLocation, FLUID_DENSITY);
+    glUniform1i(pressureTextureLocation, 1);
+
+    glBindFramebuffer(GL_FRAMEBUFFER, pressureDesination.fboHandle);
+    glActiveTexture(GL_TEXTURE0);
+    glBindTexture(GL_TEXTURE_2D, divergenceSurface.textureHandle);
+    glActiveTexture(GL_TEXTURE1);
+    glBindTexture(GL_TEXTURE_2D, pressureSource.textureHandle);
+
+    drawFullscreenQuad();
+}
+
 void SmokeSimulation::applyImpulse(Surface destination, glm::vec2 position, float radius, glm::vec3 fill) {
     GLuint program = applyImpulseProgram;
     glUseProgram(program);
@@ -186,6 +214,8 @@ void SmokeSimulation::copyVectorTextureIntoField(GLuint textureHandle, glm::vec2
             field[j][i].y = yValue;
         }
     }
+
+    delete[] pixels;
 }
 
 void SmokeSimulation::copyScalarTextureIntoField(GLuint textureHandle, float field[GRID_SIZE][GRID_SIZE]) {
@@ -204,6 +234,8 @@ void SmokeSimulation::copyScalarTextureIntoField(GLuint textureHandle, float fie
             field[j][i] = value;
         }
     }
+
+    delete[] pixels;
 }
 
 void SmokeSimulation::resetState() {

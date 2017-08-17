@@ -26,10 +26,10 @@ class SmokeSimulation {
 
     // Slabs
     Slab velocitySlab;
-    Slab divergenceSlab;
-    Slab pressureSlab;
     Slab densitySlab;
     Slab temperatureSlab;
+    Slab divergenceSlab;
+    Slab pressureSlab;
 
     void init();
     void initPrograms();
@@ -46,6 +46,7 @@ class SmokeSimulation {
     void advect(Surface velocitySurface, Surface source, Surface destination, float dissipation);
     void applyImpulse(Surface destination, glm::vec2 position, float radius, glm::vec3 fill);
     void computeDivergence(Surface velocitySurface, Surface divergenceSurface);
+    void jacobi(Surface divergenceSurface, Surface pressureSource, Surface pressureDesination);
 
 public:
 
@@ -164,7 +165,6 @@ private:
 
     // Indexing
     int wrapIndex(int i);
-    int clampIndex(int i);
     bool clampBoundary(int &i);
 
     // Rendering
