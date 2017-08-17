@@ -8,9 +8,6 @@
 #include <smoke_simulation_gui.hpp>
 #include <audio_analyzer_gui.hpp>
 
-#include <chrono>
-#include <thread>
-
 // Object instances
 SmokeSimulation* smokeSimulation = nullptr;
 AudioAnalyzer* audioAnalyzer = nullptr;
@@ -45,7 +42,7 @@ void mouseButtonCallback(GLFWwindow *win, int button, int action, int mods) {
 void keyCallback(GLFWwindow *win, int key, int scancode, int action, int mods) {
     if (key == ' ' && action == GLFW_PRESS) {
         smokeSimulation->resetFields();
-        audioAnalyzer->resetBuffers();
+        // audioAnalyzer->resetBuffers();
     } else if (key == 'G' && action == GLFW_PRESS) {
         smokeSimulation->gpuImplementation = !smokeSimulation->gpuImplementation;
     } else if (key == 'S' && action == GLFW_PRESS) {
@@ -145,7 +142,7 @@ int main(int argc, char **argv) {
         glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-        if (smokeAudio) {
+        if (smokeAudio && false) {
             float sideOffset = ((float) SCREEN_WIDTH * 0.08f);
             float bandSpacing = ((float) SCREEN_WIDTH - sideOffset * 2.0f) / (AudioAnalyzer::NUM_BANDS * 2);
 
@@ -196,7 +193,7 @@ int main(int argc, char **argv) {
         glfwSwapBuffers(window);
     }
 
-    audioAnalyzer->shutDown();
+    // audioAnalyzer->shutDown();
     ImGui_ImplGlfwGL3_Shutdown();
     glfwTerminate();
 

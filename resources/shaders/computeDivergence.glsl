@@ -3,13 +3,12 @@
 layout(location = 0) out vec4 color;
 
 uniform sampler2D velocityTexture;
-uniform sampler2D sourceTexture;
 
 uniform int gridSize;
 uniform float inverseSize;
 uniform float gridSpacing;
 uniform float timeStep;
-uniform float dissipation;
+uniform float fluidDensity;
 
 bool clampBoundary(float i) {
     if (i < 0) {
@@ -52,16 +51,17 @@ vec2 getVelocity(sampler2D source, float x, float y) {
     return v;
 }
 
-vec2 traceParticle(float x, float y) {
-    vec2 v = getVelocity(velocityTexture, x, y);
-    v = getVelocity(velocityTexture, x + (0.5f * timeStep * v.x), y + (0.5f * timeStep * v.y));
-    return vec2(x, y) - (timeStep * v);
-}
-
 void main() {
     vec2 pos = gl_FragCoord.xy;
+    float i = float(pos.x);
+    float j = float(pos.y);
 
-    vec2 tracePosition = traceParticle(pos.x * gridSpacing, pos.y * gridSpacing);
-    vec2 newValue = getVelocity(sourceTexture, tracePosition.x, tracePosition.y);
-    color = vec4(newValue.xy * dissipation, 0.0f, 0.0f);
+    float a = -((2 * gridSpacing * fluidDensity) / timeStep);
+
+    float b = getVelocity(velocityTexture, (i + 1) * gridSpacing, j * gridSpacing).x -
+              getVelocity(velocityTexture, (i - 1) * gridSpacing, j * gridSpacing).x +
+              getVelocity(velocityTexture, i * gridSpacing, (j + 1) * gridSpacing).y -
+              getVelocity(velocityTexture, i * gridSpacing, (j - 1) * gridSpacing).y;
+
+    color = vec4(a * b, 0.0f, 0.0f, 0.0f);
 }

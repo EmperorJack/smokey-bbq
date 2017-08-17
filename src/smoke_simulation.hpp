@@ -43,13 +43,9 @@ class SmokeSimulation {
     void resetState();
     void drawFullscreenQuad();
 
-    void advect(Surface velocity, Surface source, Surface destination, float dissipation);
+    void advect(Surface velocitySurface, Surface source, Surface destination, float dissipation);
     void applyImpulse(Surface destination, glm::vec2 position, float radius, glm::vec3 fill);
-
-    void copyVelocityIntoField();
-    void copyDensityIntoField();
-    void loadVelocityIntoTexture();
-    void loadDensityIntoTexture();
+    void computeDivergence(Surface velocitySurface, Surface divergenceSurface);
 
 public:
 
@@ -103,6 +99,11 @@ public:
     bool wrapBorders;
     bool enableVorticityConfinement;
     bool gpuImplementation;
+
+    void copyVectorTextureIntoField(GLuint textureHandle, glm::vec2 field[GRID_SIZE][GRID_SIZE]);
+    void copyScalarTextureIntoField(GLuint textureHandle, float field[GRID_SIZE][GRID_SIZE]);
+    void loadFieldIntoVectorTexture(GLuint textureHandle, glm::vec2 field[GRID_SIZE][GRID_SIZE]);
+    void loadFieldIntoScalarTexture(GLuint textureHandle, float field[GRID_SIZE][GRID_SIZE]);
 
 private:
 

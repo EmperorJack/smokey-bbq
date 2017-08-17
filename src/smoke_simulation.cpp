@@ -64,7 +64,7 @@ SmokeSimulation::SmokeSimulation() {
     smokeShaders.push_back(loadShaders("SmokeVertexShader", "TemperatureFragmentShader"));
     smokeShaders.push_back(loadShaders("SmokeVertexShader", "CurlFragmentShader"));
 
-    currentShader = 2;
+    currentShader = 0;
 
     init();
 }
@@ -119,8 +119,8 @@ void SmokeSimulation::setDefaultToggles() {
     displayDensityField = true;
     displayVelocityField = false;
     updateSimulation = true;
-    enableEmitter = false;
-    enablePressureSolve = false;
+    enableEmitter = true;
+    enablePressureSolve = true;
     randomPulseAngle = false;
     enableBuoyancy = false;
     wrapBorders = false;
@@ -135,14 +135,11 @@ void SmokeSimulation::update() {
 
     // Advect velocity through velocity
     if (gpuImplementation) {
-        glBindTexture(GL_TEXTURE_2D, velocitySlab.ping.textureHandle);
-        loadVelocityIntoTexture();
-        glBindTexture(GL_TEXTURE_2D, velocitySlab.pong.textureHandle);
-        loadVelocityIntoTexture();
+        loadFieldIntoVectorTexture(velocitySlab.ping.textureHandle, velocity);
 
         advect(velocitySlab.ping, velocitySlab.ping, velocitySlab.pong, VELOCITY_DISSIPATION);
         if (!enableEmitter) {
-            copyVelocityIntoField();
+            copyVectorTextureIntoField(velocitySlab.pong.textureHandle, velocity);
             swapSurfaces(velocitySlab);
         }
         resetState();
@@ -166,9 +163,19 @@ void SmokeSimulation::update() {
         glm::vec2 force = glm::vec2(myRandom() * PULSE_FORCE - PULSE_FORCE / 2.0f, -PULSE_FORCE);
 
         if (gpuImplementation) {
-            applyImpulse(velocitySlab.pong, target / gridSpacing, EMITTER_RANGE / gridSpacing, glm::vec3(force, 0.0f));
-            copyVelocityIntoField();
+            applyImpulse(velocitySlab.pong, target / gridSpacing, EMITTER_RANGE / gridSpacing, glm::vec3(force / 5.0f, 0.0f));
+            copyVectorTextureIntoField(velocitySlab.pong.textureHandle, velocity);
             swapSurfaces(velocitySlab);
+            resetState();
+
+            applyImpulse(densitySlab.pong, target / gridSpacing, EMITTER_RANGE / gridSpacing, glm::vec3(1.0f, 0.0f, 0.0f));
+            copyScalarTextureIntoField(densitySlab.pong.textureHandle, density);
+            swapSurfaces(densitySlab);
+            resetState();
+
+            applyImpulse(temperatureSlab.pong, target / gridSpacing, EMITTER_RANGE / gridSpacing, glm::vec3(5.0f, 0.0f, 0.0f));
+            copyScalarTextureIntoField(temperatureSlab.pong.textureHandle, temperature);
+            swapSurfaces(temperatureSlab);
             resetState();
         } else {
             for (int i = 0; i < GRID_SIZE; i++) {
@@ -212,9 +219,16 @@ void SmokeSimulation::update() {
     }
 
     // Compute divergence
-    for (int i = 0; i < GRID_SIZE; i++) {
-        for (int j = 0; j < GRID_SIZE; j++) {
-            divergence[i][j] = divergenceAt(i, j);
+    if (gpuImplementation) {
+        computeDivergence(velocitySlab.ping, divergenceSlab.pong);
+        copyScalarTextureIntoField(divergenceSlab.pong.textureHandle, divergence);
+        swapSurfaces(divergenceSlab);
+        resetState();
+    } else {
+        for (int i = 0; i < GRID_SIZE; i++) {
+            for (int j = 0; j < GRID_SIZE; j++) {
+                divergence[i][j] = divergenceAt(i, j);
+            }
         }
     }
 
@@ -222,29 +236,33 @@ void SmokeSimulation::update() {
     solvePressureField();
     if (enablePressureSolve) applyPressure();
 
-    // Compute the trace position
-    for (int i = 0; i < GRID_SIZE; i++) {
-        for (int j = 0; j < GRID_SIZE; j++) {
-            tracePosition[i][j] = traceParticle(i * gridSpacing, j * gridSpacing);
-        }
-    }
-
-//    int targetIndex = GRID_SIZE / 2;
-//    std::cout << "(" << density[targetIndex][targetIndex] << ")";
-
     // Advect density and temperature through velocity
-    if (gpuImplementation && false) {
-        glBindTexture(GL_TEXTURE_2D, densitySlab.ping.textureHandle);
-        loadDensityIntoTexture();
-        // glTexImage2D(GL_TEXTURE_2D, 0, GL_R32F, GRID_SIZE, GRID_SIZE, 0, GL_RED, GL_FLOAT, &density[0][0]);
-        glBindTexture(GL_TEXTURE_2D, densitySlab.pong.textureHandle);
-        loadDensityIntoTexture();
-        // glTexImage2D(GL_TEXTURE_2D, 0, GL_R32F, GRID_SIZE, GRID_SIZE, 0, GL_RED, GL_FLOAT, &density[0][0]);
+    if (gpuImplementation) {
+        loadFieldIntoScalarTexture(densitySlab.ping.textureHandle, density);
 
         advect(velocitySlab.ping, densitySlab.ping, densitySlab.pong, DENSITY_DISSIPATION);
-        copyDensityIntoField();
-        swapSurfaces(densitySlab);
+        if (!enableEmitter) {
+            copyScalarTextureIntoField(densitySlab.pong.textureHandle, density);
+            swapSurfaces(densitySlab);
+        }
+        resetState();
+
+        loadFieldIntoScalarTexture(temperatureSlab.ping.textureHandle, temperature);
+
+        advect(velocitySlab.ping, temperatureSlab.ping, temperatureSlab.pong, TEMPERATURE_DISSIPATION);
+        if (!enableEmitter) {
+            copyScalarTextureIntoField(temperatureSlab.pong.textureHandle, temperature);
+            swapSurfaces(temperatureSlab);
+        }
+        resetState();
     } else {
+        // Compute the trace position
+        for (int i = 0; i < GRID_SIZE; i++) {
+            for (int j = 0; j < GRID_SIZE; j++) {
+                tracePosition[i][j] = traceParticle(i * gridSpacing, j * gridSpacing);
+            }
+        }
+
         for (int i = 0; i < GRID_SIZE; i++) {
             for (int j = 0; j < GRID_SIZE; j++) {
                 advectedDensity[i][j] = getDensity(tracePosition[i][j].x, tracePosition[i][j].y) * DENSITY_DISSIPATION;
@@ -259,8 +277,6 @@ void SmokeSimulation::update() {
             }
         }
     }
-
-//    std::cout << " -> (" << density[targetIndex][targetIndex] << ")" << std::endl;
 }
 
 void SmokeSimulation::addPulse(glm::vec2 position) {
@@ -276,6 +292,13 @@ void SmokeSimulation::addPulse(glm::vec2 position) {
     float horizontalSpacing = ((float) SCREEN_WIDTH) / GRID_SIZE;
     float verticalSpacing = ((float) SCREEN_HEIGHT) / GRID_SIZE;
 
+    float forceFactor = PULSE_FORCE;
+    float addAmount = 0.5f;
+    if (gpuImplementation) {
+        forceFactor /= 5.0f;
+        addAmount /= 2.0f;
+    }
+
     for (int i = 0; i < GRID_SIZE; i++) {
         for (int j = 0; j < GRID_SIZE; j++) {
             float x = i * horizontalSpacing;
@@ -283,10 +306,9 @@ void SmokeSimulation::addPulse(glm::vec2 position) {
             glm::vec2 gridPosition = glm::vec2(x, y);
             if (glm::distance(position, gridPosition) < PULSE_RANGE) {
                 float falloffFactor = (1 - glm::distance(position, gridPosition) / PULSE_RANGE);
-
-                velocity[i][j] = PULSE_FORCE * (randomPulseAngle ? glm::normalize(force) : glm::normalize(gridPosition - position));
-                density[i][j] += 0.5f * falloffFactor;
-                temperature[i][j] += 2.5f * falloffFactor;
+                velocity[i][j] = forceFactor * (randomPulseAngle ? glm::normalize(force) : glm::normalize(gridPosition - position));
+                density[i][j] += addAmount * falloffFactor;
+                temperature[i][j] += addAmount * 5 * falloffFactor;
             }
         }
     }
