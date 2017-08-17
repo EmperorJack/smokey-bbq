@@ -128,40 +128,26 @@ void SmokeSimulation::setDefaultToggles() {
     gpuImplementation = true;
 }
 
-int numFrames = 0;
-
 void SmokeSimulation::update() {
     if (!updateSimulation) return;
 
     glViewport(0, 0, GRID_SIZE, GRID_SIZE);
 
-    int targetIndex = GRID_SIZE / 2;
-    std::cout << "(" << velocity[targetIndex][targetIndex].x << ", " << velocity[targetIndex][targetIndex].y << ")";
-
     // Advect velocity through velocity
     if (gpuImplementation) {
-//        glBindTexture(GL_TEXTURE_2D, velocitySlab.ping.textureHandle);
-//        glTexImage2D(GL_TEXTURE_2D, 0, GL_RG32F, GRID_SIZE, GRID_SIZE, 0, GL_RG, GL_FLOAT, &velocity[0][0][0]);
-//        glBindTexture(GL_TEXTURE_2D, velocitySlab.pong.textureHandle);
-//        glTexImage2D(GL_TEXTURE_2D, 0, GL_RG32F, GRID_SIZE, GRID_SIZE, 0, GL_RG, GL_FLOAT, &velocity[0][0][0]);
-        numFrames++;
-        if (numFrames % 1 == 0) {
-            advect(velocitySlab.ping, velocitySlab.ping, velocitySlab.pong, VELOCITY_DISSIPATION);
-            copyVelocityIntoField();
-            swapSurfaces(velocitySlab);
-//        copyVelocityIntoField();
-            resetState();
-        }
+        glBindTexture(GL_TEXTURE_2D, velocitySlab.ping.textureHandle);
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RG32F, GRID_SIZE, GRID_SIZE, 0, GL_RG, GL_FLOAT, &velocity[0][0][0]);
+        glBindTexture(GL_TEXTURE_2D, velocitySlab.pong.textureHandle);
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RG32F, GRID_SIZE, GRID_SIZE, 0, GL_RG, GL_FLOAT, &velocity[0][0][0]);
+
+        advect(velocitySlab.ping, velocitySlab.ping, velocitySlab.pong, VELOCITY_DISSIPATION);
+        copyVelocityIntoField();
+        swapSurfaces(velocitySlab);
+        resetState();
     } else {
         for (int i = 0; i < GRID_SIZE; i++) {
             for (int j = 0; j < GRID_SIZE; j++) {
-//                if (i == GRID_SIZE / 2 && j == GRID_SIZE / 2) {
-//                    advectedVelocity[i][j].x = 0.0f;
-//                    advectedVelocity[i][j].y = -100.0f;
-//                } else {
-                    advectedVelocity[i][j] =
-                            getVelocity(tracePosition[i][j].x, tracePosition[i][j].y) * VELOCITY_DISSIPATION;
-//                }
+                advectedVelocity[i][j] = getVelocity(tracePosition[i][j].x, tracePosition[i][j].y) * VELOCITY_DISSIPATION;
             }
         }
 
@@ -171,8 +157,6 @@ void SmokeSimulation::update() {
             }
         }
     }
-
-    std::cout << " -> (" << velocity[targetIndex][targetIndex].x << ", " << velocity[targetIndex][targetIndex].y << ")" << std::endl;
 
     // Smoke emitter
     if (enableEmitter) {
@@ -236,12 +220,13 @@ void SmokeSimulation::update() {
         }
     }
 
+//    int targetIndex = GRID_SIZE / 2;
 //    std::cout << "(" << density[targetIndex][targetIndex] << ")";
 
     // Advect density and temperature through velocity
-    if (gpuImplementation) {
-//        glBindTexture(GL_TEXTURE_2D, densitySlab.ping.textureHandle);
-//        glTexImage2D(GL_TEXTURE_2D, 0, GL_R32F, GRID_SIZE, GRID_SIZE, 0, GL_RED, GL_FLOAT, &density[0][0]);
+    if (gpuImplementation && false) {
+        // glBindTexture(GL_TEXTURE_2D, densitySlab.ping.textureHandle);
+        // glTexImage2D(GL_TEXTURE_2D, 0, GL_R32F, GRID_SIZE, GRID_SIZE, 0, GL_RED, GL_FLOAT, &density[0][0]);
 
         advect(velocitySlab.ping, densitySlab.ping, densitySlab.pong, DENSITY_DISSIPATION);
         swapSurfaces(densitySlab);
@@ -268,6 +253,8 @@ void SmokeSimulation::update() {
 
 void SmokeSimulation::addPulse(glm::vec2 position) {
     position -= glm::vec2(gridSpacing / 2.0f, gridSpacing / 2.0f);
+
+    position = glm::vec2(position.y, position.x);
 
     glm::vec2 force = glm::vec2(0.0f, 0.0f);
     if (randomPulseAngle) {
@@ -566,8 +553,8 @@ void SmokeSimulation::renderField() {
         for (int j = 0; j < GRID_SIZE; j++) {
             switch (currentShader) {
                 case 0:
-                    textureField[i][j][0] = density[j][i];
-                    textureField[i][j][1] = temperature[j][i];
+                    textureField[i][j][0] = density[i][j];
+                    textureField[i][j][1] = temperature[i][j];
                     break;
                 case 1:
                     textureField[i][j][0] = density[i][j];
@@ -577,10 +564,10 @@ void SmokeSimulation::renderField() {
                     textureField[i][j][1] = velocity[i][j].y / 10.0f;
                     break;
                 case 3:
-                    textureField[i][j][0] = temperature[j][i];
+                    textureField[i][j][0] = temperature[i][j];
                     break;
                 case 4:
-                    textureField[i][j][0] = curl[j][i];
+                    textureField[i][j][0] = curl[i][j];
                     break;
                 default:
                     textureField[i][j][0] = 0.0f;

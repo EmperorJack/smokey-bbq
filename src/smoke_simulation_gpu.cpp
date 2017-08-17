@@ -51,8 +51,8 @@ SmokeSimulation::Surface SmokeSimulation::createSurface(int width, int height, i
     GLuint textureHandle;
     glGenTextures(1, &textureHandle);
     glBindTexture(GL_TEXTURE_2D, textureHandle);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_WRAP_BORDER);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_WRAP_BORDER);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
@@ -84,11 +84,9 @@ SmokeSimulation::Surface SmokeSimulation::createSurface(int width, int height, i
 }
 
 void SmokeSimulation::swapSurfaces(Slab &slab) {
-//    std::cout << "PING HANDLE WAS " << slab.ping.textureHandle << " AND IS NOW ";
     Surface temp = slab.ping;
     slab.ping = slab.pong;
     slab.pong = temp;
-//    std::cout << slab.ping.textureHandle << std::endl;
 }
 
 void SmokeSimulation::clearSurface(Surface s, float v) {
@@ -137,19 +135,10 @@ void SmokeSimulation::copyVelocityIntoField() {
     glBindTexture(GL_TEXTURE_2D, velocitySlab.pong.textureHandle);
     glGetTexImage(GL_TEXTURE_2D, 0, GL_RG, GL_FLOAT, pixels);
 
-    bool printTable = false;
-    if (printTable) std::cout << "[";
     for (int i = 0; i < GRID_SIZE; i++) {
-        if (printTable) std::cout << "[";
         for (int j = 0; j < GRID_SIZE; j++) {
             float xValue = pixels[(GRID_SIZE * i + j) * 2];
             float yValue = pixels[(GRID_SIZE * i + j) * 2 + 1];
-
-//            if (i == GRID_SIZE / 2 && j == GRID_SIZE / 2) {
-//                std::cout << "Copying value " << xValue << " " << yValue << std::endl;
-//            }
-
-           if (printTable) std::cout << "(" << xValue << ", " << yValue << ")";
 
             if (isnan(xValue)) xValue = 0.0f;
             if (isnan(yValue)) yValue = 0.0f;
@@ -157,9 +146,7 @@ void SmokeSimulation::copyVelocityIntoField() {
             velocity[i][j].x = xValue;
             velocity[i][j].y = yValue;
         }
-        if (printTable) std::cout << "]" << std::endl;
     }
-    if (printTable) std::cout << "]" << std::endl;
 
     resetState();
 }
