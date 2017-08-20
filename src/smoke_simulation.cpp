@@ -129,10 +129,10 @@ void SmokeSimulation::update() {
 
     // Advect velocity through velocity
     if (gpuImplementation) {
-        loadFieldIntoVectorTexture(velocitySlab.ping.textureHandle, velocity);
+        //loadVectorFieldIntoTexture(velocitySlab.ping.textureHandle, velocity);
 
         advect(velocitySlab.ping, velocitySlab.ping, velocitySlab.pong, VELOCITY_DISSIPATION);
-        copyVectorTextureIntoField(velocitySlab.pong.textureHandle, velocity);
+        //copyVectorTextureIntoField(velocitySlab.pong.textureHandle, velocity);
         swapSurfaces(velocitySlab);
         resetState();
     } else {
@@ -157,19 +157,19 @@ void SmokeSimulation::update() {
         if (gpuImplementation) {
             swapSurfaces(velocitySlab);
             applyImpulse(velocitySlab.pong, target / gridSpacing, EMITTER_RANGE / gridSpacing, glm::vec3(force / 5.0f, 0.0f));
-            copyVectorTextureIntoField(velocitySlab.pong.textureHandle, velocity);
+            //copyVectorTextureIntoField(velocitySlab.pong.textureHandle, velocity);
             swapSurfaces(velocitySlab);
             resetState();
 
             swapSurfaces(densitySlab);
             applyImpulse(densitySlab.pong, target / gridSpacing, EMITTER_RANGE / gridSpacing, glm::vec3(1.0f, 0.0f, 0.0f));
-            copyScalarTextureIntoField(densitySlab.pong.textureHandle, density);
+            //copyScalarTextureIntoField(densitySlab.pong.textureHandle, density);
             swapSurfaces(densitySlab);
             resetState();
 
             swapSurfaces(temperatureSlab);
             applyImpulse(temperatureSlab.pong, target / gridSpacing, EMITTER_RANGE / gridSpacing, glm::vec3(5.0f, 0.0f, 0.0f));
-            copyScalarTextureIntoField(temperatureSlab.pong.textureHandle, temperature);
+            //copyScalarTextureIntoField(temperatureSlab.pong.textureHandle, temperature);
             swapSurfaces(temperatureSlab);
             resetState();
         } else {
@@ -215,9 +215,9 @@ void SmokeSimulation::update() {
 
     // Compute divergence
     if (gpuImplementation) {
-        loadFieldIntoVectorTexture(velocitySlab.ping.textureHandle, velocity);
+        //loadVectorFieldIntoTexture(velocitySlab.ping.textureHandle, velocity);
         computeDivergence(velocitySlab.ping, divergenceSlab.pong);
-        copyScalarTextureIntoField(divergenceSlab.pong.textureHandle, divergence);
+        //copyScalarTextureIntoField(divergenceSlab.pong.textureHandle, divergence);
         swapSurfaces(divergenceSlab);
         resetState();
     } else {
@@ -236,17 +236,17 @@ void SmokeSimulation::update() {
 
     // Advect density and temperature through velocity
     if (gpuImplementation) {
-        loadFieldIntoScalarTexture(densitySlab.ping.textureHandle, density);
+        //loadScalarFieldIntoTexture(densitySlab.ping.textureHandle, density);
 
         advect(velocitySlab.ping, densitySlab.ping, densitySlab.pong, DENSITY_DISSIPATION);
-        copyScalarTextureIntoField(densitySlab.pong.textureHandle, density);
+        //copyScalarTextureIntoField(densitySlab.pong.textureHandle, density);
         swapSurfaces(densitySlab);
         resetState();
 
-        loadFieldIntoScalarTexture(temperatureSlab.ping.textureHandle, temperature);
+        //loadScalarFieldIntoTexture(temperatureSlab.ping.textureHandle, temperature);
 
         advect(velocitySlab.ping, temperatureSlab.ping, temperatureSlab.pong, TEMPERATURE_DISSIPATION);
-        copyScalarTextureIntoField(temperatureSlab.pong.textureHandle, temperature);
+        //copyScalarTextureIntoField(temperatureSlab.pong.textureHandle, temperature);
         swapSurfaces(temperatureSlab);
         resetState();
     } else {
@@ -391,7 +391,7 @@ void SmokeSimulation::solvePressureField() {
             swapSurfaces(pressureSlab);
         }
 
-        copyScalarTextureIntoField(pressureSlab.ping.textureHandle, pressure);
+        //copyScalarTextureIntoField(pressureSlab.ping.textureHandle, pressure);
         resetState();
     } else {
         // Reset the pressure field
@@ -430,7 +430,7 @@ float SmokeSimulation::pressureAt(int i, int j) {
 void SmokeSimulation::applyPressure() {
     if (gpuImplementation) {
         applyPressure(pressureSlab.ping, velocitySlab.ping, velocitySlab.pong);
-        copyVectorTextureIntoField(velocitySlab.pong.textureHandle, velocity);
+        //copyVectorTextureIntoField(velocitySlab.pong.textureHandle, velocity);
         swapSurfaces(velocitySlab);
         resetState();
     } else {
@@ -621,10 +621,13 @@ void SmokeSimulation::renderField() {
                 break;
         }
     } else {
-        float textureFieldA[SmokeSimulation::GRID_SIZE][SmokeSimulation::GRID_SIZE][2];
-        float textureFieldB[SmokeSimulation::GRID_SIZE][SmokeSimulation::GRID_SIZE][2];
         for (int i = 0; i < GRID_SIZE; i++) {
             for (int j = 0; j < GRID_SIZE; j++) {
+                textureFieldA[i][j][0] = 0.0f;
+                textureFieldA[i][j][1] = 0.0f;
+                textureFieldB[i][j][0] = 0.0f;
+                textureFieldB[i][j][1] = 0.0f;
+
                 switch (currentShader) {
                     case 0:
                         textureFieldA[i][j][0] = density[j][i];

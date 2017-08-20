@@ -292,27 +292,25 @@ void SmokeSimulation::drawFullscreenQuad() {
     glDisableVertexAttribArray(0);
 }
 
-void SmokeSimulation::loadFieldIntoVectorTexture(GLuint textureHandle, glm::vec2 field[GRID_SIZE][GRID_SIZE]) {
-    float invertField[SmokeSimulation::GRID_SIZE][SmokeSimulation::GRID_SIZE][2];
+void SmokeSimulation::loadVectorFieldIntoTexture(GLuint textureHandle, vec2 **field) {
     for (int i = 0; i < GRID_SIZE; i++) {
         for (int j = 0; j < GRID_SIZE; j++) {
-            invertField[i][j][0] = field[j][i].x;
-            invertField[i][j][1] = field[j][i].y;
+            invertVectorField[i][j][0] = field[j][i].x;
+            invertVectorField[i][j][1] = field[j][i].y;
         }
     }
 
     glBindTexture(GL_TEXTURE_2D, textureHandle);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RG32F, GRID_SIZE, GRID_SIZE, 0, GL_RG, GL_FLOAT, &invertField[0][0][0]);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RG32F, GRID_SIZE, GRID_SIZE, 0, GL_RG, GL_FLOAT, &invertVectorField[0][0][0]);
 }
 
-void SmokeSimulation::loadFieldIntoScalarTexture(GLuint textureHandle, float field[GRID_SIZE][GRID_SIZE]) {
-    float invertField[SmokeSimulation::GRID_SIZE][SmokeSimulation::GRID_SIZE];
+void SmokeSimulation::loadScalarFieldIntoTexture(GLuint textureHandle, float **field) {
     for (int i = 0; i < GRID_SIZE; i++) {
         for (int j = 0; j < GRID_SIZE; j++) {
-            invertField[i][j] = field[j][i];
+            invertScalarField[i][j] = field[j][i];
         }
     }
 
     glBindTexture(GL_TEXTURE_2D, textureHandle);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_R32F, GRID_SIZE, GRID_SIZE, 0, GL_RED, GL_FLOAT, &invertField[0][0]);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_R32F, GRID_SIZE, GRID_SIZE, 0, GL_RED, GL_FLOAT, &invertScalarField[0][0]);
 }

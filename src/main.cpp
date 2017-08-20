@@ -114,8 +114,6 @@ int main(int argc, char **argv) {
     smokeSimulationGui = new SmokeSimulationGui(smokeSimulation);
     audioAnalyzerGui = new AudioAnalyzerGui(audioAnalyzer);
 
-    // printf("\n~~~\n\n");
-    // audioAnalyzer->printAudioDevices();
     printf("\n~~~\n\n");
 
     double lastTime = glfwGetTime();
@@ -193,9 +191,14 @@ int main(int argc, char **argv) {
         glfwSwapBuffers(window);
     }
 
-    // audioAnalyzer->shutDown();
+    audioAnalyzer->shutDown();
     ImGui_ImplGlfwGL3_Shutdown();
     glfwTerminate();
+
+    delete smokeSimulation;
+    delete audioAnalyzer;
+    delete smokeSimulationGui;
+    delete audioAnalyzerGui;
 
     return 0;
 }

@@ -54,7 +54,7 @@ class SmokeSimulation {
 public:
 
     // Constants
-    static constexpr int GRID_SIZE = 256;
+    static constexpr int GRID_SIZE = 512;
 
     // Variables
     float TIME_STEP;
@@ -104,10 +104,13 @@ public:
     bool enableVorticityConfinement;
     bool gpuImplementation;
 
+    float invertVectorField[GRID_SIZE][GRID_SIZE][2];
+    float invertScalarField[GRID_SIZE][GRID_SIZE];
+
     void copyVectorTextureIntoField(GLuint textureHandle, glm::vec2 field[GRID_SIZE][GRID_SIZE]);
     void copyScalarTextureIntoField(GLuint textureHandle, float field[GRID_SIZE][GRID_SIZE]);
-    void loadFieldIntoVectorTexture(GLuint textureHandle, glm::vec2 field[GRID_SIZE][GRID_SIZE]);
-    void loadFieldIntoScalarTexture(GLuint textureHandle, float field[GRID_SIZE][GRID_SIZE]);
+    void loadVectorFieldIntoTexture(GLuint textureHandle, glm::vec2 **field);
+    void loadScalarFieldIntoTexture(GLuint textureHandle, float **field);
 
 private:
 
@@ -130,6 +133,10 @@ private:
     // VBOs
     GLuint velocityVBO;
     GLuint fullscreenVBO;
+
+    // Rendering fields
+    float textureFieldA[SmokeSimulation::GRID_SIZE][SmokeSimulation::GRID_SIZE][2];
+    float textureFieldB[SmokeSimulation::GRID_SIZE][SmokeSimulation::GRID_SIZE][2];
 
     // Rendering textures
     GLuint textureA;
