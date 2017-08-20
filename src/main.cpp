@@ -41,10 +41,10 @@ void mouseButtonCallback(GLFWwindow *win, int button, int action, int mods) {
 // Keyboard callback
 void keyCallback(GLFWwindow *win, int key, int scancode, int action, int mods) {
     if (key == ' ' && action == GLFW_PRESS) {
-        smokeSimulation->resetFields();
+        smokeSimulation->reset();
         audioAnalyzer->resetBuffers();
     } else if (key == 'G' && action == GLFW_PRESS) {
-        smokeSimulation->gpuImplementation = !smokeSimulation->gpuImplementation;
+        smokeSimulation->useGPUImplementation = !smokeSimulation->useGPUImplementation;
     } else if (key == 'S' && action == GLFW_PRESS) {
         displaySmokeSimulationGui = !displaySmokeSimulationGui;
     } else if (key == 'A' && action == GLFW_PRESS) {

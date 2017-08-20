@@ -4,17 +4,18 @@
 #include <smoke_simulation.hpp>
 #include <shaderLoader.hpp>
 
-void SmokeSimulation::init() {
+void SmokeSimulation::initGPU() {
     initPrograms();
     initSlabs();
-
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 }
 
 void SmokeSimulation::initPrograms() {
     advectProgram = loadShaders("SmokeVertexShader", "advect");
     applyImpulseProgram = loadShaders("SmokeVertexShader", "applyImpulse");
-    //applyBuoyancyProgram = loadShaders("")
+    //applyBuoyancyProgram = loadShaders("SmokeVertexShader", "applyBuoyancy");
+    //computeCurlProgram = loadShaders("SmokeVertexShader", "computeCurl");
+    //applyVorticityConfinementProgram = loadShaders("SmokeVertexShader", "applyVorticityConfinement");
     computeDivergenceProgram = loadShaders("SmokeVertexShader", "computeDivergence");
     jacobiProgram = loadShaders("SmokeVertexShader", "jacobi");
     applyPressureProgram = loadShaders("SmokeVertexShader", "applyPressure");
@@ -27,20 +28,7 @@ void SmokeSimulation::initSlabs() {
     divergenceSlab = createSlab(GRID_SIZE, GRID_SIZE, 1);
     pressureSlab = createSlab(GRID_SIZE, GRID_SIZE, 1);
 
-    clearSlabs();
-}
-
-void SmokeSimulation::clearSlabs() {
-    clearSurface(velocitySlab.ping, 0.0f);
-    clearSurface(velocitySlab.pong, 0.0f);
-    clearSurface(densitySlab.ping, 0.0f);
-    clearSurface(densitySlab.pong, 0.0f);
-    clearSurface(temperatureSlab.ping, 0.0f);
-    clearSurface(temperatureSlab.pong, 0.0f);
-    clearSurface(divergenceSlab.ping, 0.0f);
-    clearSurface(divergenceSlab.pong, 0.0f);
-    clearSurface(pressureSlab.ping, 0.0f);
-    clearSurface(pressureSlab.pong, 0.0f);
+    resetSlabs();
 }
 
 SmokeSimulation::Slab SmokeSimulation::createSlab(int width, int height, int numComponents) {
@@ -101,6 +89,111 @@ void SmokeSimulation::clearSurface(Surface s, float v) {
     glClearColor(v, v, v, v);
     glClear(GL_COLOR_BUFFER_BIT);
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
+}
+
+void SmokeSimulation::resetSlabs() {
+    clearSurface(velocitySlab.ping, 0.0f);
+    clearSurface(velocitySlab.pong, 0.0f);
+    clearSurface(densitySlab.ping, 0.0f);
+    clearSurface(densitySlab.pong, 0.0f);
+    clearSurface(temperatureSlab.ping, 0.0f);
+    clearSurface(temperatureSlab.pong, 0.0f);
+    clearSurface(divergenceSlab.ping, 0.0f);
+    clearSurface(divergenceSlab.pong, 0.0f);
+    clearSurface(pressureSlab.ping, 0.0f);
+    clearSurface(pressureSlab.pong, 0.0f);
+}
+
+void SmokeSimulation::resetState() {
+    glActiveTexture(GL_TEXTURE2);
+    glBindTexture(GL_TEXTURE_2D, 0);
+    glActiveTexture(GL_TEXTURE1);
+    glBindTexture(GL_TEXTURE_2D, 0);
+    glActiveTexture(GL_TEXTURE0);
+    glBindTexture(GL_TEXTURE_2D, 0);
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+}
+
+void SmokeSimulation::updateGPU() {
+    // Advect velocity through velocity
+    //loadVectorFieldIntoTexture(velocitySlab.ping.textureHandle, velocity);
+
+    advect(velocitySlab.ping, velocitySlab.ping, velocitySlab.pong, VELOCITY_DISSIPATION);
+    //copyVectorTextureIntoField(velocitySlab.pong.textureHandle, velocity);
+    swapSurfaces(velocitySlab);
+    resetState();
+
+    // Smoke emitter
+    if (enableEmitter) {
+        glm::vec2 target = glm::vec2(GRID_SIZE / 2 * gridSpacing, GRID_SIZE * gridSpacing - 2);
+        glm::vec2 force = glm::vec2(myRandom() * PULSE_FORCE - PULSE_FORCE / 2.0f, -PULSE_FORCE);
+
+        swapSurfaces(velocitySlab);
+        applyImpulse(velocitySlab.pong, target / gridSpacing, EMITTER_RANGE / gridSpacing, glm::vec3(force / 5.0f, 0.0f));
+        //copyVectorTextureIntoField(velocitySlab.pong.textureHandle, velocity);
+        swapSurfaces(velocitySlab);
+        resetState();
+
+        swapSurfaces(densitySlab);
+        applyImpulse(densitySlab.pong, target / gridSpacing, EMITTER_RANGE / gridSpacing, glm::vec3(1.0f, 0.0f, 0.0f));
+        //copyScalarTextureIntoField(densitySlab.pong.textureHandle, density);
+        swapSurfaces(densitySlab);
+        resetState();
+
+        swapSurfaces(temperatureSlab);
+        applyImpulse(temperatureSlab.pong, target / gridSpacing, EMITTER_RANGE / gridSpacing, glm::vec3(5.0f, 0.0f, 0.0f));
+        //copyScalarTextureIntoField(temperatureSlab.pong.textureHandle, temperature);
+        swapSurfaces(temperatureSlab);
+        resetState();
+    }
+
+    // Buoyancy
+
+    // Compute curl
+
+    // Vorticity confinement
+
+    // Compute divergence
+    //loadVectorFieldIntoTexture(velocitySlab.ping.textureHandle, velocity);
+    computeDivergence(velocitySlab.ping, divergenceSlab.pong);
+    //copyScalarTextureIntoField(divergenceSlab.pong.textureHandle, divergence);
+    swapSurfaces(divergenceSlab);
+    resetState();
+
+    // Solve and apply pressure
+    if (enablePressureSolve) {
+        clearSurface(pressureSlab.ping, 0.0f);
+        clearSurface(pressureSlab.pong, 0.0f);
+
+        // Iteratively solve the new pressure field
+        for (int iteration = 0; iteration < JACOBI_ITERATIONS; iteration++) {
+            jacobi(divergenceSlab.ping, pressureSlab.ping, pressureSlab.pong);
+            swapSurfaces(pressureSlab);
+        }
+
+        //copyScalarTextureIntoField(pressureSlab.ping.textureHandle, pressure);
+        resetState();
+
+        applyPressure(pressureSlab.ping, velocitySlab.ping, velocitySlab.pong);
+        //copyVectorTextureIntoField(velocitySlab.pong.textureHandle, velocity);
+        swapSurfaces(velocitySlab);
+        resetState();
+    }
+
+    // Advect density and temperature through velocity
+    //loadScalarFieldIntoTexture(densitySlab.ping.textureHandle, density);
+
+    advect(velocitySlab.ping, densitySlab.ping, densitySlab.pong, DENSITY_DISSIPATION);
+    //copyScalarTextureIntoField(densitySlab.pong.textureHandle, density);
+    swapSurfaces(densitySlab);
+    resetState();
+
+    //loadScalarFieldIntoTexture(temperatureSlab.ping.textureHandle, temperature);
+
+    advect(velocitySlab.ping, temperatureSlab.ping, temperatureSlab.pong, TEMPERATURE_DISSIPATION);
+    //copyScalarTextureIntoField(temperatureSlab.pong.textureHandle, temperature);
+    swapSurfaces(temperatureSlab);
+    resetState();
 }
 
 void SmokeSimulation::advect(Surface velocitySurface, Surface source, Surface destination, float dissipation) {
@@ -223,94 +316,31 @@ void SmokeSimulation::applyImpulse(Surface destination, glm::vec2 position, floa
     glDisable(GL_BLEND);
 }
 
-void SmokeSimulation::copyVectorTextureIntoField(GLuint textureHandle, glm::vec2 field[GRID_SIZE][GRID_SIZE]) {
-    GLfloat* pixels = new GLfloat[GRID_SIZE * GRID_SIZE * 2];
-
-    glActiveTexture(GL_TEXTURE0);
-    glBindTexture(GL_TEXTURE_2D, textureHandle);
-    glGetTexImage(GL_TEXTURE_2D, 0, GL_RG, GL_FLOAT, pixels);
-
-    for (int i = 0; i < GRID_SIZE; i++) {
-        for (int j = 0; j < GRID_SIZE; j++) {
-            float xValue = pixels[(GRID_SIZE * i + j) * 2];
-            float yValue = pixels[(GRID_SIZE * i + j) * 2 + 1];
-
-            if (isnan(xValue)) xValue = 0.0f;
-            if (isnan(yValue)) yValue = 0.0f;
-
-            field[j][i].x = xValue;
-            field[j][i].y = yValue;
-        }
+void SmokeSimulation::renderGPU() {
+    switch (currentSmokeShader) {
+        case 0:
+            glActiveTexture(GL_TEXTURE0);
+            glBindTexture(GL_TEXTURE_2D, densitySlab.ping.textureHandle);
+            glActiveTexture(GL_TEXTURE1);
+            glBindTexture(GL_TEXTURE_2D, temperatureSlab.ping.textureHandle);
+            break;
+        case 1:
+            glActiveTexture(GL_TEXTURE0);
+            glBindTexture(GL_TEXTURE_2D, densitySlab.ping.textureHandle);
+            break;
+        case 2:
+            glActiveTexture(GL_TEXTURE0);
+            glBindTexture(GL_TEXTURE_2D, velocitySlab.ping.textureHandle);
+            break;
+        case 3:
+            glActiveTexture(GL_TEXTURE0);
+            glBindTexture(GL_TEXTURE_2D, temperatureSlab.ping.textureHandle);
+            break;
+        case 4:
+            // glActiveTexture(GL_TEXTURE0);
+            // glBindTexture(GL_TEXTURE_2D, curlSlab.ping.textureHandle);
+            break;
+        default:
+            break;
     }
-
-    delete[] pixels;
-}
-
-void SmokeSimulation::copyScalarTextureIntoField(GLuint textureHandle, float field[GRID_SIZE][GRID_SIZE]) {
-    GLfloat* pixels = new GLfloat[GRID_SIZE * GRID_SIZE];
-
-    glActiveTexture(GL_TEXTURE0);
-    glBindTexture(GL_TEXTURE_2D, textureHandle);
-    glGetTexImage(GL_TEXTURE_2D, 0, GL_RED, GL_FLOAT, pixels);
-
-    for (int i = 0; i < GRID_SIZE; i++) {
-        for (int j = 0; j < GRID_SIZE; j++) {
-            float value = pixels[(GRID_SIZE * i + j)];
-
-            if (isnan(value)) value = 0.0f;
-
-            field[j][i] = value;
-        }
-    }
-
-    delete[] pixels;
-}
-
-void SmokeSimulation::resetState() {
-    glActiveTexture(GL_TEXTURE2); glBindTexture(GL_TEXTURE_2D, 0);
-    glActiveTexture(GL_TEXTURE1); glBindTexture(GL_TEXTURE_2D, 0);
-    glActiveTexture(GL_TEXTURE0); glBindTexture(GL_TEXTURE_2D, 0);
-    glBindFramebuffer(GL_FRAMEBUFFER, 0);
-}
-
-void SmokeSimulation::drawFullscreenQuad() {
-
-    // Bind vertices
-    glEnableVertexAttribArray(0);
-    glBindBuffer(GL_ARRAY_BUFFER, fullscreenVBO);
-    glVertexAttribPointer(
-            0,         // shader layout attribute
-            4,         // size
-            GL_FLOAT,  // type
-            GL_FALSE,  // normalized?
-            0,         // stride
-            (void*)0   // array buffer offset
-    );
-
-    glDrawArrays(GL_TRIANGLES, 0, 3);
-
-    glDisableVertexAttribArray(0);
-}
-
-void SmokeSimulation::loadVectorFieldIntoTexture(GLuint textureHandle, vec2 **field) {
-    for (int i = 0; i < GRID_SIZE; i++) {
-        for (int j = 0; j < GRID_SIZE; j++) {
-            invertVectorField[i][j][0] = field[j][i].x;
-            invertVectorField[i][j][1] = field[j][i].y;
-        }
-    }
-
-    glBindTexture(GL_TEXTURE_2D, textureHandle);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RG32F, GRID_SIZE, GRID_SIZE, 0, GL_RG, GL_FLOAT, &invertVectorField[0][0][0]);
-}
-
-void SmokeSimulation::loadScalarFieldIntoTexture(GLuint textureHandle, float **field) {
-    for (int i = 0; i < GRID_SIZE; i++) {
-        for (int j = 0; j < GRID_SIZE; j++) {
-            invertScalarField[i][j] = field[j][i];
-        }
-    }
-
-    glBindTexture(GL_TEXTURE_2D, textureHandle);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_R32F, GRID_SIZE, GRID_SIZE, 0, GL_RED, GL_FLOAT, &invertScalarField[0][0]);
 }
