@@ -12,7 +12,7 @@ void SmokeSimulation::init() {
 }
 
 void SmokeSimulation::initPrograms() {
-    advectProgram = loadShaders("SmokeVertexShader", "advection");
+    advectProgram = loadShaders("SmokeVertexShader", "advect");
     applyImpulseProgram = loadShaders("SmokeVertexShader", "applyImpulse");
     //applyBuoyancyProgram = loadShaders("")
     computeDivergenceProgram = loadShaders("SmokeVertexShader", "computeDivergence");
@@ -112,6 +112,7 @@ void SmokeSimulation::advect(Surface velocitySurface, Surface source, Surface de
     GLint gridSpacingLocation = glGetUniformLocation(program, "gridSpacing");
     GLint timeStepLocation = glGetUniformLocation(program, "timeStep");
     GLint dissipationLocation = glGetUniformLocation(program, "dissipation");
+    GLint velocityTextureLocation = glGetUniformLocation(program, "velocityTexture");
     GLint sourceTextureLocation = glGetUniformLocation(program, "sourceTexture");
 
     glUniform1i(gridSizeLocation, GRID_SIZE);
@@ -119,6 +120,7 @@ void SmokeSimulation::advect(Surface velocitySurface, Surface source, Surface de
     glUniform1f(gridSpacingLocation, gridSpacing);
     glUniform1f(timeStepLocation, TIME_STEP * 5.0f);
     glUniform1f(dissipationLocation, dissipation);
+    glUniform1i(velocityTextureLocation, 0);
     glUniform1i(sourceTextureLocation, 1);
 
     glBindFramebuffer(GL_FRAMEBUFFER, destination.fboHandle);
@@ -138,11 +140,13 @@ void SmokeSimulation::computeDivergence(Surface velocitySurface, Surface diverge
     GLint inverseSizeLocation = glGetUniformLocation(program, "inverseSize");
     GLint gridSpacingLocation = glGetUniformLocation(program, "gridSpacing");
     GLint gradientScaleLocation = glGetUniformLocation(program, "gradientScale");
+    GLint velocityTextureLocation = glGetUniformLocation(program, "velocityTexture");
 
     glUniform1i(gridSizeLocation, GRID_SIZE);
     glUniform1f(inverseSizeLocation, 1.0f / GRID_SIZE);
     glUniform1f(gridSpacingLocation, gridSpacing);
     glUniform1f(gradientScaleLocation, -((2 * gridSpacing * FLUID_DENSITY) / TIME_STEP));
+    glUniform1i(velocityTextureLocation, 0);
 
     glBindFramebuffer(GL_FRAMEBUFFER, divergenceSurface.fboHandle);
     glActiveTexture(GL_TEXTURE0);
@@ -157,10 +161,12 @@ void SmokeSimulation::jacobi(Surface divergenceSurface, Surface pressureSource, 
 
     GLint gridSizeLocation = glGetUniformLocation(program, "gridSize");
     GLint inverseSizeLocation = glGetUniformLocation(program, "inverseSize");
+    GLint divergenceTextureLocation = glGetUniformLocation(program, "divergenceTexture");
     GLint pressureTextureLocation = glGetUniformLocation(program, "pressureTexture");
 
     glUniform1i(gridSizeLocation, GRID_SIZE);
     glUniform1f(inverseSizeLocation, 1.0f / GRID_SIZE);
+    glUniform1i(divergenceTextureLocation, 0);
     glUniform1i(pressureTextureLocation, 1);
 
     glBindFramebuffer(GL_FRAMEBUFFER, pressureDestination.fboHandle);
@@ -179,11 +185,13 @@ void SmokeSimulation::applyPressure(Surface pressureSurface, Surface velocitySou
     GLint gridSizeLocation = glGetUniformLocation(program, "gridSize");
     GLint inverseSizeLocation = glGetUniformLocation(program, "inverseSize");
     GLint gradientScaleLocation = glGetUniformLocation(program, "gradientScale");
+    GLint pressureTextureLocation = glGetUniformLocation(program, "pressureTexture");
     GLint velocityTextureLocation = glGetUniformLocation(program, "velocityTexture");
 
     glUniform1i(gridSizeLocation, GRID_SIZE);
     glUniform1f(inverseSizeLocation, 1.0f / GRID_SIZE);
     glUniform1f(gradientScaleLocation, -(TIME_STEP / (2 * FLUID_DENSITY * gridSpacing)));
+    glUniform1i(pressureTextureLocation, 0);
     glUniform1i(velocityTextureLocation, 1);
 
     glBindFramebuffer(GL_FRAMEBUFFER, velocityDestination.fboHandle);
@@ -269,7 +277,7 @@ void SmokeSimulation::drawFullscreenQuad() {
 
     // Bind vertices
     glEnableVertexAttribArray(0);
-    glBindBuffer(GL_ARRAY_BUFFER, densityVBO);
+    glBindBuffer(GL_ARRAY_BUFFER, fullscreenVBO);
     glVertexAttribPointer(
             0,         // shader layout attribute
             4,         // size

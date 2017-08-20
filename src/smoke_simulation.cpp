@@ -14,16 +14,6 @@ SmokeSimulation::SmokeSimulation() {
     setDefaultToggles();
 
     // Setup VBOs
-    float squareVertices[] = {
-            0.0f, 0.0f,
-            0.0f, gridSpacing,
-            gridSpacing, gridSpacing,
-            gridSpacing, 0.0f,
-    };
-    glGenBuffers(1, &squareVBO);
-    glBindBuffer(GL_ARRAY_BUFFER, squareVBO);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(squareVertices), squareVertices, GL_STATIC_DRAW);
-
     float vectorVertices[] = {
             -STROKE_WEIGHT / 2.0f, 0.0f,
             -STROKE_WEIGHT / 2.0f, gridSpacing / 2.5f,
@@ -39,18 +29,22 @@ SmokeSimulation::SmokeSimulation() {
         -1.0f, 3.0f, 0.0f, 1.0f,
         3.0f, -1.0f, 0.0f, 1.0f
     };
-    glGenBuffers(1, &densityVBO);
-    glBindBuffer(GL_ARRAY_BUFFER, densityVBO);
+    glGenBuffers(1, &fullscreenVBO);
+    glBindBuffer(GL_ARRAY_BUFFER, fullscreenVBO);
     glBufferData(GL_ARRAY_BUFFER, sizeof(densityVertices), densityVertices, GL_STATIC_DRAW);
 
-    // Setup density texture
-    glGenTextures(1, &texture);
-
-    glBindTexture(GL_TEXTURE_2D, texture);
-
+    // Setup textures for rendering fields
+    glGenTextures(1, &textureA);
+    glBindTexture(GL_TEXTURE_2D, textureA);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 
+    glGenTextures(1, &textureB);
+    glBindTexture(GL_TEXTURE_2D, textureB);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 
@@ -587,64 +581,84 @@ void SmokeSimulation::renderField() {
     glViewport(0, 0, SCREEN_WIDTH, SCREEN_HEIGHT);
 
     glUseProgram(smokeShaders[currentShader]);
-    passScreenSize(smokeShaders[currentShader]);
 
-//    if (gpuImplementation) {
-//        glActiveTexture(GL_TEXTURE0);
-//        glBindTexture(GL_TEXTURE_2D, velocitySlab.ping.textureHandle);
-//
-//        drawFullscreenQuad();
-//
-//        return;
-//    }
+    // Pass uniforms
+    GLint screenWidthLocation = glGetUniformLocation(smokeShaders[currentShader], "screenWidth");
+    GLint screenHeightLocation = glGetUniformLocation(smokeShaders[currentShader], "screenHeight");
+    glUniform1i(screenWidthLocation, SCREEN_WIDTH);
+    glUniform1i(screenHeightLocation, SCREEN_HEIGHT);
 
-    float textureField[SmokeSimulation::GRID_SIZE][SmokeSimulation::GRID_SIZE][2];
-    for (int i = 0; i < GRID_SIZE; i++) {
-        for (int j = 0; j < GRID_SIZE; j++) {
-            switch (currentShader) {
-                case 0:
-                    textureField[i][j][0] = density[j][i];
-                    textureField[i][j][1] = temperature[j][i];
-                    break;
-                case 1:
-                    textureField[i][j][0] = density[j][i];
-                    break;
-                case 2:
-                    textureField[i][j][0] = velocity[j][i].x / 10.0f;
-                    textureField[i][j][1] = velocity[j][i].y / 10.0f;
-                    break;
-                case 3:
-                    textureField[i][j][0] = temperature[j][i];
-                    break;
-                case 4:
-                    textureField[i][j][0] = curl[j][i];
-                    break;
-                default:
-                    textureField[i][j][0] = 0.0f;
-                    textureField[i][j][1] = 0.0f;
-                    break;
+    GLint textureALocation = glGetUniformLocation(smokeShaders[currentShader], "textureA");
+    GLint textureBLocation = glGetUniformLocation(smokeShaders[currentShader], "textureB");
+    glUniform1i(textureALocation, 0);
+    glUniform1i(textureBLocation, 1);
+
+    if (gpuImplementation) {
+        switch (currentShader) {
+            case 0:
+                glActiveTexture(GL_TEXTURE0);
+                glBindTexture(GL_TEXTURE_2D, densitySlab.ping.textureHandle);
+                glActiveTexture(GL_TEXTURE1);
+                glBindTexture(GL_TEXTURE_2D, temperatureSlab.ping.textureHandle);
+                break;
+            case 1:
+                glActiveTexture(GL_TEXTURE0);
+                glBindTexture(GL_TEXTURE_2D, densitySlab.ping.textureHandle);
+                break;
+            case 2:
+                glActiveTexture(GL_TEXTURE0);
+                glBindTexture(GL_TEXTURE_2D, velocitySlab.ping.textureHandle);
+                break;
+            case 3:
+                glActiveTexture(GL_TEXTURE0);
+                glBindTexture(GL_TEXTURE_2D, temperatureSlab.ping.textureHandle);
+                break;
+            case 4:
+                // glActiveTexture(GL_TEXTURE0);
+                // glBindTexture(GL_TEXTURE_2D, curlSlab.ping.textureHandle);
+                break;
+            default:
+                break;
+        }
+    } else {
+        float textureFieldA[SmokeSimulation::GRID_SIZE][SmokeSimulation::GRID_SIZE][2];
+        float textureFieldB[SmokeSimulation::GRID_SIZE][SmokeSimulation::GRID_SIZE][2];
+        for (int i = 0; i < GRID_SIZE; i++) {
+            for (int j = 0; j < GRID_SIZE; j++) {
+                switch (currentShader) {
+                    case 0:
+                        textureFieldA[i][j][0] = density[j][i];
+                        textureFieldB[i][j][0] = temperature[j][i];
+                        break;
+                    case 1:
+                        textureFieldA[i][j][0] = density[j][i];
+                        break;
+                    case 2:
+                        textureFieldA[i][j][0] = velocity[j][i].x / 10.0f;
+                        textureFieldA[i][j][1] = velocity[j][i].y / 10.0f;
+                        break;
+                    case 3:
+                        textureFieldA[i][j][0] = temperature[j][i];
+                        break;
+                    case 4:
+                        textureFieldA[i][j][0] = curl[j][i];
+                        break;
+                    default:
+                        break;
+                }
             }
         }
+
+        glActiveTexture(GL_TEXTURE0);
+        glBindTexture(GL_TEXTURE_2D, textureA);
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA32F, GRID_SIZE, GRID_SIZE, 0, GL_RG, GL_FLOAT, &textureFieldA[0][0][0]);
+
+        glActiveTexture(GL_TEXTURE1);
+        glBindTexture(GL_TEXTURE_2D, textureB);
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA32F, GRID_SIZE, GRID_SIZE, 0, GL_RG, GL_FLOAT, &textureFieldB[0][0][0]);
     }
 
-    glBindTexture(GL_TEXTURE_2D, texture);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA32F, GRID_SIZE, GRID_SIZE, 0, GL_RG, GL_FLOAT, &textureField[0][0][0]);
-
-    // Bind vertices
-    glEnableVertexAttribArray(0);
-    glBindBuffer(GL_ARRAY_BUFFER, densityVBO);
-    glVertexAttribPointer(
-            0,         // shader layout attribute
-            4,         // size
-            GL_FLOAT,  // type
-            GL_FALSE,  // normalized?
-            0,         // stride
-            (void*)0   // array buffer offset
-    );
-
-    glDrawArrays(GL_TRIANGLES, 0, 3);
-
-    glDisableVertexAttribArray(0);
+    drawFullscreenQuad();
 }
 
 void SmokeSimulation::renderVelocityField(glm::mat4 transform, glm::vec2 mousePosition) {

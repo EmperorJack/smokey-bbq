@@ -20,6 +20,8 @@ class SmokeSimulation {
     GLuint advectProgram;
     GLuint applyImpulseProgram;
     GLuint applyBuoyancyProgram;
+    GLuint computeCurlProgram;
+    GLuint applyVorticityConfinementProgram;
     GLuint computeDivergenceProgram;
     GLuint jacobiProgram;
     GLuint applyPressureProgram;
@@ -126,12 +128,12 @@ private:
     float gridSpacing;
 
     // VBOs
-    GLuint squareVBO;
     GLuint velocityVBO;
-    GLuint densityVBO;
+    GLuint fullscreenVBO;
 
-    // Textures
-    GLuint texture;
+    // Rendering textures
+    GLuint textureA;
+    GLuint textureB;
 
     // Shaders
     GLuint simpleShader;
