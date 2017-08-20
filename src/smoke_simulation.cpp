@@ -221,6 +221,7 @@ void SmokeSimulation::update() {
 
     // Compute divergence
     if (gpuImplementation) {
+        loadFieldIntoVectorTexture(velocitySlab.ping.textureHandle, velocity);
         computeDivergence(velocitySlab.ping, divergenceSlab.pong);
         copyScalarTextureIntoField(divergenceSlab.pong.textureHandle, divergence);
         swapSurfaces(divergenceSlab);
@@ -433,8 +434,7 @@ float SmokeSimulation::pressureAt(int i, int j) {
 }
 
 void SmokeSimulation::applyPressure() {
-    if (gpuImplementation && false) {
-        swapSurfaces(velocitySlab);
+    if (gpuImplementation) {
         applyPressure(pressureSlab.ping, velocitySlab.ping, velocitySlab.pong);
         copyVectorTextureIntoField(velocitySlab.pong.textureHandle, velocity);
         swapSurfaces(velocitySlab);
@@ -588,6 +588,15 @@ void SmokeSimulation::renderField() {
 
     glUseProgram(smokeShaders[currentShader]);
     passScreenSize(smokeShaders[currentShader]);
+
+//    if (gpuImplementation) {
+//        glActiveTexture(GL_TEXTURE0);
+//        glBindTexture(GL_TEXTURE_2D, velocitySlab.ping.textureHandle);
+//
+//        drawFullscreenQuad();
+//
+//        return;
+//    }
 
     float textureField[SmokeSimulation::GRID_SIZE][SmokeSimulation::GRID_SIZE][2];
     for (int i = 0; i < GRID_SIZE; i++) {

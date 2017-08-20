@@ -7,7 +7,6 @@ uniform sampler2D pressureTexture;
 
 uniform int gridSize;
 uniform float inverseSize;
-uniform float fluidDensity;
 
 bool clampBoundary(float i) {
     if (i < 0) {

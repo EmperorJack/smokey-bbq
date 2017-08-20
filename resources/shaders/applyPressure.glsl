@@ -33,8 +33,6 @@ void main() {
     float xChange = getGridPressure(i + 1, j) - getGridPressure(i - 1, j);
     float yChange = getGridPressure(i, j + 1) - getGridPressure(i, j - 1);
 
-//    color = vec4(vec2(gradientScale * xChange, gradientScale * yChange), 0.0f, 1.0f);
-
     vec2 vel = texture(velocityTexture, pos * inverseSize).xy;
     vec2 newVel = vel + vec2(gradientScale * xChange, gradientScale * yChange);
 

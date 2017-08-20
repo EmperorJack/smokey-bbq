@@ -157,12 +157,10 @@ void SmokeSimulation::jacobi(Surface divergenceSurface, Surface pressureSource, 
 
     GLint gridSizeLocation = glGetUniformLocation(program, "gridSize");
     GLint inverseSizeLocation = glGetUniformLocation(program, "inverseSize");
-    GLint fluidDensityLocation = glGetUniformLocation(program, "fluidDensity");
     GLint pressureTextureLocation = glGetUniformLocation(program, "pressureTexture");
 
     glUniform1i(gridSizeLocation, GRID_SIZE);
     glUniform1f(inverseSizeLocation, 1.0f / GRID_SIZE);
-    glUniform1f(fluidDensityLocation, FLUID_DENSITY);
     glUniform1i(pressureTextureLocation, 1);
 
     glBindFramebuffer(GL_FRAMEBUFFER, pressureDestination.fboHandle);
