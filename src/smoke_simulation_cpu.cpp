@@ -136,8 +136,8 @@ void SmokeSimulation::updateCPU() {
 
         for (int i = 0; i < GRID_SIZE; i++) {
             for (int j = 0; j < GRID_SIZE; j++) {
-                float xChange = getGridPressure(i + 1, j) - getGridPressure(i - 1, j);
-                float yChange = getGridPressure(i, j + 1) - getGridPressure(i, j - 1);
+                float xChange = getGridPressure(clampIndex(i + 1), j) - getGridPressure(clampIndex(i - 1), j);
+                float yChange = getGridPressure(i, clampIndex(j + 1)) - getGridPressure(i, clampIndex(j - 1));
 
                 velocity[i][j].x += a * xChange;
                 velocity[i][j].y += a * yChange;
@@ -222,10 +222,10 @@ glm::vec2 SmokeSimulation::vorticityConfinementForceAt(int i, int j) {
 
 float SmokeSimulation::pressureAt(int i, int j) {
     float d = divergence[i][j];
-    float p = getGridPressure(i + 2, j) +
-              getGridPressure(i - 2, j) +
-              getGridPressure(i, j + 2) +
-              getGridPressure(i, j - 2);
+    float p = getGridPressure(clampIndex(i + 2), j) +
+              getGridPressure(clampIndex(i - 2), j) +
+              getGridPressure(i, clampIndex(j + 2)) +
+              getGridPressure(i, clampIndex(j - 2));
     return (d + p) * 0.25f;
 }
 
@@ -350,6 +350,16 @@ bool SmokeSimulation::clampBoundary(int &i) {
     }
 
     return false;
+}
+
+int SmokeSimulation::clampIndex(int i) {
+    if (i < 0 && !wrapBorders) {
+        return 0;
+    }  else if (i >= GRID_SIZE && !wrapBorders) {
+        return GRID_SIZE - 1;
+    }
+
+    return i;
 }
 
 void SmokeSimulation::renderCPU() {

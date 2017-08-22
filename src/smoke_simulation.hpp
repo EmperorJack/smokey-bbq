@@ -143,6 +143,7 @@ private:
     // Indexing
     int wrapIndex(int i);
     bool clampBoundary(int &i);
+    int clampIndex(int i);
 
     // Rendering
     void renderVelocityField(glm::mat4 transform, glm::vec2 mousePosition);
