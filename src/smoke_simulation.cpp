@@ -77,7 +77,7 @@ void SmokeSimulation::setDefaultToggles() {
     enableEmitter = true;
     enablePressureSolve = true;
     randomPulseAngle = false;
-    enableBuoyancy = false;
+    enableBuoyancy = true;
     wrapBorders = false;
     enableVorticityConfinement = false;
     useGPUImplementation = true;

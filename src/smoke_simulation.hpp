@@ -8,7 +8,7 @@ class SmokeSimulation {
 public:
 
     // Constants
-    static constexpr int GRID_SIZE = 256;
+    static constexpr int GRID_SIZE = 128;
 
     // Variables
     float TIME_STEP;
@@ -203,9 +203,10 @@ private:
     // Algorithm
     void advect(Surface velocitySurface, Surface source, Surface destination, float dissipation);
     void applyImpulse(Surface destination, glm::vec2 position, float radius, glm::vec3 fill);
+    void applyBuoyancy(Surface temperatureSurface, Surface densitySurface, Surface velocityDestination);
     void computeDivergence(Surface velocitySurface, Surface divergenceSurface);
     void jacobi(Surface divergenceSurface, Surface pressureSource, Surface pressureDestination);
-    void applyPressure(Surface pressureSurface, Surface velocitySource, Surface velocityDestination);
+    void applyPressure(Surface pressureSurface, Surface velocityDestination);
 
 };
 

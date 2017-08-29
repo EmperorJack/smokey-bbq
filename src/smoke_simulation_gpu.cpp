@@ -7,13 +7,14 @@
 void SmokeSimulation::initGPU() {
     initPrograms();
     initSlabs();
-    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
+    glBlendFunc(GL_ONE, GL_ONE);
 }
 
 void SmokeSimulation::initPrograms() {
     advectProgram = loadShaders("SmokeVertexShader", "advect");
     applyImpulseProgram = loadShaders("SmokeVertexShader", "applyImpulse");
-    //applyBuoyancyProgram = loadShaders("SmokeVertexShader", "applyBuoyancy");
+    applyBuoyancyProgram = loadShaders("SmokeVertexShader", "applyBuoyancy");
     //computeCurlProgram = loadShaders("SmokeVertexShader", "computeCurl");
     //applyVorticityConfinementProgram = loadShaders("SmokeVertexShader", "applyVorticityConfinement");
     computeDivergenceProgram = loadShaders("SmokeVertexShader", "computeDivergence");
@@ -129,25 +130,31 @@ void SmokeSimulation::updateGPU() {
         glm::vec2 force = glm::vec2(myRandom() * PULSE_FORCE - PULSE_FORCE / 2.0f, -PULSE_FORCE);
 
         swapSurfaces(velocitySlab);
-        applyImpulse(velocitySlab.pong, target / gridSpacing, EMITTER_RANGE / gridSpacing, glm::vec3(force / 5.0f, 0.0f));
+        applyImpulse(velocitySlab.pong, target / gridSpacing, EMITTER_RANGE / gridSpacing, glm::vec3(force, 0.0f));
         //copyVectorTextureIntoField(velocitySlab.pong.textureHandle, velocity);
         swapSurfaces(velocitySlab);
         resetState();
 
         swapSurfaces(densitySlab);
-        applyImpulse(densitySlab.pong, target / gridSpacing, EMITTER_RANGE / gridSpacing, glm::vec3(1.0f, 0.0f, 0.0f));
+        applyImpulse(densitySlab.pong, target / gridSpacing, EMITTER_RANGE / gridSpacing, glm::vec3(0.2f, 0.0f, 0.0f));
         //copyScalarTextureIntoField(densitySlab.pong.textureHandle, density);
         swapSurfaces(densitySlab);
         resetState();
 
         swapSurfaces(temperatureSlab);
-        applyImpulse(temperatureSlab.pong, target / gridSpacing, EMITTER_RANGE / gridSpacing, glm::vec3(5.0f, 0.0f, 0.0f));
+        applyImpulse(temperatureSlab.pong, target / gridSpacing, EMITTER_RANGE / gridSpacing, glm::vec3(1.0f, 0.0f, 0.0f));
         //copyScalarTextureIntoField(temperatureSlab.pong.textureHandle, temperature);
         swapSurfaces(temperatureSlab);
         resetState();
     }
 
     // Buoyancy
+    if (enableBuoyancy) {
+        swapSurfaces(velocitySlab);
+        applyBuoyancy(temperatureSlab.ping, densitySlab.ping, velocitySlab.pong);
+        swapSurfaces(velocitySlab);
+        resetState();
+    }
 
     // Compute curl
 
@@ -174,7 +181,8 @@ void SmokeSimulation::updateGPU() {
         //copyScalarTextureIntoField(pressureSlab.ping.textureHandle, pressure);
         resetState();
 
-        applyPressure(pressureSlab.ping, velocitySlab.ping, velocitySlab.pong);
+        swapSurfaces(velocitySlab);
+        applyPressure(pressureSlab.ping, velocitySlab.pong);
         //copyVectorTextureIntoField(velocitySlab.pong.textureHandle, velocity);
         swapSurfaces(velocitySlab);
         resetState();
@@ -211,7 +219,7 @@ void SmokeSimulation::advect(Surface velocitySurface, Surface source, Surface de
     glUniform1i(gridSizeLocation, GRID_SIZE);
     glUniform1f(inverseSizeLocation, 1.0f / GRID_SIZE);
     glUniform1f(gridSpacingLocation, gridSpacing);
-    glUniform1f(timeStepLocation, TIME_STEP * 5.0f);
+    glUniform1f(timeStepLocation, TIME_STEP);
     glUniform1f(dissipationLocation, dissipation);
     glUniform1i(velocityTextureLocation, 0);
     glUniform1i(sourceTextureLocation, 1);
@@ -271,7 +279,7 @@ void SmokeSimulation::jacobi(Surface divergenceSurface, Surface pressureSource, 
     drawFullscreenQuad();
 }
 
-void SmokeSimulation::applyPressure(Surface pressureSurface, Surface velocitySource, Surface velocityDestination) {
+void SmokeSimulation::applyPressure(Surface pressureSurface, Surface velocityDestination) {
     GLuint program = applyPressureProgram;
     glUseProgram(program);
 
@@ -279,21 +287,19 @@ void SmokeSimulation::applyPressure(Surface pressureSurface, Surface velocitySou
     GLint inverseSizeLocation = glGetUniformLocation(program, "inverseSize");
     GLint gradientScaleLocation = glGetUniformLocation(program, "gradientScale");
     GLint pressureTextureLocation = glGetUniformLocation(program, "pressureTexture");
-    GLint velocityTextureLocation = glGetUniformLocation(program, "velocityTexture");
 
     glUniform1i(gridSizeLocation, GRID_SIZE);
     glUniform1f(inverseSizeLocation, 1.0f / GRID_SIZE);
     glUniform1f(gradientScaleLocation, -(TIME_STEP / (2 * FLUID_DENSITY * gridSpacing)));
     glUniform1i(pressureTextureLocation, 0);
-    glUniform1i(velocityTextureLocation, 1);
 
     glBindFramebuffer(GL_FRAMEBUFFER, velocityDestination.fboHandle);
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_2D, pressureSurface.textureHandle);
-    glActiveTexture(GL_TEXTURE1);
-    glBindTexture(GL_TEXTURE_2D, velocitySource.textureHandle);
 
+    glEnable(GL_BLEND);
     drawFullscreenQuad();
+    glDisable(GL_BLEND);
 }
 
 
@@ -310,6 +316,37 @@ void SmokeSimulation::applyImpulse(Surface destination, glm::vec2 position, floa
     glUniform3f(fillLocation, fill.x, fill.y, fill.z);
 
     glBindFramebuffer(GL_FRAMEBUFFER, destination.fboHandle);
+
+    glEnable(GL_BLEND);
+    drawFullscreenQuad();
+    glDisable(GL_BLEND);
+}
+
+void SmokeSimulation::applyBuoyancy(Surface temperatureSurface, Surface densitySurface, Surface velocityDestination) {
+    GLuint program = applyBuoyancyProgram;
+    glUseProgram(program);
+
+    GLint inverseSizeLocation = glGetUniformLocation(program, "inverseSize");
+    GLint fallForceLocation = glGetUniformLocation(program, "fallForce");
+    GLint riseForceLocation = glGetUniformLocation(program, "riseForce");
+    GLint atmosphereTemperatureLocation = glGetUniformLocation(program, "atmosphereTemperature");
+    GLint gravityLocation = glGetUniformLocation(program, "gravity");
+    GLint temperatureTextureLocation = glGetUniformLocation(program, "temperatureTexture");
+    GLint densityTextureLocation = glGetUniformLocation(program, "densityTexture");
+
+    glUniform1f(inverseSizeLocation, 1.0f / GRID_SIZE);
+    glUniform1f(fallForceLocation, FALL_FORCE);
+    glUniform1f(riseForceLocation, RISE_FORCE);
+    glUniform1f(atmosphereTemperatureLocation, ATMOSPHERE_TEMPERATURE);
+    glUniform1f(gravityLocation, GRAVITY);
+    glUniform1i(temperatureTextureLocation, 0);
+    glUniform1i(densityTextureLocation, 1);
+
+    glBindFramebuffer(GL_FRAMEBUFFER, velocityDestination.fboHandle);
+    glActiveTexture(GL_TEXTURE0);
+    glBindTexture(GL_TEXTURE_2D, temperatureSurface.textureHandle);
+    glActiveTexture(GL_TEXTURE1);
+    glBindTexture(GL_TEXTURE_2D, densitySurface.textureHandle);
 
     glEnable(GL_BLEND);
     drawFullscreenQuad();

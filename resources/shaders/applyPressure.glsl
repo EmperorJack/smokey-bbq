@@ -3,7 +3,6 @@
 layout(location = 0) out vec4 color;
 
 uniform sampler2D pressureTexture;
-uniform sampler2D velocityTexture;
 
 uniform int gridSize;
 uniform float inverseSize;
@@ -45,8 +44,5 @@ void main() {
     float xChange = getGridPressure(clampIndex(i + 1), j) - getGridPressure(clampIndex(i - 1), j);
     float yChange = getGridPressure(i, clampIndex(j + 1)) - getGridPressure(i, clampIndex(j - 1));
 
-    vec2 vel = texture(velocityTexture, pos * inverseSize).xy;
-    vec2 newVel = vel + vec2(gradientScale * xChange, gradientScale * yChange);
-
-    color = vec4(newVel, 0.0f, 0.0f);
+    color = vec4(gradientScale * xChange, gradientScale * yChange, 0.0f, 0.0f);
 }
