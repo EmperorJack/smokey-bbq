@@ -40,13 +40,13 @@ vec2 getInterpolatedVelocity(sampler2D source, float x, float y) {
 
 void main() {
     vec2 pos = gl_FragCoord.xy;
-    float i = float(pos.x);
-    float j = float(pos.y);
+    int i = int(pos.x);
+    int j = int(pos.y);
 
-    float pdx = (getInterpolatedVelocity(velocityTexture, i + 1, j).x -
-                 getInterpolatedVelocity(velocityTexture, i - 1, j).x) * 0.5f;
-    float pdy = (getInterpolatedVelocity(velocityTexture, i, j + 1).y -
-                 getInterpolatedVelocity(velocityTexture, i, j - 1).y) * 0.5f;
+    float pdx = (getInterpolatedVelocity(velocityTexture, i + 1, j).y -
+                 getInterpolatedVelocity(velocityTexture, i - 1, j).y) * 0.5f;
+    float pdy = (getInterpolatedVelocity(velocityTexture, i, j + 1).x -
+                 getInterpolatedVelocity(velocityTexture, i, j - 1).x) * 0.5f;
 
     color = vec4(pdx - pdy, 0.0f, 0.0f, 0.0f);
 }

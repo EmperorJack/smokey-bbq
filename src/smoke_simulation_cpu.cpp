@@ -385,8 +385,8 @@ void SmokeSimulation::renderCPU() {
                     textureFieldA[i][j][0] = density[j][i];
                     break;
                 case 2:
-                    textureFieldA[i][j][0] = velocity[j][i].x / 10.0f;
-                    textureFieldA[i][j][1] = velocity[j][i].y / 10.0f;
+                    textureFieldA[i][j][0] = velocity[j][i].x;
+                    textureFieldA[i][j][1] = velocity[j][i].y;
                     break;
                 case 3:
                     textureFieldA[i][j][0] = temperature[j][i];

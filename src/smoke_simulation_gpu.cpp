@@ -16,7 +16,7 @@ void SmokeSimulation::initPrograms() {
     applyImpulseProgram = loadShaders("SmokeVertexShader", "applyImpulse");
     applyBuoyancyProgram = loadShaders("SmokeVertexShader", "applyBuoyancy");
     computeCurlProgram = loadShaders("SmokeVertexShader", "computeCurl");
-    //applyVorticityConfinementProgram = loadShaders("SmokeVertexShader", "applyVorticityConfinement");
+    applyVorticityConfinementProgram = loadShaders("SmokeVertexShader", "applyVorticityConfinement");
     computeDivergenceProgram = loadShaders("SmokeVertexShader", "computeDivergence");
     jacobiProgram = loadShaders("SmokeVertexShader", "jacobi");
     applyPressureProgram = loadShaders("SmokeVertexShader", "applyPressure");
@@ -54,16 +54,16 @@ SmokeSimulation::Surface SmokeSimulation::createSurface(int width, int height, i
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
     switch (numComponents) {
-        case 1: glTexImage2D(GL_TEXTURE_2D, 0, GL_R32F, width, height, 0, GL_RED, GL_FLOAT, 0); break;
-        case 2: glTexImage2D(GL_TEXTURE_2D, 0, GL_RG32F, width, height, 0, GL_RG, GL_FLOAT, 0); break;
-        case 3: glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB32F, width, height, 0, GL_RGB, GL_FLOAT, 0); break;
-        case 4: glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA32F, width, height, 0, GL_RGBA, GL_FLOAT, 0); break;
+        case 1: glTexImage2D(GL_TEXTURE_2D, 0, GL_R16F, width, height, 0, GL_RED, GL_FLOAT, 0); break;
+        case 2: glTexImage2D(GL_TEXTURE_2D, 0, GL_RG16F, width, height, 0, GL_RG, GL_FLOAT, 0); break;
+        case 3: glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB16F, width, height, 0, GL_RGB, GL_FLOAT, 0); break;
+        case 4: glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA16F, width, height, 0, GL_RGBA, GL_FLOAT, 0); break;
         default: fprintf(stderr, "Invalid slab format."); exit(1);
     }
 
-    GLuint colorbuffer;
-    glGenRenderbuffers(1, &colorbuffer);
-    glBindRenderbuffer(GL_RENDERBUFFER, colorbuffer);
+    GLuint colorBuffer;
+    glGenRenderbuffers(1, &colorBuffer);
+    glBindRenderbuffer(GL_RENDERBUFFER, colorBuffer);
     glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, textureHandle, 0);
 
     if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE) {
@@ -132,19 +132,20 @@ void SmokeSimulation::updateGPU() {
 
         applyImpulse(velocitySlab.ping, target / gridSpacing, EMITTER_RANGE / gridSpacing, glm::vec3(force / 5.0f, 0.0f));
         //copyVectorTextureIntoField(velocitySlab.pong.textureHandle, velocity);
+        resetState();
 
         applyImpulse(densitySlab.ping, target / gridSpacing, EMITTER_RANGE / gridSpacing, glm::vec3(0.2f, 0.0f, 0.0f));
         //copyScalarTextureIntoField(densitySlab.pong.textureHandle, density);
+        resetState();
 
         applyImpulse(temperatureSlab.ping, target / gridSpacing, EMITTER_RANGE / gridSpacing, glm::vec3(1.0f, 0.0f, 0.0f));
         //copyScalarTextureIntoField(temperatureSlab.pong.textureHandle, temperature);
+        resetState();
     }
 
     // Buoyancy
     if (enableBuoyancy) {
-        swapSurfaces(velocitySlab);
-        applyBuoyancy(temperatureSlab.ping, densitySlab.ping, velocitySlab.pong);
-        swapSurfaces(velocitySlab);
+        applyBuoyancy(temperatureSlab.ping, densitySlab.ping, velocitySlab.ping);
         resetState();
     }
 
@@ -157,7 +158,8 @@ void SmokeSimulation::updateGPU() {
 
     // Apply vorticity confinement
     if (enableVorticityConfinement) {
-
+        applyVorticityConfinement(curlSlab.ping, velocitySlab.ping);
+        resetState();
     }
 
     // Compute divergence
@@ -377,7 +379,28 @@ void SmokeSimulation::computeCurl(Surface velocitySurface, Surface curlSurface) 
 }
 
 void SmokeSimulation::applyVorticityConfinement(Surface curlSurface, Surface velocityDestination) {
+    GLuint program = applyVorticityConfinementProgram;
+    glUseProgram(program);
 
+    GLint gridSizeLocation = glGetUniformLocation(program, "gridSize");
+    GLint inverseSizeLocation = glGetUniformLocation(program, "inverseSize");
+    GLint timeStepLocation = glGetUniformLocation(program, "timeStep");
+    GLint vorticityConfinementForceLocation = glGetUniformLocation(program, "vorticityConfinementForce");
+    GLint curlTextureLocation = glGetUniformLocation(program, "curlTexture");
+
+    glUniform1i(gridSizeLocation, GRID_SIZE);
+    glUniform1f(inverseSizeLocation, 1.0f / GRID_SIZE);
+    glUniform1f(timeStepLocation, TIME_STEP);
+    glUniform1f(vorticityConfinementForceLocation, VORTICITY_CONFINEMENT_FORCE);
+    glUniform1i(curlTextureLocation, 0);
+
+    glBindFramebuffer(GL_FRAMEBUFFER, velocityDestination.fboHandle);
+    glActiveTexture(GL_TEXTURE0);
+    glBindTexture(GL_TEXTURE_2D, curlSurface.textureHandle);
+
+    glEnable(GL_BLEND);
+    drawFullscreenQuad();
+    glDisable(GL_BLEND);
 }
 
 void SmokeSimulation::renderGPU() {
