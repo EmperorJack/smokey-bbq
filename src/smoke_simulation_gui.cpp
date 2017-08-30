@@ -26,7 +26,8 @@ void SmokeSimulationGui::renderToggles() {
     ImGui::Checkbox("Enable Buoyancy Force", &smokeSimulation->enableBuoyancy);
     ImGui::Checkbox("Enable Vorticity Confinement", &smokeSimulation->enableVorticityConfinement);
     ImGui::Checkbox("Wrap Borders", &smokeSimulation->wrapBorders);
-    ImGui::Checkbox("Enable Pressure Solver", &smokeSimulation->enablePressureSolve);
+    ImGui::Checkbox("Enable Pressure Solver", &smokeSimulation->enablePressureSolver);
+    ImGui::Checkbox("Compute Intermediate Fields", &smokeSimulation->computeIntermediateFields);
     ImGui::Checkbox("GPU Implementation", &smokeSimulation->useGPUImplementation);
 
     ImGui::Separator(); // Reset toggles

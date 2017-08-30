@@ -75,11 +75,12 @@ void SmokeSimulation::setDefaultToggles() {
     displayVelocityField = false;
     updateSimulation = true;
     enableEmitter = true;
-    enablePressureSolve = true;
+    enablePressureSolver = true;
     randomPulseAngle = false;
     enableBuoyancy = true;
     wrapBorders = false;
-    enableVorticityConfinement = false;
+    enableVorticityConfinement = true;
+    computeIntermediateFields = false;
     useGPUImplementation = true;
 }
 

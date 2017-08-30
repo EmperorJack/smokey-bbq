@@ -15,7 +15,7 @@ void SmokeSimulation::initPrograms() {
     advectProgram = loadShaders("SmokeVertexShader", "advect");
     applyImpulseProgram = loadShaders("SmokeVertexShader", "applyImpulse");
     applyBuoyancyProgram = loadShaders("SmokeVertexShader", "applyBuoyancy");
-    //computeCurlProgram = loadShaders("SmokeVertexShader", "computeCurl");
+    computeCurlProgram = loadShaders("SmokeVertexShader", "computeCurl");
     //applyVorticityConfinementProgram = loadShaders("SmokeVertexShader", "applyVorticityConfinement");
     computeDivergenceProgram = loadShaders("SmokeVertexShader", "computeDivergence");
     jacobiProgram = loadShaders("SmokeVertexShader", "jacobi");
@@ -26,6 +26,7 @@ void SmokeSimulation::initSlabs() {
     velocitySlab = createSlab(GRID_SIZE, GRID_SIZE, 2);
     densitySlab = createSlab(GRID_SIZE, GRID_SIZE, 1);
     temperatureSlab = createSlab(GRID_SIZE, GRID_SIZE, 1);
+    curlSlab = createSlab(GRID_SIZE, GRID_SIZE, 1);
     divergenceSlab = createSlab(GRID_SIZE, GRID_SIZE, 1);
     pressureSlab = createSlab(GRID_SIZE, GRID_SIZE, 1);
 
@@ -129,23 +130,14 @@ void SmokeSimulation::updateGPU() {
         glm::vec2 target = glm::vec2(GRID_SIZE / 2 * gridSpacing, GRID_SIZE * gridSpacing - 2);
         glm::vec2 force = glm::vec2(myRandom() * PULSE_FORCE - PULSE_FORCE / 2.0f, -PULSE_FORCE);
 
-        swapSurfaces(velocitySlab);
-        applyImpulse(velocitySlab.pong, target / gridSpacing, EMITTER_RANGE / gridSpacing, glm::vec3(force, 0.0f));
+        applyImpulse(velocitySlab.ping, target / gridSpacing, EMITTER_RANGE / gridSpacing, glm::vec3(force / 5.0f, 0.0f));
         //copyVectorTextureIntoField(velocitySlab.pong.textureHandle, velocity);
-        swapSurfaces(velocitySlab);
-        resetState();
 
-        swapSurfaces(densitySlab);
-        applyImpulse(densitySlab.pong, target / gridSpacing, EMITTER_RANGE / gridSpacing, glm::vec3(0.2f, 0.0f, 0.0f));
+        applyImpulse(densitySlab.ping, target / gridSpacing, EMITTER_RANGE / gridSpacing, glm::vec3(0.2f, 0.0f, 0.0f));
         //copyScalarTextureIntoField(densitySlab.pong.textureHandle, density);
-        swapSurfaces(densitySlab);
-        resetState();
 
-        swapSurfaces(temperatureSlab);
-        applyImpulse(temperatureSlab.pong, target / gridSpacing, EMITTER_RANGE / gridSpacing, glm::vec3(1.0f, 0.0f, 0.0f));
+        applyImpulse(temperatureSlab.ping, target / gridSpacing, EMITTER_RANGE / gridSpacing, glm::vec3(1.0f, 0.0f, 0.0f));
         //copyScalarTextureIntoField(temperatureSlab.pong.textureHandle, temperature);
-        swapSurfaces(temperatureSlab);
-        resetState();
     }
 
     // Buoyancy
@@ -157,18 +149,30 @@ void SmokeSimulation::updateGPU() {
     }
 
     // Compute curl
+    if (enableVorticityConfinement || computeIntermediateFields) {
+        computeCurl(velocitySlab.ping, curlSlab.pong);
+        swapSurfaces(curlSlab);
+        resetState();
+    }
 
-    // Vorticity confinement
+    // Apply vorticity confinement
+    if (enableVorticityConfinement) {
+
+    }
 
     // Compute divergence
-    //loadVectorFieldIntoTexture(velocitySlab.ping.textureHandle, velocity);
-    computeDivergence(velocitySlab.ping, divergenceSlab.pong);
-    //copyScalarTextureIntoField(divergenceSlab.pong.textureHandle, divergence);
-    swapSurfaces(divergenceSlab);
-    resetState();
+    if (enablePressureSolver || computeIntermediateFields) {
+        //loadVectorFieldIntoTexture(velocitySlab.ping.textureHandle, velocity);
+        computeDivergence(velocitySlab.ping, divergenceSlab.pong);
+        //copyScalarTextureIntoField(divergenceSlab.pong.textureHandle, divergence);
+        swapSurfaces(divergenceSlab);
+        resetState();
+    }
 
-    // Solve and apply pressure
-    if (enablePressureSolve) {
+    // Pressure solver
+    if (enablePressureSolver) {
+
+        // Reset the pressure field
         clearSurface(pressureSlab.ping, 0.0f);
         clearSurface(pressureSlab.pong, 0.0f);
 
@@ -181,10 +185,9 @@ void SmokeSimulation::updateGPU() {
         //copyScalarTextureIntoField(pressureSlab.ping.textureHandle, pressure);
         resetState();
 
-        swapSurfaces(velocitySlab);
-        applyPressure(pressureSlab.ping, velocitySlab.pong);
+        // Apply pressure
+        applyPressure(pressureSlab.ping, velocitySlab.ping);
         //copyVectorTextureIntoField(velocitySlab.pong.textureHandle, velocity);
-        swapSurfaces(velocitySlab);
         resetState();
     }
 
@@ -302,7 +305,6 @@ void SmokeSimulation::applyPressure(Surface pressureSurface, Surface velocityDes
     glDisable(GL_BLEND);
 }
 
-
 void SmokeSimulation::applyImpulse(Surface destination, glm::vec2 position, float radius, glm::vec3 fill) {
     GLuint program = applyImpulseProgram;
     glUseProgram(program);
@@ -353,6 +355,31 @@ void SmokeSimulation::applyBuoyancy(Surface temperatureSurface, Surface densityS
     glDisable(GL_BLEND);
 }
 
+void SmokeSimulation::computeCurl(Surface velocitySurface, Surface curlSurface) {
+    GLuint program = computeCurlProgram;
+    glUseProgram(program);
+
+    GLint gridSizeLocation = glGetUniformLocation(program, "gridSize");
+    GLint inverseSizeLocation = glGetUniformLocation(program, "inverseSize");
+    GLint gridSpacingLocation = glGetUniformLocation(program, "gridSpacing");
+    GLint velocityTextureLocation = glGetUniformLocation(program, "velocityTexture");
+
+    glUniform1i(gridSizeLocation, GRID_SIZE);
+    glUniform1f(inverseSizeLocation, 1.0f / GRID_SIZE);
+    glUniform1f(gridSpacingLocation, gridSpacing);
+    glUniform1i(velocityTextureLocation, 0);
+
+    glBindFramebuffer(GL_FRAMEBUFFER, curlSurface.fboHandle);
+    glActiveTexture(GL_TEXTURE0);
+    glBindTexture(GL_TEXTURE_2D, velocitySurface.textureHandle);
+
+    drawFullscreenQuad();
+}
+
+void SmokeSimulation::applyVorticityConfinement(Surface curlSurface, Surface velocityDestination) {
+
+}
+
 void SmokeSimulation::renderGPU() {
     switch (currentSmokeShader) {
         case 0:
@@ -374,8 +401,8 @@ void SmokeSimulation::renderGPU() {
             glBindTexture(GL_TEXTURE_2D, temperatureSlab.ping.textureHandle);
             break;
         case 4:
-            // glActiveTexture(GL_TEXTURE0);
-            // glBindTexture(GL_TEXTURE_2D, curlSlab.ping.textureHandle);
+            glActiveTexture(GL_TEXTURE0);
+            glBindTexture(GL_TEXTURE_2D, curlSlab.ping.textureHandle);
             break;
         default:
             break;

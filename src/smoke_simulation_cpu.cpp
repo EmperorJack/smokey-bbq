@@ -86,13 +86,15 @@ void SmokeSimulation::updateCPU() {
     }
 
     // Compute curl
-    for (int i = 0; i < GRID_SIZE; i++) {
-        for (int j = 0; j < GRID_SIZE; j++) {
-            curl[i][j] = curlAt(i, j);
+    if (enableVorticityConfinement || computeIntermediateFields) {
+        for (int i = 0; i < GRID_SIZE; i++) {
+            for (int j = 0; j < GRID_SIZE; j++) {
+                curl[i][j] = curlAt(i, j);
+            }
         }
     }
 
-    // Vorticity confinement
+    // Apply vorticity confinement
     if (enableVorticityConfinement) {
         for (int i = 0; i < GRID_SIZE; i++) {
             for (int j = 0; j < GRID_SIZE; j++) {
@@ -102,14 +104,17 @@ void SmokeSimulation::updateCPU() {
     }
 
     // Compute divergence
-    for (int i = 0; i < GRID_SIZE; i++) {
-        for (int j = 0; j < GRID_SIZE; j++) {
-            divergence[i][j] = divergenceAt(i, j);
+    if (enablePressureSolver || computeIntermediateFields) {
+        for (int i = 0; i < GRID_SIZE; i++) {
+            for (int j = 0; j < GRID_SIZE; j++) {
+                divergence[i][j] = divergenceAt(i, j);
+            }
         }
     }
 
-    // Solve and apply pressure
-    if (enablePressureSolve) {
+    // Pressure solver
+    if (enablePressureSolver) {
+
         // Reset the pressure field
         for (int i = 0; i < GRID_SIZE; i++) {
             for (int j = 0; j < GRID_SIZE; j++) {
@@ -134,6 +139,7 @@ void SmokeSimulation::updateCPU() {
 
         float a = -(TIME_STEP / (2 * FLUID_DENSITY * gridSpacing));
 
+        // Apply pressure
         for (int i = 0; i < GRID_SIZE; i++) {
             for (int j = 0; j < GRID_SIZE; j++) {
                 float xChange = getGridPressure(clampIndex(i + 1), j) - getGridPressure(clampIndex(i - 1), j);

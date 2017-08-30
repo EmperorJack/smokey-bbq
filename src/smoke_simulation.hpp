@@ -51,11 +51,12 @@ public:
     bool displayVelocityField;
     bool updateSimulation;
     bool enableEmitter;
-    bool enablePressureSolve;
+    bool enablePressureSolver;
     bool randomPulseAngle;
     bool enableBuoyancy;
     bool wrapBorders;
     bool enableVorticityConfinement;
+    bool computeIntermediateFields;
     bool useGPUImplementation;
 
 private:
@@ -180,6 +181,7 @@ private:
     Slab velocitySlab;
     Slab densitySlab;
     Slab temperatureSlab;
+    Slab curlSlab;
     Slab divergenceSlab;
     Slab pressureSlab;
 
@@ -204,6 +206,8 @@ private:
     void advect(Surface velocitySurface, Surface source, Surface destination, float dissipation);
     void applyImpulse(Surface destination, glm::vec2 position, float radius, glm::vec3 fill);
     void applyBuoyancy(Surface temperatureSurface, Surface densitySurface, Surface velocityDestination);
+    void computeCurl(Surface velocitySurface, Surface curlSurface);
+    void applyVorticityConfinement(Surface curlSurface, Surface velocityDestination);
     void computeDivergence(Surface velocitySurface, Surface divergenceSurface);
     void jacobi(Surface divergenceSurface, Surface pressureSource, Surface pressureDestination);
     void applyPressure(Surface pressureSurface, Surface velocityDestination);
