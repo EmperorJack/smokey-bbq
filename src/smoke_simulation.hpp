@@ -54,7 +54,7 @@ public:
     bool enablePressureSolver;
     bool randomPulseAngle;
     bool enableBuoyancy;
-    bool wrapBorders;
+    bool wrapBorders, prevWrapBorders;
     bool enableVorticityConfinement;
     bool computeIntermediateFields;
     bool useGPUImplementation;
@@ -178,6 +178,7 @@ private:
     GLuint applyPressureProgram;
 
     // Slabs
+    std::vector<Slab> slabs;
     Slab velocitySlab;
     Slab densitySlab;
     Slab temperatureSlab;
@@ -185,12 +186,17 @@ private:
     Slab divergenceSlab;
     Slab pressureSlab;
 
+    // Samplers
+    GLuint boundedSampler;
+    GLuint wrapBordersSampler;
+
     // Setup
     void initGPU();
     void initPrograms();
     void initSlabs();
     Slab createSlab(int width, int height, int numComponents);
     Surface createSurface(int width, int height, int numComponents);
+    void updateSampler();
 
     // Core
     void updateGPU();

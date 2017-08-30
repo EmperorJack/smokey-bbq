@@ -6,18 +6,9 @@ uniform sampler2D curlTexture;
 
 uniform int gridSize;
 uniform float inverseSize;
+uniform bool wrapBorders;
 uniform float timeStep;
 uniform float vorticityConfinementForce;
-
-float clampIndex(float i) {
-    if (i < 0) {
-        return 0.0f;
-    }  else if (i >= gridSize) {
-        return float(gridSize - 1);
-    }
-
-    return i;
-}
 
 bool clampBoundary(inout float i) {
     if (i < 0) {
@@ -32,7 +23,7 @@ bool clampBoundary(inout float i) {
 }
 
 float getGridCurl(float i, float j) {
-    bool boundary = clampBoundary(i) || clampBoundary(j);
+    bool boundary = !wrapBorders && (clampBoundary(i) || clampBoundary(j));
     vec2 texcoord = vec2(i, j) * inverseSize;
     return texture(curlTexture, texcoord).x * (boundary ? 0.0f : 1.0f);
 }

@@ -6,6 +6,7 @@ uniform sampler2D velocityTexture;
 
 uniform int gridSize;
 uniform float inverseSize;
+uniform bool wrapBorders;
 uniform float gridSpacing;
 uniform float gradientScale;
 
@@ -22,7 +23,7 @@ bool clampBoundary(inout float i) {
 }
 
 vec2 getGridVelocity(sampler2D source, float i, float j) {
-    bool boundary = clampBoundary(i) || clampBoundary(j);
+    bool boundary = !wrapBorders && (clampBoundary(i) || clampBoundary(j));
     vec2 texcoord = vec2(i, j) * inverseSize;
     return texture(source, texcoord).xy * (boundary ? 0.0f : 1.0f);
 }

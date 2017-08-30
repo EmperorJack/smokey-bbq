@@ -6,12 +6,13 @@ uniform sampler2D pressureTexture;
 
 uniform int gridSize;
 uniform float inverseSize;
+uniform bool wrapBorders;
 uniform float gradientScale;
 
 float clampIndex(float i) {
-    if (i < 0) {
+    if (i < 0 && !wrapBorders) {
         return 0.0f;
-    }  else if (i >= gridSize) {
+    }  else if (i >= gridSize && !wrapBorders) {
         return float(gridSize - 1);
     }
 
@@ -31,7 +32,7 @@ bool clampBoundary(inout float i) {
 }
 
 float getGridPressure(float i, float j) {
-    bool boundary = clampBoundary(i) || clampBoundary(j);
+    bool boundary = !wrapBorders && (clampBoundary(i) || clampBoundary(j));
     vec2 texcoord = vec2(i, j) * inverseSize;
     return texture(pressureTexture, texcoord).x * (boundary ? 0.0f : 1.0f);
 }
