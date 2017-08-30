@@ -44,6 +44,7 @@ void SmokeSimulation::resetFields() {
 }
 
 void SmokeSimulation::updateCPU() {
+
     // Advect velocity through velocity
     for (int i = 0; i < GRID_SIZE; i++) {
         for (int j = 0; j < GRID_SIZE; j++) {
@@ -59,24 +60,10 @@ void SmokeSimulation::updateCPU() {
 
     // Smoke emitter
     if (enableEmitter) {
-        glm::vec2 target = glm::vec2(GRID_SIZE / 2 * gridSpacing, GRID_SIZE * gridSpacing - 2);
+        glm::vec2 position = glm::vec2(GRID_SIZE / 2 * SCREEN_WIDTH / GRID_SIZE, GRID_SIZE * SCREEN_HEIGHT / GRID_SIZE - 2);
         glm::vec2 force = glm::vec2(myRandom() * PULSE_FORCE - PULSE_FORCE / 2.0f, -PULSE_FORCE);
 
-        for (int i = 0; i < GRID_SIZE; i++) {
-            for (int j = 0; j < GRID_SIZE; j++) {
-                float x = i * gridSpacing;
-                float y = j * gridSpacing;
-                glm::vec2 gridPosition = glm::vec2(x, y);
-                float distance = glm::distance(target, gridPosition);
-
-                if (distance < EMITTER_RANGE) {
-                    float falloff = 1.0f - distance / EMITTER_RANGE;
-                    velocity[i][j] += force * falloff;
-                    density[i][j] += 0.2f * falloff;
-                    temperature[i][j] += 1.0f * falloff;
-                }
-            }
-        }
+        emitCPU(position, force, EMITTER_RANGE, 0.2f, 1.0f);
     }
 
     // Buoyancy
@@ -177,14 +164,29 @@ void SmokeSimulation::updateCPU() {
     }
 }
 
+void SmokeSimulation::emitCPU(glm::vec2 position, glm::vec2 force, float range, float densityAmount, float temperatureAmount) {
+    float horizontalSpacing = ((float) SCREEN_WIDTH) / GRID_SIZE;
+    float verticalSpacing = ((float) SCREEN_HEIGHT) / GRID_SIZE;
+
+    for (int i = 0; i < GRID_SIZE; i++) {
+        for (int j = 0; j < GRID_SIZE; j++) {
+            glm::vec2 gridPosition = glm::vec2(i * horizontalSpacing, j * verticalSpacing);
+            float distance = glm::distance(position, gridPosition);
+
+            if (distance < range) {
+                float falloff = (1.0f - distance / range);
+                velocity[i][j] += force * falloff;
+                density[i][j] += densityAmount * falloff;
+                temperature[i][j] += temperatureAmount * falloff;
+            }
+        }
+    }
+}
+
 glm::vec2 SmokeSimulation::traceParticle(float x, float y) {
-    // return glm::vec2(x, y) - (TIME_STEP * getVelocity(x, y));
     glm::vec2 v = getVelocity(x, y);
     v = getVelocity(x + 0.5f * TIME_STEP * v.x, y + 0.5f * TIME_STEP * v.y);
     return glm::vec2(x, y) - (TIME_STEP * v);
-
-    // Euler method:         y = x + ∆t * u(x)
-    // Runge kutta 2 method: y = x + ∆t * u(x + ∆t / 2 * u(x))
 }
 
 float SmokeSimulation::divergenceAt(int i, int j) {

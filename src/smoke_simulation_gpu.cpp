@@ -70,8 +70,8 @@ SmokeSimulation::Surface SmokeSimulation::createSurface(int width, int height, i
     GLuint textureHandle;
     glGenTextures(1, &textureHandle);
     glBindTexture(GL_TEXTURE_2D, textureHandle);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, wrapBorders ? GL_WRAP_BORDER : GL_CLAMP_TO_EDGE);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, wrapBorders ? GL_WRAP_BORDER : GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
@@ -153,14 +153,10 @@ void SmokeSimulation::updateGPU() {
 
     // Smoke emitter
     if (enableEmitter) {
-        glm::vec2 target = glm::vec2(GRID_SIZE / 2 * gridSpacing, GRID_SIZE * gridSpacing - 2);
+        glm::vec2 position = glm::vec2(GRID_SIZE / 2 * SCREEN_WIDTH / GRID_SIZE, GRID_SIZE * SCREEN_HEIGHT / GRID_SIZE - 2);
         glm::vec2 force = glm::vec2(myRandom() * PULSE_FORCE - PULSE_FORCE / 2.0f, -PULSE_FORCE);
 
-        applyImpulse(velocitySlab.ping, target / gridSpacing, EMITTER_RANGE / gridSpacing, glm::vec3(force, 0.0f), false);
-        applyImpulse(densitySlab.ping, target / gridSpacing, EMITTER_RANGE / gridSpacing, glm::vec3(0.2f, 0.0f, 0.0f), false);
-        applyImpulse(temperatureSlab.ping, target / gridSpacing, EMITTER_RANGE / gridSpacing, glm::vec3(1.0f, 0.0f, 0.0f), false);
-
-        resetState();
+        emitGPU(position, force, EMITTER_RANGE, 0.2f, 1.0f);
     }
 
     // Buoyancy
@@ -216,6 +212,14 @@ void SmokeSimulation::updateGPU() {
 
     advect(velocitySlab.ping, temperatureSlab.ping, temperatureSlab.pong, TEMPERATURE_DISSIPATION);
     swapSurfaces(temperatureSlab);
+    resetState();
+}
+
+void SmokeSimulation::emitGPU(glm::vec2 position, glm::vec2 force, float range, float densityAmount, float temperatureAmount) {
+    applyImpulse(velocitySlab.ping, position, range, glm::vec3(force, 0.0f), false);
+    applyImpulse(densitySlab.ping, position, range, glm::vec3(densityAmount, 0.0f, 0.0f), false);
+    applyImpulse(temperatureSlab.ping, position, range, glm::vec3(temperatureAmount, 0.0f, 0.0f), false);
+
     resetState();
 }
 
@@ -330,11 +334,15 @@ void SmokeSimulation::applyImpulse(Surface destination, glm::vec2 position, floa
     GLuint program = applyImpulseProgram;
     glUseProgram(program);
 
+    GLint horizontalSpacingLocation = glGetUniformLocation(program, "horizontalSpacing");
+    GLint verticalSpacingLocation = glGetUniformLocation(program, "verticalSpacing");
     GLint positionLocation = glGetUniformLocation(program, "position");
     GLint radiusLocation = glGetUniformLocation(program, "radius");
     GLint fillLocation = glGetUniformLocation(program, "fill");
     GLint outwardImpulseLocation = glGetUniformLocation(program, "outwardImpulse");
 
+    glUniform1f(horizontalSpacingLocation, ((float) SCREEN_WIDTH) / GRID_SIZE);
+    glUniform1f(verticalSpacingLocation, ((float) SCREEN_HEIGHT) / GRID_SIZE);
     glUniform2f(positionLocation, position.x, position.y);
     glUniform1f(radiusLocation, radius);
     glUniform3f(fillLocation, fill.x, fill.y, fill.z);

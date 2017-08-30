@@ -48,7 +48,7 @@ SmokeSimulation::SmokeSimulation() {
 }
 
 void SmokeSimulation::setDefaultVariables() {
-    TIME_STEP = 0.1f;
+    TIME_STEP = 0.05f;
     FLUID_DENSITY = 1.0f;
     JACOBI_ITERATIONS = 25;
 
@@ -78,7 +78,7 @@ void SmokeSimulation::setDefaultToggles() {
     enablePressureSolver = true;
     randomPulseAngle = false;
     enableBuoyancy = true;
-    wrapBorders = true; prevWrapBorders = wrapBorders;
+    wrapBorders = false; prevWrapBorders = wrapBorders;
     enableVorticityConfinement = true;
     computeIntermediateFields = false;
     useGPUImplementation = true;
@@ -116,9 +116,9 @@ void SmokeSimulation::addPulse(glm::vec2 position) {
     float verticalSpacing = ((float) SCREEN_HEIGHT) / GRID_SIZE;
 
     if (useGPUImplementation) {
-        applyImpulse(velocitySlab.ping, position / gridSpacing, PULSE_RANGE / gridSpacing, glm::vec3(force, 0.0f), true);
-        applyImpulse(densitySlab.ping, position / gridSpacing, PULSE_RANGE / gridSpacing, glm::vec3(addAmount, 0.0f, 0.0f), false);
-        applyImpulse(temperatureSlab.ping, position / gridSpacing, PULSE_RANGE / gridSpacing, glm::vec3(addAmount * 5, 0.0f, 0.0f), false);
+        applyImpulse(velocitySlab.ping, position, PULSE_RANGE, glm::vec3(force, 0.0f), true);
+        applyImpulse(densitySlab.ping, position, PULSE_RANGE, glm::vec3(addAmount, 0.0f, 0.0f), false);
+        applyImpulse(temperatureSlab.ping, position, PULSE_RANGE, glm::vec3(addAmount * 5, 0.0f, 0.0f), false);
         resetState();
     } else {
         for (int i = 0; i < GRID_SIZE; i++) {
@@ -138,22 +138,10 @@ void SmokeSimulation::addPulse(glm::vec2 position) {
 }
 
 void SmokeSimulation::emit(glm::vec2 position, glm::vec2 force, float range, float densityAmount, float temperatureAmount) {
-    float horizontalSpacing = ((float) SCREEN_WIDTH) / GRID_SIZE;
-    float verticalSpacing = ((float) SCREEN_HEIGHT) / GRID_SIZE;
-
-    for (int i = 0; i < GRID_SIZE; i++) {
-        for (int j = 0; j < GRID_SIZE; j++) {
-            float x = i * horizontalSpacing;
-            float y = j * verticalSpacing;
-            glm::vec2 gridPosition = glm::vec2(x, y);
-            if (glm::distance(position, gridPosition) < range) {
-                float falloff = (1 - glm::distance(position, gridPosition) / range);
-
-                velocity[i][j] += force * falloff;
-                density[i][j] += densityAmount * falloff;
-                temperature[i][j] += temperatureAmount * falloff;
-            }
-        }
+    if (useGPUImplementation) {
+        emitGPU(position, force, range, densityAmount, temperatureAmount);
+    } else {
+        emitCPU(position, force, range, densityAmount, temperatureAmount);
     }
 }
 

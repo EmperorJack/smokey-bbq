@@ -97,6 +97,9 @@ private:
     void updateCPU();
     void renderCPU();
 
+    // Interactions
+    void emitCPU(glm::vec2 position, glm::vec2 force, float range, float densityAmount, float temperatureAmount);
+
     // Grid fields
     glm::vec2 velocity[GRID_SIZE][GRID_SIZE];
     glm::vec2 advectedVelocity[GRID_SIZE][GRID_SIZE];
@@ -201,6 +204,9 @@ private:
     // Core
     void updateGPU();
     void renderGPU();
+
+    // Interactions
+    void emitGPU(glm::vec2 position, glm::vec2 force, float range, float densityAmount, float temperatureAmount);
 
     // State functions
     void swapSurfaces(Slab &slab);

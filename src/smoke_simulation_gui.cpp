@@ -54,7 +54,7 @@ void SmokeSimulationGui::renderVariables() {
     if (ImGui::CollapsingHeader("Core variables")) {
 
         ImGui::Text("Time Step");
-        ImGui::SliderFloat("##TIME_STEP", &smokeSimulation->TIME_STEP, 0.01f, 1.0f, "%.3f");
+        ImGui::SliderFloat("##TIME_STEP", &smokeSimulation->TIME_STEP, 0.01f, 0.25f, "%.3f");
 
         // ImGui::Text("Fluid Density");
         // ImGui::SliderFloat("##FLUID_DENSITY", &smokeSimulation->FLUID_DENSITY, 0.0f, 1.0f, "%.3f");
