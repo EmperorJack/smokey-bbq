@@ -67,10 +67,13 @@ void SmokeSimulation::updateCPU() {
                 float x = i * gridSpacing;
                 float y = j * gridSpacing;
                 glm::vec2 gridPosition = glm::vec2(x, y);
-                if (glm::distance(target, gridPosition) < EMITTER_RANGE) {
-                    velocity[i][j] = force;
-                    density[i][j] += 0.2f;
-                    temperature[i][j] += 1.0f;
+                float distance = glm::distance(target, gridPosition);
+
+                if (distance < EMITTER_RANGE) {
+                    float falloff = 1.0f - distance / EMITTER_RANGE;
+                    velocity[i][j] += force * falloff;
+                    density[i][j] += 0.2f * falloff;
+                    temperature[i][j] += 1.0f * falloff;
                 }
             }
         }

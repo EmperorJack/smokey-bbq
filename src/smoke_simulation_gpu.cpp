@@ -7,8 +7,6 @@
 void SmokeSimulation::initGPU() {
     initPrograms();
     initSlabs();
-
-    glBlendFunc(GL_ONE, GL_ONE);
 }
 
 void SmokeSimulation::initPrograms() {
@@ -118,10 +116,7 @@ void SmokeSimulation::resetState() {
 
 void SmokeSimulation::updateGPU() {
     // Advect velocity through velocity
-    //loadVectorFieldIntoTexture(velocitySlab.ping.textureHandle, velocity);
-
     advect(velocitySlab.ping, velocitySlab.ping, velocitySlab.pong, VELOCITY_DISSIPATION);
-    //copyVectorTextureIntoField(velocitySlab.pong.textureHandle, velocity);
     swapSurfaces(velocitySlab);
     resetState();
 
@@ -130,16 +125,10 @@ void SmokeSimulation::updateGPU() {
         glm::vec2 target = glm::vec2(GRID_SIZE / 2 * gridSpacing, GRID_SIZE * gridSpacing - 2);
         glm::vec2 force = glm::vec2(myRandom() * PULSE_FORCE - PULSE_FORCE / 2.0f, -PULSE_FORCE);
 
-        applyImpulse(velocitySlab.ping, target / gridSpacing, EMITTER_RANGE / gridSpacing, glm::vec3(force / 5.0f, 0.0f));
-        //copyVectorTextureIntoField(velocitySlab.pong.textureHandle, velocity);
-        resetState();
+        applyImpulse(velocitySlab.ping, target / gridSpacing, EMITTER_RANGE / gridSpacing, glm::vec3(force, 0.0f), false);
+        applyImpulse(densitySlab.ping, target / gridSpacing, EMITTER_RANGE / gridSpacing, glm::vec3(0.2f, 0.0f, 0.0f), false);
+        applyImpulse(temperatureSlab.ping, target / gridSpacing, EMITTER_RANGE / gridSpacing, glm::vec3(1.0f, 0.0f, 0.0f), false);
 
-        applyImpulse(densitySlab.ping, target / gridSpacing, EMITTER_RANGE / gridSpacing, glm::vec3(0.2f, 0.0f, 0.0f));
-        //copyScalarTextureIntoField(densitySlab.pong.textureHandle, density);
-        resetState();
-
-        applyImpulse(temperatureSlab.ping, target / gridSpacing, EMITTER_RANGE / gridSpacing, glm::vec3(1.0f, 0.0f, 0.0f));
-        //copyScalarTextureIntoField(temperatureSlab.pong.textureHandle, temperature);
         resetState();
     }
 
@@ -164,9 +153,7 @@ void SmokeSimulation::updateGPU() {
 
     // Compute divergence
     if (enablePressureSolver || computeIntermediateFields) {
-        //loadVectorFieldIntoTexture(velocitySlab.ping.textureHandle, velocity);
         computeDivergence(velocitySlab.ping, divergenceSlab.pong);
-        //copyScalarTextureIntoField(divergenceSlab.pong.textureHandle, divergence);
         swapSurfaces(divergenceSlab);
         resetState();
     }
@@ -184,27 +171,19 @@ void SmokeSimulation::updateGPU() {
             swapSurfaces(pressureSlab);
         }
 
-        //copyScalarTextureIntoField(pressureSlab.ping.textureHandle, pressure);
         resetState();
 
         // Apply pressure
         applyPressure(pressureSlab.ping, velocitySlab.ping);
-        //copyVectorTextureIntoField(velocitySlab.pong.textureHandle, velocity);
         resetState();
     }
 
     // Advect density and temperature through velocity
-    //loadScalarFieldIntoTexture(densitySlab.ping.textureHandle, density);
-
     advect(velocitySlab.ping, densitySlab.ping, densitySlab.pong, DENSITY_DISSIPATION);
-    //copyScalarTextureIntoField(densitySlab.pong.textureHandle, density);
     swapSurfaces(densitySlab);
     resetState();
 
-    //loadScalarFieldIntoTexture(temperatureSlab.ping.textureHandle, temperature);
-
     advect(velocitySlab.ping, temperatureSlab.ping, temperatureSlab.pong, TEMPERATURE_DISSIPATION);
-    //copyScalarTextureIntoField(temperatureSlab.pong.textureHandle, temperature);
     swapSurfaces(temperatureSlab);
     resetState();
 }
@@ -303,25 +282,29 @@ void SmokeSimulation::applyPressure(Surface pressureSurface, Surface velocityDes
     glBindTexture(GL_TEXTURE_2D, pressureSurface.textureHandle);
 
     glEnable(GL_BLEND);
+    glBlendFunc(GL_ONE, GL_ONE);
     drawFullscreenQuad();
     glDisable(GL_BLEND);
 }
 
-void SmokeSimulation::applyImpulse(Surface destination, glm::vec2 position, float radius, glm::vec3 fill) {
+void SmokeSimulation::applyImpulse(Surface destination, glm::vec2 position, float radius, glm::vec3 fill, bool allowOutwardImpulse) {
     GLuint program = applyImpulseProgram;
     glUseProgram(program);
 
     GLint positionLocation = glGetUniformLocation(program, "position");
     GLint radiusLocation = glGetUniformLocation(program, "radius");
     GLint fillLocation = glGetUniformLocation(program, "fill");
+    GLint outwardImpulseLocation = glGetUniformLocation(program, "outwardImpulse");
 
     glUniform2f(positionLocation, position.x, position.y);
     glUniform1f(radiusLocation, radius);
     glUniform3f(fillLocation, fill.x, fill.y, fill.z);
+    glUniform1i(outwardImpulseLocation, allowOutwardImpulse && !randomPulseAngle);
 
     glBindFramebuffer(GL_FRAMEBUFFER, destination.fboHandle);
 
     glEnable(GL_BLEND);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE);
     drawFullscreenQuad();
     glDisable(GL_BLEND);
 }
@@ -353,6 +336,7 @@ void SmokeSimulation::applyBuoyancy(Surface temperatureSurface, Surface densityS
     glBindTexture(GL_TEXTURE_2D, densitySurface.textureHandle);
 
     glEnable(GL_BLEND);
+    glBlendFunc(GL_ONE, GL_ONE);
     drawFullscreenQuad();
     glDisable(GL_BLEND);
 }
@@ -399,6 +383,7 @@ void SmokeSimulation::applyVorticityConfinement(Surface curlSurface, Surface vel
     glBindTexture(GL_TEXTURE_2D, curlSurface.textureHandle);
 
     glEnable(GL_BLEND);
+    glBlendFunc(GL_ONE, GL_ONE);
     drawFullscreenQuad();
     glDisable(GL_BLEND);
 }
