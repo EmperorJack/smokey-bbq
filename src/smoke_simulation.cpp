@@ -1,4 +1,5 @@
 #include <iostream>
+#include <chrono>
 #include <vector>
 #include <main.hpp>
 #include <opengl.hpp>
@@ -50,7 +51,7 @@ SmokeSimulation::SmokeSimulation() {
 void SmokeSimulation::setDefaultVariables() {
     TIME_STEP = 0.05f;
     FLUID_DENSITY = 1.0f;
-    JACOBI_ITERATIONS = 25;
+    JACOBI_ITERATIONS = 40;
 
     GRAVITY = 0.0981f;
     PULSE_RANGE = 50.0f;
@@ -94,11 +95,51 @@ void SmokeSimulation::update() {
 
     glViewport(0, 0, GRID_SIZE, GRID_SIZE);
 
+    std::chrono::high_resolution_clock::time_point t1;
+    std::chrono::high_resolution_clock::time_point t2;
+
+    if (benchmarking) {
+        t1 = std::chrono::high_resolution_clock::now();
+    }
+
     if (useGPUImplementation) {
         updateGPU();
     } else {
         updateCPU();
     }
+
+    if (benchmarking) {
+        t2 = std::chrono::high_resolution_clock::now();
+
+        double duration = std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count();
+        updateTimes.push_back(duration);
+
+        benchmarkSample++;
+
+        if (benchmarkSample >= BENCHMARK_SAMPLES) {
+            finishBenchmark();
+        }
+    }
+}
+
+void SmokeSimulation::beginBenchmark() {
+    std::cout << "Beginning benchmark" << std::endl;
+
+    benchmarkSample = 0;
+    updateTimes.clear();
+    benchmarking = true;
+}
+
+void SmokeSimulation::finishBenchmark() {
+    benchmarking = false;
+
+    double averageDuration = 0.0;
+    for (double duration : updateTimes) {
+        averageDuration += duration;
+    }
+
+    averageDuration /= (double) BENCHMARK_SAMPLES;
+    std::cout << averageDuration << " ms" << std::endl;
 }
 
 void SmokeSimulation::addPulse(glm::vec2 position) {

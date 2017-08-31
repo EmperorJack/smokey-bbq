@@ -27,6 +27,12 @@ public:
     float STROKE_WEIGHT;
     float VORTICITY_CONFINEMENT_FORCE;
 
+    // Benchmarking variables
+    static constexpr int BENCHMARK_SAMPLES = 60;
+    bool benchmarking;
+    int benchmarkSample;
+    std::vector<double> updateTimes;
+
     // Setup
     SmokeSimulation();
     void setDefaultVariables();
@@ -38,6 +44,10 @@ public:
 
     // Updating
     void update();
+
+    // Benchmarking
+    void beginBenchmark();
+    void finishBenchmark();
 
     // Rendering
     void render(glm::mat4 transform, glm::vec2 mousePosition);

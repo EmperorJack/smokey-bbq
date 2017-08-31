@@ -113,4 +113,8 @@ void SmokeSimulationGui::renderVariables() {
     ImGui::Separator(); // Reset variables
 
     if (ImGui::Button("Reset Variables")) smokeSimulation->setDefaultVariables();
+
+    ImGui::Separator(); // Benchmark
+
+    if (ImGui::Button("Benchmark")) smokeSimulation->beginBenchmark();
 }

@@ -24,6 +24,7 @@ bool mousePressed = false;
 bool displaySmokeSimulationGui = false;
 bool displayAudioAnalyzerGui = false;
 bool smokeAudio = false;
+bool printFrameTimes = false;
 
 // Mouse Position callback
 void mouseMovedCallback(GLFWwindow* win, double xPos, double yPos) {
@@ -51,6 +52,8 @@ void keyCallback(GLFWwindow *win, int key, int scancode, int action, int mods) {
         displayAudioAnalyzerGui = !displayAudioAnalyzerGui;
     } else if (key == 'Z' && action == GLFW_PRESS) {
         smokeAudio = !smokeAudio;
+    } else if (key == 'F' && action == GLFW_PRESS) {
+        printFrameTimes = !printFrameTimes;
     }
 }
 
@@ -132,7 +135,7 @@ int main(int argc, char **argv) {
 
         // Print the frame time every second
         if (currentTime - lastTime >= 1.0) {
-            printf("%f ms/frame\n", 1000.0 / (double) frameCount);
+            if (printFrameTimes) printf("%f ms/frame\n", 1000.0 / (double) frameCount);
             frameCount = 0;
             lastTime += 1.0;
         }
