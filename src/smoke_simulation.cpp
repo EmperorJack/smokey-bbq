@@ -144,6 +144,7 @@ void SmokeSimulation::finishBenchmark() {
 
 void SmokeSimulation::addPulse(glm::vec2 position) {
     position -= glm::vec2(gridSpacing / 2.0f, gridSpacing / 2.0f);
+    position *= windowToGrid;
 
     float addAmount = 0.5f;
 
@@ -153,9 +154,6 @@ void SmokeSimulation::addPulse(glm::vec2 position) {
         force = PULSE_FORCE * glm::vec2(myRandom() * 2.0f - 1.0f, myRandom() * 2.0f - 1.0f);
     }
 
-    float horizontalSpacing = ((float) SCREEN_WIDTH) / GRID_SIZE;
-    float verticalSpacing = ((float) SCREEN_HEIGHT) / GRID_SIZE;
-
     if (useGPUImplementation) {
         applyImpulse(velocitySlab.ping, position, PULSE_RANGE, glm::vec3(force, 0.0f), true);
         applyImpulse(densitySlab.ping, position, PULSE_RANGE, glm::vec3(addAmount, 0.0f, 0.0f), false);
@@ -164,7 +162,7 @@ void SmokeSimulation::addPulse(glm::vec2 position) {
     } else {
         for (int i = 0; i < GRID_SIZE; i++) {
             for (int j = 0; j < GRID_SIZE; j++) {
-                glm::vec2 gridPosition = glm::vec2(i * horizontalSpacing, j * verticalSpacing);
+                glm::vec2 gridPosition = glm::vec2(i * gridSpacing, j * gridSpacing);
                 float distance = glm::distance(position, gridPosition);
 
                 if (distance < PULSE_RANGE) {

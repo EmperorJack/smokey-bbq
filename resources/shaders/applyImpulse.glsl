@@ -2,15 +2,14 @@
 
 layout(location = 0) out vec4 color;
 
-uniform float horizontalSpacing;
-uniform float verticalSpacing;
+uniform float gridSpacing;
 uniform vec2 position;
 uniform float radius;
 uniform vec3 fill;
 uniform bool outwardImpulse;
 
 void main() {
-    vec2 gridPosition = vec2(gl_FragCoord.x * horizontalSpacing, gl_FragCoord.y * verticalSpacing);
+    vec2 gridPosition = vec2(gl_FragCoord.x * gridSpacing, gl_FragCoord.y * gridSpacing);
     float distance = distance(position, gridPosition);
 
     if (distance < radius) {

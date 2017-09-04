@@ -163,7 +163,7 @@ int main(int argc, char **argv) {
 
                 glm::vec2 position = vec2(i * bandSpacing + sideOffset, SCREEN_HEIGHT * 0.95f);
                 glm::vec2 force = vec2(myRandom() * 100.0f - 50.0f, (volume + value + 0.5f) * -7.0f);
-                float diameter = bandSpacing * 0.65f + value * 0.75f;
+                float diameter = bandSpacing * 0.5f + value * 0.6f;
                 float density = value * 0.0065f;
                 float temperature = value * 0.02f;
 

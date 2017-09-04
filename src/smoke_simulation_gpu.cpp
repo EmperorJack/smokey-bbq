@@ -216,6 +216,8 @@ void SmokeSimulation::updateGPU() {
 }
 
 void SmokeSimulation::emitGPU(glm::vec2 position, glm::vec2 force, float range, float densityAmount, float temperatureAmount) {
+    position *= windowToGrid;
+
     applyImpulse(velocitySlab.ping, position, range, glm::vec3(force, 0.0f), false);
     applyImpulse(densitySlab.ping, position, range, glm::vec3(densityAmount, 0.0f, 0.0f), false);
     applyImpulse(temperatureSlab.ping, position, range, glm::vec3(temperatureAmount, 0.0f, 0.0f), false);
@@ -334,15 +336,13 @@ void SmokeSimulation::applyImpulse(Surface destination, glm::vec2 position, floa
     GLuint program = applyImpulseProgram;
     glUseProgram(program);
 
-    GLint horizontalSpacingLocation = glGetUniformLocation(program, "horizontalSpacing");
-    GLint verticalSpacingLocation = glGetUniformLocation(program, "verticalSpacing");
+    GLint gridSpacingLocation = glGetUniformLocation(program, "gridSpacing");
     GLint positionLocation = glGetUniformLocation(program, "position");
     GLint radiusLocation = glGetUniformLocation(program, "radius");
     GLint fillLocation = glGetUniformLocation(program, "fill");
     GLint outwardImpulseLocation = glGetUniformLocation(program, "outwardImpulse");
 
-    glUniform1f(horizontalSpacingLocation, ((float) SCREEN_WIDTH) / GRID_SIZE);
-    glUniform1f(verticalSpacingLocation, ((float) SCREEN_HEIGHT) / GRID_SIZE);
+    glUniform1f(gridSpacingLocation, gridSpacing);
     glUniform2f(positionLocation, position.x, position.y);
     glUniform1f(radiusLocation, radius);
     glUniform3f(fillLocation, fill.x, fill.y, fill.z);

@@ -165,12 +165,11 @@ void SmokeSimulation::updateCPU() {
 }
 
 void SmokeSimulation::emitCPU(glm::vec2 position, glm::vec2 force, float range, float densityAmount, float temperatureAmount) {
-    float horizontalSpacing = ((float) SCREEN_WIDTH) / GRID_SIZE;
-    float verticalSpacing = ((float) SCREEN_HEIGHT) / GRID_SIZE;
+    position *= windowToGrid;
 
     for (int i = 0; i < GRID_SIZE; i++) {
         for (int j = 0; j < GRID_SIZE; j++) {
-            glm::vec2 gridPosition = glm::vec2(i * horizontalSpacing, j * verticalSpacing);
+            glm::vec2 gridPosition = glm::vec2(i * gridSpacing, j * gridSpacing);
             float distance = glm::distance(position, gridPosition);
 
             if (distance < range) {
