@@ -23,7 +23,8 @@ bool mousePressed = false;
 // Toggles
 bool displaySmokeSimulationGui = false;
 bool displayAudioAnalyzerGui = false;
-bool smokeAudio = true;
+bool smokeAudio = false;
+bool printFrameTimes = false;
 
 // Mouse Position callback
 void mouseMovedCallback(GLFWwindow* win, double xPos, double yPos) {
@@ -41,14 +42,18 @@ void mouseButtonCallback(GLFWwindow *win, int button, int action, int mods) {
 // Keyboard callback
 void keyCallback(GLFWwindow *win, int key, int scancode, int action, int mods) {
     if (key == ' ' && action == GLFW_PRESS) {
-        smokeSimulation->resetFields();
+        smokeSimulation->reset();
         audioAnalyzer->resetBuffers();
+    } else if (key == 'G' && action == GLFW_PRESS) {
+        smokeSimulation->useGPUImplementation = !smokeSimulation->useGPUImplementation;
     } else if (key == 'S' && action == GLFW_PRESS) {
         displaySmokeSimulationGui = !displaySmokeSimulationGui;
     } else if (key == 'A' && action == GLFW_PRESS) {
         displayAudioAnalyzerGui = !displayAudioAnalyzerGui;
     } else if (key == 'Z' && action == GLFW_PRESS) {
         smokeAudio = !smokeAudio;
+    } else if (key == 'F' && action == GLFW_PRESS) {
+        printFrameTimes = !printFrameTimes;
     }
 }
 
@@ -112,8 +117,6 @@ int main(int argc, char **argv) {
     smokeSimulationGui = new SmokeSimulationGui(smokeSimulation);
     audioAnalyzerGui = new AudioAnalyzerGui(audioAnalyzer);
 
-    // printf("\n~~~\n\n");
-    // audioAnalyzer->printAudioDevices();
     printf("\n~~~\n\n");
 
     double lastTime = glfwGetTime();
@@ -132,10 +135,13 @@ int main(int argc, char **argv) {
 
         // Print the frame time every second
         if (currentTime - lastTime >= 1.0) {
-            printf("%f ms/frame\n", 1000.0 / (double) frameCount);
+            if (printFrameTimes) printf("%f ms/frame\n", 1000.0 / (double) frameCount);
             frameCount = 0;
             lastTime += 1.0;
         }
+
+        glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
         if (smokeAudio) {
             float sideOffset = ((float) SCREEN_WIDTH * 0.08f);
@@ -157,7 +163,7 @@ int main(int argc, char **argv) {
 
                 glm::vec2 position = vec2(i * bandSpacing + sideOffset, SCREEN_HEIGHT * 0.95f);
                 glm::vec2 force = vec2(myRandom() * 100.0f - 50.0f, (volume + value + 0.5f) * -7.0f);
-                float diameter = bandSpacing * 0.65f + value * 0.75f;
+                float diameter = bandSpacing * 0.5f + value * 0.6f;
                 float density = value * 0.0065f;
                 float temperature = value * 0.02f;
 
@@ -168,9 +174,6 @@ int main(int argc, char **argv) {
         if (mousePressed && !ImGui::IsMouseHoveringAnyWindow()) smokeSimulation->addPulse(mousePosition);
 
         smokeSimulation->update();
-
-        glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
-        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
         glm::mat4 projection = glm::ortho(0.0f, (float) SCREEN_WIDTH, (float) SCREEN_HEIGHT, 0.0f);
         glm::mat4 view = glm::translate(glm::vec3(0.0f, 0.0f, 0.0f));
@@ -194,6 +197,11 @@ int main(int argc, char **argv) {
     audioAnalyzer->shutDown();
     ImGui_ImplGlfwGL3_Shutdown();
     glfwTerminate();
+
+    delete smokeSimulation;
+    delete audioAnalyzer;
+    delete smokeSimulationGui;
+    delete audioAnalyzerGui;
 
     return 0;
 }

@@ -21,12 +21,4 @@ static inline void setColor(int shader, float color[]) {
     glUniform4fv(fillColorLocation, 1, color);
 }
 
-static inline void passScreenSize(int shader) {
-    GLint screenWidthLocation = glGetUniformLocation(shader, "screenWidth");
-    glUniform1i(screenWidthLocation, SCREEN_WIDTH);
-
-    GLint screenHeightLocation = glGetUniformLocation(shader, "screenHeight");
-    glUniform1i(screenHeightLocation, SCREEN_HEIGHT);
-}
-
 #endif

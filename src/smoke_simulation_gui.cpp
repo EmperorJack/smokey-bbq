@@ -18,7 +18,7 @@ void SmokeSimulationGui::render() {
 }
 
 void SmokeSimulationGui::renderToggles() {
-    ImGui::Checkbox("Display Density Field", &smokeSimulation->displayDensityField);
+    ImGui::Checkbox("Display Density Field", &smokeSimulation->displaySmokeField);
     ImGui::Checkbox("Display Velocity Field", &smokeSimulation->displayVelocityField);
     ImGui::Checkbox("Update Simulation", &smokeSimulation->updateSimulation);
     ImGui::Checkbox("Enable Emitter", &smokeSimulation->enableEmitter);
@@ -26,7 +26,9 @@ void SmokeSimulationGui::renderToggles() {
     ImGui::Checkbox("Enable Buoyancy Force", &smokeSimulation->enableBuoyancy);
     ImGui::Checkbox("Enable Vorticity Confinement", &smokeSimulation->enableVorticityConfinement);
     ImGui::Checkbox("Wrap Borders", &smokeSimulation->wrapBorders);
-    ImGui::Checkbox("Enable Pressure Solver", &smokeSimulation->enablePressureSolve);
+    ImGui::Checkbox("Enable Pressure Solver", &smokeSimulation->enablePressureSolver);
+    ImGui::Checkbox("Compute Intermediate Fields", &smokeSimulation->computeIntermediateFields);
+    ImGui::Checkbox("GPU Implementation", &smokeSimulation->useGPUImplementation);
 
     ImGui::Separator(); // Reset toggles
 
@@ -44,7 +46,7 @@ void SmokeSimulationGui::renderDisplaySelector() {
     ImGui::RadioButton("Temperature", &select, 3);
     ImGui::RadioButton("Curl", &select, 4);
 
-    if (ImGui::Button("Apply")) smokeSimulation->currentShader = select;
+    if (ImGui::Button("Apply")) smokeSimulation->currentSmokeShader = select;
 }
 
 void SmokeSimulationGui::renderVariables() {
@@ -52,7 +54,7 @@ void SmokeSimulationGui::renderVariables() {
     if (ImGui::CollapsingHeader("Core variables")) {
 
         ImGui::Text("Time Step");
-        ImGui::SliderFloat("##TIME_STEP", &smokeSimulation->TIME_STEP, 0.01f, 1.0f, "%.3f");
+        ImGui::SliderFloat("##TIME_STEP", &smokeSimulation->TIME_STEP, 0.01f, 0.25f, "%.3f");
 
         // ImGui::Text("Fluid Density");
         // ImGui::SliderFloat("##FLUID_DENSITY", &smokeSimulation->FLUID_DENSITY, 0.0f, 1.0f, "%.3f");
@@ -111,4 +113,8 @@ void SmokeSimulationGui::renderVariables() {
     ImGui::Separator(); // Reset variables
 
     if (ImGui::Button("Reset Variables")) smokeSimulation->setDefaultVariables();
+
+    ImGui::Separator(); // Benchmark
+
+    if (ImGui::Button("Benchmark")) smokeSimulation->beginBenchmark();
 }

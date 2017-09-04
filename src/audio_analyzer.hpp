@@ -51,7 +51,7 @@ public:
 
 private:
 
-    // VBOs
+    // Vertex buffer objects
     GLuint waveformVBO;
     GLuint squareVBO;
 

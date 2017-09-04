@@ -1,11 +1,16 @@
 #include <iostream>
 #include <fstream>
 #include <vector>
-
 #include <opengl.hpp>
 #include <shaderLoader.hpp>
 
-GLuint loadShaders(const char * vertex_file_path,const char * fragment_file_path){
+GLuint loadShaders(std::string vertex_file_path_s, std::string fragment_file_path_s) {
+    vertex_file_path_s = std::string(SHADER_PATH) + vertex_file_path_s + std::string(".glsl");
+    fragment_file_path_s = std::string(SHADER_PATH) + fragment_file_path_s + std::string(".glsl");
+
+    const char* vertex_file_path = vertex_file_path_s.c_str();
+    const char* fragment_file_path = fragment_file_path_s.c_str();
+
     // Create the shaders
     GLuint VertexShaderID = glCreateShader(GL_VERTEX_SHADER);
     GLuint FragmentShaderID = glCreateShader(GL_FRAGMENT_SHADER);
@@ -18,7 +23,7 @@ GLuint loadShaders(const char * vertex_file_path,const char * fragment_file_path
         while(getline(VertexShaderStream, Line))
             VertexShaderCode += "\n" + Line;
         VertexShaderStream.close();
-    }else{
+    } else {
         printf("Impossible to open %s. Are you in the right directory?!\n", vertex_file_path);
         getchar();
         return 0;
@@ -32,6 +37,10 @@ GLuint loadShaders(const char * vertex_file_path,const char * fragment_file_path
         while(getline(FragmentShaderStream, Line))
             FragmentShaderCode += "\n" + Line;
         FragmentShaderStream.close();
+    } else {
+        printf("Impossible to open %s. Are you in the right directory?!\n", vertex_file_path);
+        getchar();
+        return 0;
     }
 
     GLint Result = GL_FALSE;
@@ -65,6 +74,7 @@ GLuint loadShaders(const char * vertex_file_path,const char * fragment_file_path
         std::vector<char> FragmentShaderErrorMessage(InfoLogLength+1);
         glGetShaderInfoLog(FragmentShaderID, InfoLogLength, NULL, &FragmentShaderErrorMessage[0]);
         printf("%s\n", &FragmentShaderErrorMessage[0]);
+        exit(-1);
     }
 
     // Link the program
@@ -81,6 +91,7 @@ GLuint loadShaders(const char * vertex_file_path,const char * fragment_file_path
         std::vector<char> ProgramErrorMessage(InfoLogLength+1);
         glGetProgramInfoLog(ProgramID, InfoLogLength, NULL, &ProgramErrorMessage[0]);
         printf("%s\n", &ProgramErrorMessage[0]);
+        exit(-1);
     }
 
     glDetachShader(ProgramID, VertexShaderID);
