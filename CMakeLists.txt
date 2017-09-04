@@ -26,7 +26,7 @@ file(GLOB COMMON
 
 # Include source files
 include_directories(${PROJECT_SOURCE_DIR}/src)
-file(GLOB SOURCES
+file(GLOB_RECURSE  SOURCES
     src/*.h
     src/*.cpp
 )

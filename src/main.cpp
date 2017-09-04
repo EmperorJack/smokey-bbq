@@ -3,10 +3,10 @@
 #include <opengl.hpp>
 #include <imgui.h>
 #include <imgui_impl_glfw_gl3.h>
-#include <smoke_simulation.hpp>
-#include <audio_analyzer.hpp>
-#include <smoke_simulation_gui.hpp>
-#include <audio_analyzer_gui.hpp>
+#include <smoke_simulation/smoke_simulation.hpp>
+#include <audio_analyzer/audio_analyzer.hpp>
+#include <smoke_simulation/smoke_simulation_gui.hpp>
+#include <audio_analyzer/audio_analyzer_gui.hpp>
 
 // Object instances
 SmokeSimulation* smokeSimulation = nullptr;
