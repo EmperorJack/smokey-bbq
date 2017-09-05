@@ -3,34 +3,31 @@
 #include <opengl.hpp>
 #include <imgui.h>
 #include <imgui_impl_glfw_gl3.h>
-#include <smoke_simulation/smoke_simulation.hpp>
-#include <audio_analyzer/audio_analyzer.hpp>
-#include <compositions/composition.hpp>
-#include <compositions/horizontal_spectrum.hpp>
+#include <manager.hpp>
 #include <smoke_simulation/smoke_simulation_gui.hpp>
 #include <audio_analyzer/audio_analyzer_gui.hpp>
+#include <manager_gui.hpp>
 
-// Components
-SmokeSimulation* smokeSimulation = nullptr;
-AudioAnalyzer* audioAnalyzer = nullptr;
-
-// Compositions
-int currentComposition;
-std::vector<Composition*> compositions;
+// Manager instance
+Manager* manager = nullptr;
 
 // Gui instances
 SmokeSimulationGui* smokeSimulationGui = nullptr;
 AudioAnalyzerGui* audioAnalyzerGui = nullptr;
-
-// Mouse variables
-glm::vec2 mousePosition;
-bool mousePressed = false;
+ManagerGui* mainGui = nullptr;
 
 // Toggles
 bool displaySmokeSimulationGui = false;
 bool displayAudioAnalyzerGui = false;
-bool smokeAudio = false;
-bool printFrameTimes = false;
+bool displayMainGui = false;
+
+// Mouse variables
+glm::vec2 mousePosition = vec2(0.0f, 0.0f);
+bool mousePressed = false;
+
+// Frame timing
+double lastTime = 0.0f;
+int frameCount = 0;
 
 void mouseMovedCallback(GLFWwindow* win, double xPos, double yPos) {
     mousePosition = glm::vec2(xPos, yPos);
@@ -45,18 +42,15 @@ void mouseButtonCallback(GLFWwindow *win, int button, int action, int mods) {
 
 void keyCallback(GLFWwindow *win, int key, int scancode, int action, int mods) {
     if (key == ' ' && action == GLFW_PRESS) {
-        smokeSimulation->reset();
-        audioAnalyzer->resetBuffers();
-    } else if (key == 'G' && action == GLFW_PRESS) {
-        smokeSimulation->useGPUImplementation = !smokeSimulation->useGPUImplementation;
-    } else if (key == 'S' && action == GLFW_PRESS) {
+        manager->resetComponents();
+    }  else if (key == 'S' && action == GLFW_PRESS) {
         displaySmokeSimulationGui = !displaySmokeSimulationGui;
     } else if (key == 'A' && action == GLFW_PRESS) {
         displayAudioAnalyzerGui = !displayAudioAnalyzerGui;
-    } else if (key == 'Z' && action == GLFW_PRESS) {
-        smokeAudio = !smokeAudio;
-    } else if (key == 'F' && action == GLFW_PRESS) {
-        printFrameTimes = !printFrameTimes;
+    } else if (key == 'C' && action == GLFW_PRESS) {
+        displayMainGui = !displayMainGui;
+    } else if (key == 'G' && action == GLFW_PRESS) {
+        manager->smokeSimulation->useGPUImplementation = !manager->smokeSimulation->useGPUImplementation;
     }
 }
 
@@ -112,34 +106,22 @@ int main(int argc, char **argv) {
 
     printf("\n~~~\n\n");
 
-    // Setup object instances
-    smokeSimulation = new SmokeSimulation();
-    audioAnalyzer = new AudioAnalyzer();
-
-    // Setup compositions
-    currentComposition = 0;
-    compositions.push_back(new HorizontalSpectrum(smokeSimulation, audioAnalyzer));
-
-    for (Composition* composition : compositions) {
-        composition->initialize();
-    }
-    compositions[currentComposition]->enable();
+    // Setup the component manager
+    manager = new Manager();
 
     // Setup GUI instances
-    smokeSimulationGui = new SmokeSimulationGui(smokeSimulation);
-    audioAnalyzerGui = new AudioAnalyzerGui(audioAnalyzer);
+    smokeSimulationGui = new SmokeSimulationGui(manager->smokeSimulation);
+    audioAnalyzerGui = new AudioAnalyzerGui(manager->audioAnalyzer);
+    mainGui = new ManagerGui(manager);
 
     printf("\n~~~\n\n");
 
-    double lastTime = glfwGetTime();
-    int frameCount = 0;
+    // Setup frame timing
+    lastTime = glfwGetTime();
+    frameCount = 0;
 
     // Check if the escape key was pressed or the window was closed
     while(glfwGetKey(window, GLFW_KEY_ESCAPE) != GLFW_PRESS && glfwWindowShouldClose(window) == 0) {
-
-        // Poll events and setup GUI for the current frame
-        glfwPollEvents();
-        ImGui_ImplGlfwGL3_NewFrame();
 
         // Measure speed
         double currentTime = glfwGetTime();
@@ -147,52 +129,39 @@ int main(int argc, char **argv) {
 
         // Print the frame time every second
         if (currentTime - lastTime >= 1.0) {
-            if (printFrameTimes) printf("%f ms/frame\n", 1000.0 / (double) frameCount);
+            if (manager->printFrameTimes) printf("%f ms/frame\n", 1000.0 / (double) frameCount);
             frameCount = 0;
             lastTime += 1.0;
         }
 
+        // Poll events and setup GUI for the current frame
+        glfwPollEvents();
+        ImGui_ImplGlfwGL3_NewFrame();
+
+        // Clear the screen
         glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-        if (smokeAudio) {
-            compositions[currentComposition]->update();
-        }
+        // Update all the components
+        manager->update(mousePressed && !ImGui::IsMouseHoveringAnyWindow(), mousePosition);
 
-        if (mousePressed && !ImGui::IsMouseHoveringAnyWindow()) smokeSimulation->addPulse(mousePosition);
-
-        smokeSimulation->update();
-
-        glm::mat4 projection = glm::ortho(0.0f, (float) SCREEN_WIDTH, (float) SCREEN_HEIGHT, 0.0f);
-        glm::mat4 view = glm::translate(glm::vec3(0.0f, 0.0f, 0.0f));
-
-        glm::mat4 mvp = projection * view;
-
-        smokeSimulation->render(mvp, mousePosition);
-
-        audioAnalyzer->update();
-
-        audioAnalyzer->render(mvp);
-
-        // Render GUI
+        // Render gui
         if (displaySmokeSimulationGui) smokeSimulationGui->render();
         if (displayAudioAnalyzerGui) audioAnalyzerGui->render();
+        if (displayMainGui) mainGui->render();
         ImGui::Render();
 
         glfwSwapBuffers(window);
     }
 
-    audioAnalyzer->shutDown();
     ImGui_ImplGlfwGL3_Shutdown();
     glfwTerminate();
 
-    delete smokeSimulation;
-    delete audioAnalyzer;
-    for (Composition* composition : compositions) {
-        delete composition;
-    }
     delete smokeSimulationGui;
     delete audioAnalyzerGui;
+    delete mainGui;
+
+    delete manager;
 
     return 0;
 }

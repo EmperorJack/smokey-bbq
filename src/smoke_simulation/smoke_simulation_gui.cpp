@@ -1,5 +1,5 @@
-#include <smoke_simulation/smoke_simulation_gui.hpp>
 #include <imgui.h>
+#include <smoke_simulation/smoke_simulation_gui.hpp>
 
 SmokeSimulationGui::SmokeSimulationGui(SmokeSimulation *smokeSimulation) :
     smokeSimulation(smokeSimulation) {
