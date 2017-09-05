@@ -35,11 +35,11 @@ SmokeSimulation::SmokeSimulation() {
 
     // Setup shaders
     simpleShader = loadShaders("SimpleVertexShader", "SimpleFragmentShader");
-    currentShader = COMPOSITION;
-    fieldShaders[DENSITY] = loadShaders("SmokeVertexShader", "DensityFragmentShader");
-    fieldShaders[VELOCITY] = loadShaders("SmokeVertexShader", "VelocityFragmentShader");
-    fieldShaders[TEMPERATURE] = loadShaders("SmokeVertexShader", "TemperatureFragmentShader");
-    fieldShaders[CURL] = loadShaders("SmokeVertexShader", "CurlFragmentShader");
+    currentDisplay = COMPOSITION;
+    fieldShaders[DENSITY] = loadShaders("SmokeVertexShader", "fields/DensityFragmentShader");
+    fieldShaders[VELOCITY] = loadShaders("SmokeVertexShader", "fields/VelocityFragmentShader");
+    fieldShaders[TEMPERATURE] = loadShaders("SmokeVertexShader", "fields/TemperatureFragmentShader");
+    fieldShaders[CURL] = loadShaders("SmokeVertexShader", "fields/CurlFragmentShader");
 
     initCPU();
     initGPU();
@@ -189,18 +189,18 @@ void SmokeSimulation::render(glm::mat4 transform, glm::vec2 mousePosition) {
     if (displaySmokeField) {
         glViewport(0, 0, SCREEN_WIDTH, SCREEN_HEIGHT);
 
-        GLuint shader = currentShader == COMPOSITION ? compositionShader : fieldShaders[currentShader];
-        glUseProgram(shader);
+        GLuint currentShader = currentDisplay == COMPOSITION ? compositionShader : fieldShaders[currentDisplay];
+        glUseProgram(currentShader);
 
         // Pass screen size uniforms
-        GLint screenWidthLocation = glGetUniformLocation(shader, "screenWidth");
-        GLint screenHeightLocation = glGetUniformLocation(shader, "screenHeight");
+        GLint screenWidthLocation = glGetUniformLocation(currentShader, "screenWidth");
+        GLint screenHeightLocation = glGetUniformLocation(currentShader, "screenHeight");
         glUniform1i(screenWidthLocation, SCREEN_WIDTH);
         glUniform1i(screenHeightLocation, SCREEN_HEIGHT);
 
         // Pass texture location uniforms
-        GLint textureALocation = glGetUniformLocation(shader, "textureA");
-        GLint textureBLocation = glGetUniformLocation(shader, "textureB");
+        GLint textureALocation = glGetUniformLocation(currentShader, "textureA");
+        GLint textureBLocation = glGetUniformLocation(currentShader, "textureB");
         glUniform1i(textureALocation, 0);
         glUniform1i(textureBLocation, 1);
 

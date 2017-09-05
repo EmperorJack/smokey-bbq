@@ -3,7 +3,7 @@
 
 SmokeSimulationGui::SmokeSimulationGui(SmokeSimulation *smokeSimulation) :
     smokeSimulation(smokeSimulation) {
-    displaySelect = smokeSimulation->currentShader;
+    displaySelect = smokeSimulation->currentDisplay;
 }
 
 void SmokeSimulationGui::render() {
@@ -45,7 +45,7 @@ void SmokeSimulationGui::renderDisplaySelector() {
     ImGui::RadioButton("Temperature", &displaySelect, SmokeSimulation::TEMPERATURE);
     ImGui::RadioButton("Curl", &displaySelect, SmokeSimulation::CURL);
 
-    if (ImGui::Button("Apply")) smokeSimulation->currentShader = SmokeSimulation::Display(displaySelect);
+    if (ImGui::Button("Apply")) smokeSimulation->currentDisplay = SmokeSimulation::Display(displaySelect);
 }
 
 void SmokeSimulationGui::renderVariables() {

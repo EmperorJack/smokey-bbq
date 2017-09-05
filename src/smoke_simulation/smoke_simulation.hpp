@@ -53,7 +53,7 @@ public:
         TEMPERATURE,
         CURL
     };
-    Display currentShader;
+    Display currentDisplay;
 
     // Updating
     void update();

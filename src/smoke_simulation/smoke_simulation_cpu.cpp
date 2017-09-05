@@ -377,7 +377,7 @@ void SmokeSimulation::renderCPU() {
             textureFieldB[i][j][0] = 0.0f;
             textureFieldB[i][j][1] = 0.0f;
 
-            switch (currentShader) {
+            switch (currentDisplay) {
                 case COMPOSITION:
                     textureFieldA[i][j][0] = density[j][i];
                     textureFieldB[i][j][0] = temperature[j][i];

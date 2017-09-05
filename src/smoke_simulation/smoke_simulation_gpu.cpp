@@ -27,14 +27,14 @@ void SmokeSimulation::initGPU() {
 }
 
 void SmokeSimulation::initPrograms() {
-    advectProgram = loadShaders("SmokeVertexShader", "advect");
-    applyImpulseProgram = loadShaders("SmokeVertexShader", "applyImpulse");
-    applyBuoyancyProgram = loadShaders("SmokeVertexShader", "applyBuoyancy");
-    computeCurlProgram = loadShaders("SmokeVertexShader", "computeCurl");
-    applyVorticityConfinementProgram = loadShaders("SmokeVertexShader", "applyVorticityConfinement");
-    computeDivergenceProgram = loadShaders("SmokeVertexShader", "computeDivergence");
-    jacobiProgram = loadShaders("SmokeVertexShader", "jacobi");
-    applyPressureProgram = loadShaders("SmokeVertexShader", "applyPressure");
+    advectProgram = loadShaders("SmokeVertexShader", "programs/advect");
+    applyImpulseProgram = loadShaders("SmokeVertexShader", "programs/applyImpulse");
+    applyBuoyancyProgram = loadShaders("SmokeVertexShader", "programs/applyBuoyancy");
+    computeCurlProgram = loadShaders("SmokeVertexShader", "programs/computeCurl");
+    applyVorticityConfinementProgram = loadShaders("SmokeVertexShader", "programs/applyVorticityConfinement");
+    computeDivergenceProgram = loadShaders("SmokeVertexShader", "programs/computeDivergence");
+    jacobiProgram = loadShaders("SmokeVertexShader", "programs/jacobi");
+    applyPressureProgram = loadShaders("SmokeVertexShader", "programs/applyPressure");
 }
 
 void SmokeSimulation::initSlabs() {
@@ -440,7 +440,7 @@ void SmokeSimulation::applyVorticityConfinement(Surface curlSurface, Surface vel
 }
 
 void SmokeSimulation::renderGPU() {
-    switch (currentShader) {
+    switch (currentDisplay) {
         case COMPOSITION:
             glActiveTexture(GL_TEXTURE0);
             glBindTexture(GL_TEXTURE_2D, densitySlab.ping.textureHandle);
