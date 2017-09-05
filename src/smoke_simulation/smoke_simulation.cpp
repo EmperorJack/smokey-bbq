@@ -34,15 +34,12 @@ SmokeSimulation::SmokeSimulation() {
     glBufferData(GL_ARRAY_BUFFER, sizeof(fullscreenVertices), fullscreenVertices, GL_STATIC_DRAW);
 
     // Setup shaders
-    currentSmokeShader = 0;
     simpleShader = loadShaders("SimpleVertexShader", "SimpleFragmentShader");
-
-    smokeFieldShaders = std::vector<GLuint>();
-    smokeFieldShaders.push_back(loadShaders("SmokeVertexShader", "SmokeFragmentShader"));
-    smokeFieldShaders.push_back(loadShaders("SmokeVertexShader", "DensityFragmentShader"));
-    smokeFieldShaders.push_back(loadShaders("SmokeVertexShader", "VelocityFragmentShader"));
-    smokeFieldShaders.push_back(loadShaders("SmokeVertexShader", "TemperatureFragmentShader"));
-    smokeFieldShaders.push_back(loadShaders("SmokeVertexShader", "CurlFragmentShader"));
+    currentShader = COMPOSITION;
+    fieldShaders[DENSITY] = loadShaders("SmokeVertexShader", "DensityFragmentShader");
+    fieldShaders[VELOCITY] = loadShaders("SmokeVertexShader", "VelocityFragmentShader");
+    fieldShaders[TEMPERATURE] = loadShaders("SmokeVertexShader", "TemperatureFragmentShader");
+    fieldShaders[CURL] = loadShaders("SmokeVertexShader", "CurlFragmentShader");
 
     initCPU();
     initGPU();
@@ -122,6 +119,10 @@ void SmokeSimulation::update() {
     }
 }
 
+void SmokeSimulation::setCompositionShader(GLuint shader) {
+    compositionShader = shader;
+}
+
 void SmokeSimulation::beginBenchmark() {
     std::cout << "Beginning benchmark" << std::endl;
 
@@ -188,17 +189,18 @@ void SmokeSimulation::render(glm::mat4 transform, glm::vec2 mousePosition) {
     if (displaySmokeField) {
         glViewport(0, 0, SCREEN_WIDTH, SCREEN_HEIGHT);
 
-        glUseProgram(smokeFieldShaders[currentSmokeShader]);
+        GLuint shader = currentShader == COMPOSITION ? compositionShader : fieldShaders[currentShader];
+        glUseProgram(shader);
 
         // Pass screen size uniforms
-        GLint screenWidthLocation = glGetUniformLocation(smokeFieldShaders[currentSmokeShader], "screenWidth");
-        GLint screenHeightLocation = glGetUniformLocation(smokeFieldShaders[currentSmokeShader], "screenHeight");
+        GLint screenWidthLocation = glGetUniformLocation(shader, "screenWidth");
+        GLint screenHeightLocation = glGetUniformLocation(shader, "screenHeight");
         glUniform1i(screenWidthLocation, SCREEN_WIDTH);
         glUniform1i(screenHeightLocation, SCREEN_HEIGHT);
 
         // Pass texture location uniforms
-        GLint textureALocation = glGetUniformLocation(smokeFieldShaders[currentSmokeShader], "textureA");
-        GLint textureBLocation = glGetUniformLocation(smokeFieldShaders[currentSmokeShader], "textureB");
+        GLint textureALocation = glGetUniformLocation(shader, "textureA");
+        GLint textureBLocation = glGetUniformLocation(shader, "textureB");
         glUniform1i(textureALocation, 0);
         glUniform1i(textureBLocation, 1);
 

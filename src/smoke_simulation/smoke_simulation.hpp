@@ -1,6 +1,7 @@
 #ifndef SMOKE_SIMULATION_HPP
 #define SMOKE_SIMULATION_HPP
 
+#include <map>
 #include <opengl.hpp>
 
 class SmokeSimulation {
@@ -9,6 +10,7 @@ public:
 
     // Constants
     static constexpr int GRID_SIZE = 512;
+    static constexpr int BENCHMARK_SAMPLES = 60;
 
     // Variables
     float timeStep;
@@ -33,7 +35,6 @@ public:
     float vorticityConfinementForce;
 
     // Benchmarking variables
-    static constexpr int BENCHMARK_SAMPLES = 60;
     bool benchmarking;
     int benchmarkSample;
     std::vector<double> updateTimes;
@@ -45,10 +46,18 @@ public:
     void reset();
 
     // Display toggle
-    int currentSmokeShader;
+    enum Display {
+        COMPOSITION,
+        DENSITY,
+        VELOCITY,
+        TEMPERATURE,
+        CURL
+    };
+    Display currentShader;
 
     // Updating
     void update();
+    void setCompositionShader(GLuint shader);
 
     // Benchmarking
     void beginBenchmark();
@@ -85,7 +94,8 @@ private:
 
     // Shaders
     GLuint simpleShader;
-    std::vector<GLuint> smokeFieldShaders;
+    GLuint compositionShader;
+    std::map<Display, GLuint> fieldShaders;
 
     // Rendering
     void drawFullscreenQuad();

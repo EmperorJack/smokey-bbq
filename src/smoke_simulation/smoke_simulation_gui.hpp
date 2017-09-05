@@ -18,6 +18,9 @@ private:
     // Smoke simulation instance
     SmokeSimulation *smokeSimulation;
 
+    // Display selector
+    int displaySelect;
+
     // Rendering
     void renderToggles();
     void renderDisplaySelector();

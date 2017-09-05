@@ -5,12 +5,18 @@
 #include <imgui_impl_glfw_gl3.h>
 #include <smoke_simulation/smoke_simulation.hpp>
 #include <audio_analyzer/audio_analyzer.hpp>
+#include <compositions/composition.hpp>
+#include <compositions/horizontal_spectrum.hpp>
 #include <smoke_simulation/smoke_simulation_gui.hpp>
 #include <audio_analyzer/audio_analyzer_gui.hpp>
 
-// Object instances
+// Components
 SmokeSimulation* smokeSimulation = nullptr;
 AudioAnalyzer* audioAnalyzer = nullptr;
+
+// Compositions
+int currentComposition;
+std::vector<Composition*> compositions;
 
 // Gui instances
 SmokeSimulationGui* smokeSimulationGui = nullptr;
@@ -26,12 +32,10 @@ bool displayAudioAnalyzerGui = false;
 bool smokeAudio = false;
 bool printFrameTimes = false;
 
-// Mouse Position callback
 void mouseMovedCallback(GLFWwindow* win, double xPos, double yPos) {
     mousePosition = glm::vec2(xPos, yPos);
 }
 
-// Mouse Button callback
 void mouseButtonCallback(GLFWwindow *win, int button, int action, int mods) {
     if (button == GLFW_MOUSE_BUTTON_LEFT) {
         if (action == GLFW_PRESS) mousePressed = true;
@@ -39,7 +43,6 @@ void mouseButtonCallback(GLFWwindow *win, int button, int action, int mods) {
     }
 }
 
-// Keyboard callback
 void keyCallback(GLFWwindow *win, int key, int scancode, int action, int mods) {
     if (key == ' ' && action == GLFW_PRESS) {
         smokeSimulation->reset();
@@ -113,6 +116,10 @@ int main(int argc, char **argv) {
     smokeSimulation = new SmokeSimulation();
     audioAnalyzer = new AudioAnalyzer();
 
+    // Setup compositions
+    currentComposition = 0;
+    compositions.push_back(new HorizontalSpectrum(smokeSimulation, audioAnalyzer, "SmokeFragmentShader"));
+
     // Setup GUI instances
     smokeSimulationGui = new SmokeSimulationGui(smokeSimulation);
     audioAnalyzerGui = new AudioAnalyzerGui(audioAnalyzer);
@@ -144,31 +151,7 @@ int main(int argc, char **argv) {
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
         if (smokeAudio) {
-            float sideOffset = ((float) SCREEN_WIDTH * 0.08f);
-            float bandSpacing = ((float) SCREEN_WIDTH - sideOffset * 2.0f) / (AudioAnalyzer::NUM_BANDS * 2);
-
-            float volume = max(audioAnalyzer->getOverallVolume(), 1.0f);
-
-            for (int i = 0; i < AudioAnalyzer::NUM_BANDS * 2; i++) {
-                int index;
-                if (i < AudioAnalyzer::NUM_BANDS) {
-                    index = AudioAnalyzer::NUM_BANDS - i - 1;
-                } else {
-                    index = i % AudioAnalyzer::NUM_BANDS;
-                }
-
-                float value = audioAnalyzer->getFrequencyBand(index);
-
-                if (value < 3.0f) continue;
-
-                glm::vec2 position = vec2(i * bandSpacing + sideOffset, SCREEN_HEIGHT * 0.95f);
-                glm::vec2 force = vec2(myRandom() * 100.0f - 50.0f, (volume + value + 0.5f) * -7.0f);
-                float diameter = bandSpacing * 0.5f + value * 0.6f;
-                float density = value * 0.0065f;
-                float temperature = value * 0.02f;
-
-                smokeSimulation->emit(position, force, diameter, density, temperature);
-            }
+            compositions[currentComposition]->update();
         }
 
         if (mousePressed && !ImGui::IsMouseHoveringAnyWindow()) smokeSimulation->addPulse(mousePosition);
@@ -200,6 +183,9 @@ int main(int argc, char **argv) {
 
     delete smokeSimulation;
     delete audioAnalyzer;
+    for (Composition* composition : compositions) {
+        delete composition;
+    }
     delete smokeSimulationGui;
     delete audioAnalyzerGui;
 

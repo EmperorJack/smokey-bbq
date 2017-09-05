@@ -1,8 +1,9 @@
 #include <smoke_simulation/smoke_simulation_gui.hpp>
 #include <imgui.h>
 
-SmokeSimulationGui::SmokeSimulationGui(SmokeSimulation *smokeSimulation) {
-    this->smokeSimulation = smokeSimulation;
+SmokeSimulationGui::SmokeSimulationGui(SmokeSimulation *smokeSimulation) :
+    smokeSimulation(smokeSimulation) {
+    displaySelect = smokeSimulation->currentShader;
 }
 
 void SmokeSimulationGui::render() {
@@ -38,15 +39,13 @@ void SmokeSimulationGui::renderToggles() {
 void SmokeSimulationGui::renderDisplaySelector() {
     ImGui::Text("Display Fields");
 
-    static int select = 0;
+    ImGui::RadioButton("Composition", &displaySelect, SmokeSimulation::COMPOSITION);
+    ImGui::RadioButton("Density", &displaySelect, SmokeSimulation::DENSITY);
+    ImGui::RadioButton("Velocity", &displaySelect, SmokeSimulation::VELOCITY);
+    ImGui::RadioButton("Temperature", &displaySelect, SmokeSimulation::TEMPERATURE);
+    ImGui::RadioButton("Curl", &displaySelect, SmokeSimulation::CURL);
 
-    ImGui::RadioButton("Smoke", &select, 0);
-    ImGui::RadioButton("Density", &select, 1);
-    ImGui::RadioButton("Velocity", &select, 2);
-    ImGui::RadioButton("Temperature", &select, 3);
-    ImGui::RadioButton("Curl", &select, 4);
-
-    if (ImGui::Button("Apply")) smokeSimulation->currentSmokeShader = select;
+    if (ImGui::Button("Apply")) smokeSimulation->currentShader = SmokeSimulation::Display(displaySelect);
 }
 
 void SmokeSimulationGui::renderVariables() {

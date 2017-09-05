@@ -25,9 +25,6 @@ void SmokeSimulation::initCPU() {
 void SmokeSimulation::resetFields() {
     for (int i = 0; i < GRID_SIZE; i++) {
         for (int j = 0; j < GRID_SIZE; j++) {
-            float x = (i / (float) GRID_SIZE - 0.5f) * 2.0f;
-            float y = (j / (float) GRID_SIZE - 0.5f) * 2.0f;
-            // velocity[i][j] = glm::vec2(sin(2 * M_PI * y), sin(2 * M_PI * x));
             velocity[i][j] = glm::vec2(0.0f, 0.0f);
             advectedVelocity[i][j] = glm::vec2(0.0f, 0.0f);
             divergence[i][j] = 0.0f;
@@ -380,22 +377,22 @@ void SmokeSimulation::renderCPU() {
             textureFieldB[i][j][0] = 0.0f;
             textureFieldB[i][j][1] = 0.0f;
 
-            switch (currentSmokeShader) {
-                case 0:
+            switch (currentShader) {
+                case COMPOSITION:
                     textureFieldA[i][j][0] = density[j][i];
                     textureFieldB[i][j][0] = temperature[j][i];
                     break;
-                case 1:
+                case DENSITY:
                     textureFieldA[i][j][0] = density[j][i];
                     break;
-                case 2:
+                case VELOCITY:
                     textureFieldA[i][j][0] = velocity[j][i].x;
                     textureFieldA[i][j][1] = velocity[j][i].y;
                     break;
-                case 3:
+                case TEMPERATURE:
                     textureFieldA[i][j][0] = temperature[j][i];
                     break;
-                case 4:
+                case CURL:
                     textureFieldA[i][j][0] = curl[j][i];
                     break;
                 default:

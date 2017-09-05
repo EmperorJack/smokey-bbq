@@ -440,26 +440,26 @@ void SmokeSimulation::applyVorticityConfinement(Surface curlSurface, Surface vel
 }
 
 void SmokeSimulation::renderGPU() {
-    switch (currentSmokeShader) {
-        case 0:
+    switch (currentShader) {
+        case COMPOSITION:
             glActiveTexture(GL_TEXTURE0);
             glBindTexture(GL_TEXTURE_2D, densitySlab.ping.textureHandle);
             glActiveTexture(GL_TEXTURE1);
             glBindTexture(GL_TEXTURE_2D, temperatureSlab.ping.textureHandle);
             break;
-        case 1:
+        case DENSITY:
             glActiveTexture(GL_TEXTURE0);
             glBindTexture(GL_TEXTURE_2D, densitySlab.ping.textureHandle);
             break;
-        case 2:
+        case VELOCITY:
             glActiveTexture(GL_TEXTURE0);
             glBindTexture(GL_TEXTURE_2D, velocitySlab.ping.textureHandle);
             break;
-        case 3:
+        case TEMPERATURE:
             glActiveTexture(GL_TEXTURE0);
             glBindTexture(GL_TEXTURE_2D, temperatureSlab.ping.textureHandle);
             break;
-        case 4:
+        case CURL:
             glActiveTexture(GL_TEXTURE0);
             glBindTexture(GL_TEXTURE_2D, curlSlab.ping.textureHandle);
             break;
