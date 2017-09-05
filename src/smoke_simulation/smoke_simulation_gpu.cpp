@@ -440,30 +440,37 @@ void SmokeSimulation::applyVorticityConfinement(Surface curlSurface, Surface vel
 }
 
 void SmokeSimulation::renderGPU() {
+    GLuint gpuTextureA = 0;
+    GLuint gpuTextureB = 0;
+    GLuint gpuTextureC = 0;
+
     switch (currentDisplay) {
         case COMPOSITION:
-            glActiveTexture(GL_TEXTURE0);
-            glBindTexture(GL_TEXTURE_2D, densitySlab.ping.textureHandle);
-            glActiveTexture(GL_TEXTURE1);
-            glBindTexture(GL_TEXTURE_2D, temperatureSlab.ping.textureHandle);
+            gpuTextureA = densitySlab.ping.textureHandle;
+            gpuTextureB = temperatureSlab.ping.textureHandle;
             break;
         case DENSITY:
-            glActiveTexture(GL_TEXTURE0);
-            glBindTexture(GL_TEXTURE_2D, densitySlab.ping.textureHandle);
+            gpuTextureA = densitySlab.ping.textureHandle;
             break;
         case VELOCITY:
-            glActiveTexture(GL_TEXTURE0);
-            glBindTexture(GL_TEXTURE_2D, velocitySlab.ping.textureHandle);
+            gpuTextureA = velocitySlab.ping.textureHandle;
             break;
         case TEMPERATURE:
-            glActiveTexture(GL_TEXTURE0);
-            glBindTexture(GL_TEXTURE_2D, temperatureSlab.ping.textureHandle);
+            gpuTextureA = temperatureSlab.ping.textureHandle;
             break;
         case CURL:
-            glActiveTexture(GL_TEXTURE0);
-            glBindTexture(GL_TEXTURE_2D, curlSlab.ping.textureHandle);
+            gpuTextureA = curlSlab.ping.textureHandle;
             break;
         default:
             break;
     }
+
+    glActiveTexture(GL_TEXTURE0);
+    glBindTexture(GL_TEXTURE_2D, gpuTextureA);
+
+    glActiveTexture(GL_TEXTURE1);
+    glBindTexture(GL_TEXTURE_2D, gpuTextureB);
+
+    glActiveTexture(GL_TEXTURE2);
+    glBindTexture(GL_TEXTURE_2D, gpuTextureC);
 }

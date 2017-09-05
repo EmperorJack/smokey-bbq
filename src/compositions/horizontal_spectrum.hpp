@@ -10,8 +10,10 @@
 class HorizontalSpectrum : public Composition {
 
 public:
-    HorizontalSpectrum(SmokeSimulation* smokeSimulation, AudioAnalyzer* audioAnalyzer, std::string fragmentShaderPath) :
-        Composition(smokeSimulation, audioAnalyzer, fragmentShaderPath) {}
+    HorizontalSpectrum(SmokeSimulation* smokeSimulation, AudioAnalyzer* audioAnalyzer) :
+        Composition(smokeSimulation, audioAnalyzer) {}
+    std::string fragmentShaderPath();
+    std::vector<SmokeSimulation::Display> displayFields();
     void update();
 
 };

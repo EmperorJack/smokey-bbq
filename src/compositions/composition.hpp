@@ -11,13 +11,19 @@
 class Composition {
 
 public:
-    Composition(SmokeSimulation* smokeSimulation, AudioAnalyzer* audioAnalyzer, std::string fragmentShaderPath);
+    Composition(SmokeSimulation* smokeSimulation, AudioAnalyzer* audioAnalyzer) :
+            smokeSimulation(smokeSimulation), audioAnalyzer(audioAnalyzer) {}
+    void initialize();
     void enable();
-    virtual void update();
+
+    virtual std::string fragmentShaderPath() {}
+    virtual std::vector<SmokeSimulation::Display> displayFields() {}
+    virtual void update() {}
 
     SmokeSimulation* smokeSimulation;
     AudioAnalyzer* audioAnalyzer;
     GLuint shader;
+    std::vector<SmokeSimulation::Display> fields;
 
 };
 

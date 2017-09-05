@@ -118,7 +118,12 @@ int main(int argc, char **argv) {
 
     // Setup compositions
     currentComposition = 0;
-    compositions.push_back(new HorizontalSpectrum(smokeSimulation, audioAnalyzer, "compositions/SmokeFragmentShader"));
+    compositions.push_back(new HorizontalSpectrum(smokeSimulation, audioAnalyzer));
+
+    for (Composition* composition : compositions) {
+        composition->initialize();
+    }
+    compositions[currentComposition]->enable();
 
     // Setup GUI instances
     smokeSimulationGui = new SmokeSimulationGui(smokeSimulation);

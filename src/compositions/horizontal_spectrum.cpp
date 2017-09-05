@@ -3,6 +3,18 @@
 //
 
 #include <compositions/horizontal_spectrum.hpp>
+#include <iostream>
+
+std::string HorizontalSpectrum::fragmentShaderPath() {
+    return "compositions/SmokeFragmentShader";
+}
+
+std::vector<SmokeSimulation::Display> HorizontalSpectrum::displayFields() {
+    return std::vector<SmokeSimulation::Display> {
+            SmokeSimulation::Display::DENSITY,
+            SmokeSimulation::Display::TEMPERATURE
+    };
+}
 
 void HorizontalSpectrum::update() {
     Composition::update();

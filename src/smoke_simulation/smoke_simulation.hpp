@@ -57,7 +57,7 @@ public:
 
     // Updating
     void update();
-    void setCompositionShader(GLuint shader);
+    void setCompositionData(GLuint shader, std::vector<Display> fields);
 
     // Benchmarking
     void beginBenchmark();
@@ -95,6 +95,7 @@ private:
     // Shaders
     GLuint simpleShader;
     GLuint compositionShader;
+    std::vector<Display> compositionFields;
     std::map<Display, GLuint> fieldShaders;
 
     // Rendering
@@ -141,8 +142,10 @@ private:
     // Rendering fields and textures
     float textureFieldA[GRID_SIZE][GRID_SIZE][2];
     float textureFieldB[GRID_SIZE][GRID_SIZE][2];
+    float textureFieldC[GRID_SIZE][GRID_SIZE][2];
     GLuint textureA;
     GLuint textureB;
+    GLuint textureC;
 
     // Algorithm
     glm::vec2 traceParticle(float x, float y);

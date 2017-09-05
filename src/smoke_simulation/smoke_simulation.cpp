@@ -119,8 +119,9 @@ void SmokeSimulation::update() {
     }
 }
 
-void SmokeSimulation::setCompositionShader(GLuint shader) {
+void SmokeSimulation::setCompositionData(GLuint shader, std::vector<Display> fields) {
     compositionShader = shader;
+    compositionFields = std::vector<Display>(fields);
 }
 
 void SmokeSimulation::beginBenchmark() {
@@ -201,8 +202,10 @@ void SmokeSimulation::render(glm::mat4 transform, glm::vec2 mousePosition) {
         // Pass texture location uniforms
         GLint textureALocation = glGetUniformLocation(currentShader, "textureA");
         GLint textureBLocation = glGetUniformLocation(currentShader, "textureB");
+        GLint textureCLocation = glGetUniformLocation(currentShader, "textureC");
         glUniform1i(textureALocation, 0);
         glUniform1i(textureBLocation, 1);
+        glUniform1i(textureCLocation, 1);
 
         if (useGPUImplementation) {
             renderGPU();
