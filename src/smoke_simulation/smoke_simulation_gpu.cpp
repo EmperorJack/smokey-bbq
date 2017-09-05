@@ -444,25 +444,12 @@ void SmokeSimulation::renderGPU() {
     GLuint gpuTextureB = 0;
     GLuint gpuTextureC = 0;
 
-    switch (currentDisplay) {
-        case COMPOSITION:
-            gpuTextureA = densitySlab.ping.textureHandle;
-            gpuTextureB = temperatureSlab.ping.textureHandle;
-            break;
-        case DENSITY:
-            gpuTextureA = densitySlab.ping.textureHandle;
-            break;
-        case VELOCITY:
-            gpuTextureA = velocitySlab.ping.textureHandle;
-            break;
-        case TEMPERATURE:
-            gpuTextureA = temperatureSlab.ping.textureHandle;
-            break;
-        case CURL:
-            gpuTextureA = curlSlab.ping.textureHandle;
-            break;
-        default:
-            break;
+    if (currentDisplay == COMPOSITION) {
+        gpuTextureA = dataForDisplayGPU(compositionFields[0]);
+        gpuTextureB = dataForDisplayGPU(compositionFields[1]);
+        gpuTextureC = dataForDisplayGPU(compositionFields[2]);
+    } else {
+        gpuTextureA = dataForDisplayGPU(currentDisplay);
     }
 
     glActiveTexture(GL_TEXTURE0);
@@ -473,4 +460,21 @@ void SmokeSimulation::renderGPU() {
 
     glActiveTexture(GL_TEXTURE2);
     glBindTexture(GL_TEXTURE_2D, gpuTextureC);
+}
+
+GLuint SmokeSimulation::dataForDisplayGPU(Display display) {
+    switch (display) {
+        case DENSITY:
+            return densitySlab.ping.textureHandle;
+        case VELOCITY:
+            return velocitySlab.ping.textureHandle;
+        case TEMPERATURE:
+            return temperatureSlab.ping.textureHandle;
+        case CURL:
+            return curlSlab.ping.textureHandle;
+        default:
+            break;
+    }
+
+    return 0;
 }

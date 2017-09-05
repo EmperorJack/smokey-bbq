@@ -122,6 +122,7 @@ private:
     // Core
     void updateCPU();
     void renderCPU();
+    float dataForDisplayCPU(Display display, int i, int j);
 
     // Interactions
     void emitCPU(glm::vec2 position, glm::vec2 force, float range, float densityAmount, float temperatureAmount);
@@ -232,6 +233,7 @@ private:
     // Core
     void updateGPU();
     void renderGPU();
+    GLuint dataForDisplayGPU(Display display);
 
     // Interactions
     void emitGPU(glm::vec2 position, glm::vec2 force, float range, float densityAmount, float temperatureAmount);

@@ -388,8 +388,8 @@ void SmokeSimulation::renderCPU() {
 
             switch (currentDisplay) {
                 case COMPOSITION:
-                    textureFieldA[i][j][0] = density[j][i];
-                    textureFieldB[i][j][0] = temperature[j][i];
+                    textureFieldA[i][j][0] = dataForDisplayCPU(compositionFields[0], j, i);
+                    textureFieldB[i][j][0] = dataForDisplayCPU(compositionFields[1], j, i);
                     break;
                 case DENSITY:
                     textureFieldA[i][j][0] = density[j][i];
@@ -421,4 +421,19 @@ void SmokeSimulation::renderCPU() {
     glActiveTexture(GL_TEXTURE2);
     glBindTexture(GL_TEXTURE_2D, textureC);
     glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA32F, GRID_SIZE, GRID_SIZE, 0, GL_RG, GL_FLOAT, textureFieldC);
+}
+
+float SmokeSimulation::dataForDisplayCPU(Display display, int i, int j) {
+    switch (display) {
+        case DENSITY:
+            return density[i][j];
+        case TEMPERATURE:
+            return temperature[i][j];
+        case CURL:
+            return curl[i][j];
+        default:
+            break;
+    }
+
+    return 0;
 }
