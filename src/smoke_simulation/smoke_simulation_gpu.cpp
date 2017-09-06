@@ -27,14 +27,14 @@ void SmokeSimulation::initGPU() {
 }
 
 void SmokeSimulation::initPrograms() {
-    advectProgram = loadShaders("SmokeVertexShader", "programs/advect");
-    applyImpulseProgram = loadShaders("SmokeVertexShader", "programs/applyImpulse");
-    applyBuoyancyProgram = loadShaders("SmokeVertexShader", "programs/applyBuoyancy");
-    computeCurlProgram = loadShaders("SmokeVertexShader", "programs/computeCurl");
-    applyVorticityConfinementProgram = loadShaders("SmokeVertexShader", "programs/applyVorticityConfinement");
-    computeDivergenceProgram = loadShaders("SmokeVertexShader", "programs/computeDivergence");
-    jacobiProgram = loadShaders("SmokeVertexShader", "programs/jacobi");
-    applyPressureProgram = loadShaders("SmokeVertexShader", "programs/applyPressure");
+    advectProgram = loadShaders("programs/vertexShader", "programs/advect");
+    applyImpulseProgram = loadShaders("programs/vertexShader", "programs/applyImpulse");
+    applyBuoyancyProgram = loadShaders("programs/vertexShader", "programs/applyBuoyancy");
+    computeCurlProgram = loadShaders("programs/vertexShader", "programs/computeCurl");
+    applyVorticityConfinementProgram = loadShaders("programs/vertexShader", "programs/applyVorticityConfinement");
+    computeDivergenceProgram = loadShaders("programs/vertexShader", "programs/computeDivergence");
+    jacobiProgram = loadShaders("programs/vertexShader", "programs/jacobi");
+    applyPressureProgram = loadShaders("programs/vertexShader", "programs/applyPressure");
 }
 
 void SmokeSimulation::initSlabs() {

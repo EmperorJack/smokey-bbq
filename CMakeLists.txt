@@ -90,7 +90,9 @@ add_executable(${PROJECT_NAME} ${SOURCES} ${COMMON} ${EXTERNAL})
 target_link_libraries(${PROJECT_NAME} glfw glew ${frameworks} ${PORT_AUDIO_LIBRARY} ${OPENGL_LIBRARIES})
 
 # Copy library dlls to the build directory
-file(COPY ${PROJECT_SOURCE_DIR}/lib/portaudio/libs/libportaudio-2.dll DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
+if (WIN32)
+    file(COPY ${PROJECT_SOURCE_DIR}/lib/portaudio/libs/libportaudio-2.dll DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
+endif()
 
 # Copy resources to the build directory
 set(RESOURCES_SUBDIRECTORY resources)
