@@ -3,6 +3,8 @@
 //
 
 #include <manager.hpp>
+#include <compositions/horizontal_spectrum.hpp>
+#include <compositions/circular_spectrum.hpp>
 
 Manager::Manager() {
 
@@ -11,8 +13,9 @@ Manager::Manager() {
     audioAnalyzer = new AudioAnalyzer();
 
     // Setup compositions
-    currentComposition = 0;
+    currentComposition = 1;
     compositions.push_back(new HorizontalSpectrum(smokeSimulation, audioAnalyzer));
+    compositions.push_back(new CircularSpectrum(smokeSimulation, audioAnalyzer));
 
     for (Composition* composition : compositions) {
         composition->initialize();
@@ -52,6 +55,11 @@ void Manager::update(bool mouseDragging, glm::vec2 mousePosition) {
     audioAnalyzer->update();
 
     audioAnalyzer->render(mvp);
+}
+
+void Manager::setComposition(int composition) {
+    currentComposition = composition;
+    compositions[currentComposition]->enable();
 }
 
 void Manager::resetComponents() {

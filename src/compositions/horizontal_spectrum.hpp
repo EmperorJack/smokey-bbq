@@ -14,7 +14,13 @@ public:
         Composition(smokeSimulation, audioAnalyzer) {}
     std::string fragmentShaderPath();
     std::vector<SmokeSimulation::Display> displayFields();
+
+    void setup();
     void update();
+
+private:
+    float sideOffset;
+    float bandSpacing;
 
 };
 

@@ -8,7 +8,6 @@
 #include <smoke_simulation/smoke_simulation.hpp>
 #include <audio_analyzer/audio_analyzer.hpp>
 #include <compositions/composition.hpp>
-#include <compositions/horizontal_spectrum.hpp>
 
 class Manager {
 
@@ -34,6 +33,7 @@ public:
 
     // Core
     void update(bool mouseDragging, glm::vec2 mousePosition);
+    void setComposition(int composition);
     void resetComponents();
 
 };

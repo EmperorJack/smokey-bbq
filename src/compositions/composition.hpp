@@ -18,6 +18,7 @@ public:
 
     virtual std::string fragmentShaderPath() {}
     virtual std::vector<SmokeSimulation::Display> displayFields() {}
+    virtual void setup() {}
     virtual void update() {}
 
     SmokeSimulation* smokeSimulation;

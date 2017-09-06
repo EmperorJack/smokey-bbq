@@ -12,4 +12,5 @@ void Composition::initialize() {
 
 void Composition::enable() {
     smokeSimulation->setCompositionData(shader, fields);
+    setup();
 }

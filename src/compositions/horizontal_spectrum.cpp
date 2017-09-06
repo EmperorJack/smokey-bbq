@@ -11,17 +11,17 @@ std::string HorizontalSpectrum::fragmentShaderPath() {
 
 std::vector<SmokeSimulation::Display> HorizontalSpectrum::displayFields() {
     return std::vector<SmokeSimulation::Display> {
-            SmokeSimulation::Display::DENSITY,
-            SmokeSimulation::Display::TEMPERATURE
+        SmokeSimulation::Display::DENSITY,
+        SmokeSimulation::Display::TEMPERATURE
     };
 }
 
+void HorizontalSpectrum::setup() {
+    sideOffset = ((float) SCREEN_WIDTH * 0.08f);
+    bandSpacing = ((float) SCREEN_WIDTH - sideOffset * 2.0f) / (AudioAnalyzer::NUM_BANDS * 2);
+}
+
 void HorizontalSpectrum::update() {
-    Composition::update();
-
-    float sideOffset = ((float) SCREEN_WIDTH * 0.08f);
-    float bandSpacing = ((float) SCREEN_WIDTH - sideOffset * 2.0f) / (AudioAnalyzer::NUM_BANDS * 2);
-
     float volume = max(audioAnalyzer->getOverallVolume(), 1.0f);
 
     for (int i = 0; i < AudioAnalyzer::NUM_BANDS * 2; i++) {
@@ -37,7 +37,7 @@ void HorizontalSpectrum::update() {
         if (value < 3.0f) continue;
 
         glm::vec2 position = vec2(i * bandSpacing + sideOffset, SCREEN_HEIGHT * 0.95f);
-        glm::vec2 force = vec2(myRandom() * 100.0f - 50.0f, (volume + value + 0.5f) * -7.0f);
+        glm::vec2 force = vec2(myRandom() * 1.0f - 0.5f, -1.0f) * (volume + value + 0.5f) * 7.0f;
         float diameter = bandSpacing * 0.5f + value * 0.6f;
         float density = value * 0.0065f;
         float temperature = value * 0.02f;
