@@ -21,6 +21,7 @@ private:
     float angleSpacing;
     float radius;
     glm::vec2 screenCenter;
+    float globalRotation;
 
     void renderHalfCircle(float flip);
 
