@@ -7,11 +7,11 @@ out vec4 color;
 uniform int screenWidth;
 uniform int screenHeight;
 
-uniform sampler2D temperatureTexture;
+uniform sampler2D densityTexture;
 
 void main() {
-    float density = texture(temperatureTexture, UV).r;
-    density = clamp(density, 0.0, 1.0);
+    float density = texture(densityTexture, UV).r;
+    density = 1.0f - clamp(density, 0.0, 1.0);
 
     color = vec4(density, density, density, 1.0);
 }

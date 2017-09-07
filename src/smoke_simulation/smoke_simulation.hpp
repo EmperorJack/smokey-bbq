@@ -1,6 +1,7 @@
 #ifndef SMOKE_SIMULATION_HPP
 #define SMOKE_SIMULATION_HPP
 
+#include <map>
 #include <opengl.hpp>
 
 class SmokeSimulation {
@@ -9,6 +10,7 @@ public:
 
     // Constants
     static constexpr int GRID_SIZE = 512;
+    static constexpr int BENCHMARK_SAMPLES = 60;
 
     // Variables
     float timeStep;
@@ -33,7 +35,6 @@ public:
     float vorticityConfinementForce;
 
     // Benchmarking variables
-    static constexpr int BENCHMARK_SAMPLES = 60;
     bool benchmarking;
     int benchmarkSample;
     std::vector<double> updateTimes;
@@ -45,10 +46,18 @@ public:
     void reset();
 
     // Display toggle
-    int currentSmokeShader;
+    enum Display {
+        COMPOSITION,
+        DENSITY,
+        VELOCITY,
+        TEMPERATURE,
+        CURL
+    };
+    Display currentDisplay;
 
     // Updating
     void update();
+    void setCompositionData(GLuint shader, std::vector<Display> fields);
 
     // Benchmarking
     void beginBenchmark();
@@ -85,7 +94,9 @@ private:
 
     // Shaders
     GLuint simpleShader;
-    std::vector<GLuint> smokeFieldShaders;
+    GLuint compositionShader;
+    std::vector<Display> compositionFields;
+    std::map<Display, GLuint> fieldShaders;
 
     // Rendering
     void drawFullscreenQuad();
@@ -111,6 +122,7 @@ private:
     // Core
     void updateCPU();
     void renderCPU();
+    float dataForDisplayCPU(Display display, int i, int j);
 
     // Interactions
     void emitCPU(glm::vec2 position, glm::vec2 force, float range, float densityAmount, float temperatureAmount);
@@ -131,8 +143,10 @@ private:
     // Rendering fields and textures
     float textureFieldA[GRID_SIZE][GRID_SIZE][2];
     float textureFieldB[GRID_SIZE][GRID_SIZE][2];
+    float textureFieldC[GRID_SIZE][GRID_SIZE][2];
     GLuint textureA;
     GLuint textureB;
+    GLuint textureC;
 
     // Algorithm
     glm::vec2 traceParticle(float x, float y);
@@ -219,6 +233,7 @@ private:
     // Core
     void updateGPU();
     void renderGPU();
+    GLuint dataForDisplayGPU(Display display);
 
     // Interactions
     void emitGPU(glm::vec2 position, glm::vec2 force, float range, float densityAmount, float temperatureAmount);

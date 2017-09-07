@@ -89,10 +89,11 @@ add_executable(${PROJECT_NAME} ${SOURCES} ${COMMON} ${EXTERNAL})
 # Link the external libraries
 target_link_libraries(${PROJECT_NAME} glfw glew ${frameworks} ${PORT_AUDIO_LIBRARY} ${OPENGL_LIBRARIES})
 
-# Copy shaders to the build directory
-set(SHADER_SUBDIRECTORY resources/shaders)
-file(GLOB shaders ${CMAKE_SOURCE_DIR}/${SHADER_SUBDIRECTORY}/*)
-foreach(shader ${shaders})
-    get_filename_component(outputFileName ${shader} NAME)
-    configure_file(${shader} ${CMAKE_CURRENT_BINARY_DIR}/${SHADER_SUBDIRECTORY}/${outputFileName} COPYONLY)
-endforeach()
+# Copy library dlls to the build directory
+if (WIN32)
+    file(COPY ${PROJECT_SOURCE_DIR}/lib/portaudio/libs/libportaudio-2.dll DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
+endif()
+
+# Copy resources to the build directory
+set(RESOURCES_SUBDIRECTORY resources)
+file(COPY ${CMAKE_SOURCE_DIR}/${RESOURCES_SUBDIRECTORY} DESTINATION ${CMAKE_CURRENT_BINARY_DIR})

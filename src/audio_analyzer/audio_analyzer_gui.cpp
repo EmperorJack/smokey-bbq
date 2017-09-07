@@ -1,5 +1,5 @@
-#include <audio_analyzer/audio_analyzer_gui.hpp>
 #include <imgui.h>
+#include <audio_analyzer/audio_analyzer_gui.hpp>
 
 std::vector<std::pair<int, const char*>> inputDevices;
 

@@ -27,14 +27,14 @@ void SmokeSimulation::initGPU() {
 }
 
 void SmokeSimulation::initPrograms() {
-    advectProgram = loadShaders("SmokeVertexShader", "advect");
-    applyImpulseProgram = loadShaders("SmokeVertexShader", "applyImpulse");
-    applyBuoyancyProgram = loadShaders("SmokeVertexShader", "applyBuoyancy");
-    computeCurlProgram = loadShaders("SmokeVertexShader", "computeCurl");
-    applyVorticityConfinementProgram = loadShaders("SmokeVertexShader", "applyVorticityConfinement");
-    computeDivergenceProgram = loadShaders("SmokeVertexShader", "computeDivergence");
-    jacobiProgram = loadShaders("SmokeVertexShader", "jacobi");
-    applyPressureProgram = loadShaders("SmokeVertexShader", "applyPressure");
+    advectProgram = loadShaders("programs/vertexShader", "programs/advect");
+    applyImpulseProgram = loadShaders("programs/vertexShader", "programs/applyImpulse");
+    applyBuoyancyProgram = loadShaders("programs/vertexShader", "programs/applyBuoyancy");
+    computeCurlProgram = loadShaders("programs/vertexShader", "programs/computeCurl");
+    applyVorticityConfinementProgram = loadShaders("programs/vertexShader", "programs/applyVorticityConfinement");
+    computeDivergenceProgram = loadShaders("programs/vertexShader", "programs/computeDivergence");
+    jacobiProgram = loadShaders("programs/vertexShader", "programs/jacobi");
+    applyPressureProgram = loadShaders("programs/vertexShader", "programs/applyPressure");
 }
 
 void SmokeSimulation::initSlabs() {
@@ -440,30 +440,41 @@ void SmokeSimulation::applyVorticityConfinement(Surface curlSurface, Surface vel
 }
 
 void SmokeSimulation::renderGPU() {
-    switch (currentSmokeShader) {
-        case 0:
-            glActiveTexture(GL_TEXTURE0);
-            glBindTexture(GL_TEXTURE_2D, densitySlab.ping.textureHandle);
-            glActiveTexture(GL_TEXTURE1);
-            glBindTexture(GL_TEXTURE_2D, temperatureSlab.ping.textureHandle);
-            break;
-        case 1:
-            glActiveTexture(GL_TEXTURE0);
-            glBindTexture(GL_TEXTURE_2D, densitySlab.ping.textureHandle);
-            break;
-        case 2:
-            glActiveTexture(GL_TEXTURE0);
-            glBindTexture(GL_TEXTURE_2D, velocitySlab.ping.textureHandle);
-            break;
-        case 3:
-            glActiveTexture(GL_TEXTURE0);
-            glBindTexture(GL_TEXTURE_2D, temperatureSlab.ping.textureHandle);
-            break;
-        case 4:
-            glActiveTexture(GL_TEXTURE0);
-            glBindTexture(GL_TEXTURE_2D, curlSlab.ping.textureHandle);
-            break;
+    GLuint gpuTextureA = 0;
+    GLuint gpuTextureB = 0;
+    GLuint gpuTextureC = 0;
+
+    if (currentDisplay == COMPOSITION) {
+        gpuTextureA = dataForDisplayGPU(compositionFields[0]);
+        gpuTextureB = dataForDisplayGPU(compositionFields[1]);
+        gpuTextureC = dataForDisplayGPU(compositionFields[2]);
+    } else {
+        gpuTextureA = dataForDisplayGPU(currentDisplay);
+    }
+
+    glActiveTexture(GL_TEXTURE0);
+    glBindTexture(GL_TEXTURE_2D, gpuTextureA);
+
+    glActiveTexture(GL_TEXTURE1);
+    glBindTexture(GL_TEXTURE_2D, gpuTextureB);
+
+    glActiveTexture(GL_TEXTURE2);
+    glBindTexture(GL_TEXTURE_2D, gpuTextureC);
+}
+
+GLuint SmokeSimulation::dataForDisplayGPU(Display display) {
+    switch (display) {
+        case DENSITY:
+            return densitySlab.ping.textureHandle;
+        case VELOCITY:
+            return velocitySlab.ping.textureHandle;
+        case TEMPERATURE:
+            return temperatureSlab.ping.textureHandle;
+        case CURL:
+            return curlSlab.ping.textureHandle;
         default:
             break;
     }
+
+    return 0;
 }
