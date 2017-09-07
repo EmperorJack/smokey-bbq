@@ -20,7 +20,7 @@ find_package(OpenGL REQUIRED)
 # Include common files
 include_directories(${PROJECT_SOURCE_DIR}/common)
 file(GLOB COMMON
-    common/*.h
+    common/*.hpp
     common/*.cpp
 )
 

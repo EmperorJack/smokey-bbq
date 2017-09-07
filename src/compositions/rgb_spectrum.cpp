@@ -2,17 +2,16 @@
 // Created by Jack Purvis
 //
 
+#include <imgui.h>
 #include <compositions/rgb_spectrum.hpp>
-#include <iostream>
 
 std::string RgbSpectrum::fragmentShaderPath() {
-    return "compositions/SmokeFragmentShader";
+    return "compositions/RgbFragmentShader";
 }
 
 std::vector<SmokeSimulation::Display> RgbSpectrum::displayFields() {
     return std::vector<SmokeSimulation::Display> {
-            SmokeSimulation::Display::TEMPERATURE,
-            SmokeSimulation::Display::DENSITY
+            SmokeSimulation::Display::RGB
     };
 }
 
@@ -21,6 +20,17 @@ void RgbSpectrum::setup() {
     bandSpacing = ((float) SCREEN_WIDTH - sideOffset * 2.0f) / (AudioAnalyzer::NUM_BANDS * 2);
 }
 
+glm::vec3 hue(float h) {
+    float r = abs(h * 6 - 3) - 1;
+    float g = 2 - abs(h * 6 - 2);
+    float b = 2 - abs(h * 6 - 4);
+    return glm::saturate(glm::vec3(r, g, b));
+}
+
+float map(float value, float srcMin, float srcMax, float destMin, float destMax) {
+    return (value - srcMin) * (destMax - destMin) / (srcMax - srcMin) + destMin;
+}
+#include <iostream>
 void RgbSpectrum::update() {
     float volume = max(audioAnalyzer->getOverallVolume(), 1.0f);
 
@@ -39,12 +49,14 @@ void RgbSpectrum::update() {
         glm::vec2 position = vec2(i * bandSpacing + sideOffset, SCREEN_HEIGHT * 0.95f);
         glm::vec2 force = vec2(myRandom() * 1.0f - 0.5f, -1.0f) * (volume + value + 0.5f) * 7.0f;
         float diameter = bandSpacing * 0.5f + value * 0.6f;
-        float density = value * 0.0065f;
-        float temperature = value * 0.02f;
+
+        float h = map(i, 0, AudioAnalyzer::NUM_BANDS * 2, 0.0f, 1.0f);
+        float r, g, b;
+        ImGui::ColorConvertHSVtoRGB(h, 1.0f, 1.0f, r, g, b);
 
         smokeSimulation->emit(position, diameter,
-                              std::vector<SmokeSimulation::Display> { SmokeSimulation::VELOCITY, SmokeSimulation::DENSITY, SmokeSimulation::TEMPERATURE },
-                              std::vector<glm::vec3> { glm::vec3(force, 0.0f), glm::vec3(density, 0.0f, 0.0f), glm::vec3(temperature, 0.0f, 0.0f)}
+                              std::vector<SmokeSimulation::Display> { SmokeSimulation::VELOCITY, SmokeSimulation::RGB },
+                              std::vector<glm::vec3> { glm::vec3(force, 0.0f), glm::vec3(r, g, b) }
         );
     }
 }

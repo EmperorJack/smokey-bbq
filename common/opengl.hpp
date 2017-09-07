@@ -1,3 +1,7 @@
+//
+// Created by Jack Purvis
+//
+
 #ifndef OPENGL_H
 #define OPENGL_H
 
