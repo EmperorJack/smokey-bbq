@@ -9,7 +9,7 @@ class SmokeSimulation {
 public:
 
     // Constants
-    static constexpr int GRID_SIZE = 512;
+    static constexpr int GRID_SIZE = 128;
     static constexpr int BENCHMARK_SAMPLES = 60;
 
     // Variables
@@ -51,7 +51,8 @@ public:
         DENSITY,
         VELOCITY,
         TEMPERATURE,
-        CURL
+        CURL,
+        RGB
     };
     Display currentDisplay;
 
@@ -68,7 +69,7 @@ public:
 
     // Interactions
     void addPulse(glm::vec2);
-    void emit(glm::vec2 position, glm::vec2 force, float range, float density, float temperature);
+    void emit(glm::vec2 position, float range, std::vector<Display> fields, std::vector<glm::vec3> values);
 
     // Toggle variables
     bool displaySmokeField;
@@ -125,7 +126,7 @@ private:
     float dataForDisplayCPU(Display display, int i, int j);
 
     // Interactions
-    void emitCPU(glm::vec2 position, glm::vec2 force, float range, float densityAmount, float temperatureAmount);
+    void emitCPU(glm::vec2 position, float range, std::vector<Display> fields, std::vector<glm::vec3> values);
 
     // Grid fields
     glm::vec2 velocity[GRID_SIZE][GRID_SIZE];
@@ -217,6 +218,7 @@ private:
     Slab curlSlab;
     Slab divergenceSlab;
     Slab pressureSlab;
+    Slab rgbSlab;
 
     // Samplers
     GLuint boundedSampler;
@@ -233,10 +235,10 @@ private:
     // Core
     void updateGPU();
     void renderGPU();
-    GLuint dataForDisplayGPU(Display display);
+    Slab dataForDisplayGPU(Display display);
 
     // Interactions
-    void emitGPU(glm::vec2 position, glm::vec2 force, float range, float densityAmount, float temperatureAmount);
+    void emitGPU(glm::vec2 position, float range, std::vector<Display> fields, std::vector<glm::vec3> values);
 
     // State functions
     void swapSurfaces(Slab &slab);

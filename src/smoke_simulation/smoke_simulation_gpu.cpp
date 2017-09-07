@@ -1,4 +1,5 @@
 #include <iostream>
+#include <algorithm>
 #include <main.hpp>
 #include <opengl.hpp>
 #include <smoke_simulation/smoke_simulation.hpp>
@@ -44,6 +45,7 @@ void SmokeSimulation::initSlabs() {
     curlSlab = createSlab(GRID_SIZE, GRID_SIZE, 1);
     divergenceSlab = createSlab(GRID_SIZE, GRID_SIZE, 1);
     pressureSlab = createSlab(GRID_SIZE, GRID_SIZE, 1);
+    rgbSlab = createSlab(GRID_SIZE, GRID_SIZE, 3);
 
     slabs.push_back(velocitySlab);
     slabs.push_back(densitySlab);
@@ -51,6 +53,7 @@ void SmokeSimulation::initSlabs() {
     slabs.push_back(curlSlab);
     slabs.push_back(divergenceSlab);
     slabs.push_back(pressureSlab);
+    slabs.push_back(rgbSlab);
 
     resetSlabs();
 }
@@ -156,7 +159,10 @@ void SmokeSimulation::updateGPU() {
         glm::vec2 position = glm::vec2(GRID_SIZE / 2 * SCREEN_WIDTH / GRID_SIZE, GRID_SIZE * SCREEN_HEIGHT / GRID_SIZE - 2);
         glm::vec2 force = glm::vec2(myRandom() * pulseForce - pulseForce / 2.0f, -pulseForce);
 
-        emitGPU(position, force, emitterRange, 0.2f, 1.0f);
+        emitGPU(position, emitterRange,
+                std::vector<Display>{ VELOCITY, DENSITY, TEMPERATURE },
+                std::vector<glm::vec3>{ glm::vec3(force, 0.0f), glm::vec3(0.2f, 0.0f, 0.0f), glm::vec3(1.0f, 0.0f, 0.0f) }
+        );
     }
 
     // Buoyancy
@@ -213,14 +219,21 @@ void SmokeSimulation::updateGPU() {
     advect(velocitySlab.ping, temperatureSlab.ping, temperatureSlab.pong, temperatureDissipation);
     swapSurfaces(temperatureSlab);
     resetState();
+
+    // Advect rgb through velocity if enabled
+    if(std::find(compositionFields.begin(), compositionFields.end(), RGB) != compositionFields.end()) {
+        advect(velocitySlab.ping, rgbSlab.ping, rgbSlab.pong, 1.0f);
+        swapSurfaces(rgbSlab);
+        resetState();
+    }
 }
 
-void SmokeSimulation::emitGPU(glm::vec2 position, glm::vec2 force, float range, float densityAmount, float temperatureAmount) {
+void SmokeSimulation::emitGPU(glm::vec2 position, float range, std::vector<Display> fields, std::vector<glm::vec3> values) {
     position *= windowToGrid;
 
-    applyImpulse(velocitySlab.ping, position, range, glm::vec3(force, 0.0f), false);
-    applyImpulse(densitySlab.ping, position, range, glm::vec3(densityAmount, 0.0f, 0.0f), false);
-    applyImpulse(temperatureSlab.ping, position, range, glm::vec3(temperatureAmount, 0.0f, 0.0f), false);
+    for (int i = 0; i < fields.size(); i++) {
+        applyImpulse(dataForDisplayGPU(fields[i]).ping, position, range, values[i], false);
+    }
 
     resetState();
 }
@@ -445,11 +458,11 @@ void SmokeSimulation::renderGPU() {
     GLuint gpuTextureC = 0;
 
     if (currentDisplay == COMPOSITION) {
-        gpuTextureA = dataForDisplayGPU(compositionFields[0]);
-        gpuTextureB = dataForDisplayGPU(compositionFields[1]);
-        gpuTextureC = dataForDisplayGPU(compositionFields[2]);
+        gpuTextureA = dataForDisplayGPU(compositionFields[0]).ping.textureHandle;
+        gpuTextureB = dataForDisplayGPU(compositionFields[1]).ping.textureHandle;
+        gpuTextureC = dataForDisplayGPU(compositionFields[2]).ping.textureHandle;
     } else {
-        gpuTextureA = dataForDisplayGPU(currentDisplay);
+        gpuTextureA = dataForDisplayGPU(currentDisplay).ping.textureHandle;
     }
 
     glActiveTexture(GL_TEXTURE0);
@@ -462,19 +475,21 @@ void SmokeSimulation::renderGPU() {
     glBindTexture(GL_TEXTURE_2D, gpuTextureC);
 }
 
-GLuint SmokeSimulation::dataForDisplayGPU(Display display) {
+SmokeSimulation::Slab SmokeSimulation::dataForDisplayGPU(Display display) {
     switch (display) {
         case DENSITY:
-            return densitySlab.ping.textureHandle;
+            return densitySlab;
         case VELOCITY:
-            return velocitySlab.ping.textureHandle;
+            return velocitySlab;
         case TEMPERATURE:
-            return temperatureSlab.ping.textureHandle;
+            return temperatureSlab;
         case CURL:
-            return curlSlab.ping.textureHandle;
+            return curlSlab;
+        case RGB:
+            return rgbSlab;
         default:
             break;
     }
 
-    return 0;
+    return Slab();
 }

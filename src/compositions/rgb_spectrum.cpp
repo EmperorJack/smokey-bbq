@@ -2,26 +2,26 @@
 // Created by Jack Purvis
 //
 
-#include <compositions/horizontal_spectrum.hpp>
+#include <compositions/rgb_spectrum.hpp>
 #include <iostream>
 
-std::string HorizontalSpectrum::fragmentShaderPath() {
+std::string RgbSpectrum::fragmentShaderPath() {
     return "compositions/SmokeFragmentShader";
 }
 
-std::vector<SmokeSimulation::Display> HorizontalSpectrum::displayFields() {
+std::vector<SmokeSimulation::Display> RgbSpectrum::displayFields() {
     return std::vector<SmokeSimulation::Display> {
-        SmokeSimulation::Display::DENSITY,
-        SmokeSimulation::Display::TEMPERATURE
+            SmokeSimulation::Display::TEMPERATURE,
+            SmokeSimulation::Display::DENSITY
     };
 }
 
-void HorizontalSpectrum::setup() {
+void RgbSpectrum::setup() {
     sideOffset = ((float) SCREEN_WIDTH * 0.08f);
     bandSpacing = ((float) SCREEN_WIDTH - sideOffset * 2.0f) / (AudioAnalyzer::NUM_BANDS * 2);
 }
 
-void HorizontalSpectrum::update() {
+void RgbSpectrum::update() {
     float volume = max(audioAnalyzer->getOverallVolume(), 1.0f);
 
     for (int i = 0; i < AudioAnalyzer::NUM_BANDS * 2; i++) {

@@ -48,7 +48,7 @@ SmokeSimulation::SmokeSimulation() {
 void SmokeSimulation::setDefaultVariables() {
     timeStep = 0.05f;
     fluidDensity = 1.0f;
-    jacobiIterations = 40;
+    jacobiIterations = 16;
 
     gravity = 0.0981f;
     pulseRange = 50.0f;
@@ -178,11 +178,11 @@ void SmokeSimulation::addPulse(glm::vec2 position) {
     }
 }
 
-void SmokeSimulation::emit(glm::vec2 position, glm::vec2 force, float range, float densityAmount, float temperatureAmount) {
+void SmokeSimulation::emit(glm::vec2 position, float range, std::vector<Display> fields, std::vector<glm::vec3> values) {
     if (useGPUImplementation) {
-        emitGPU(position, force, range, densityAmount, temperatureAmount);
+        emitGPU(position, range, fields, values);
     } else {
-        emitCPU(position, force, range, densityAmount, temperatureAmount);
+        emitCPU(position, range, fields, values);
     }
 }
 

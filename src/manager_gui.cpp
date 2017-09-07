@@ -37,6 +37,7 @@ void ManagerGui::renderCompositionSelector() {
 
     ImGui::RadioButton("Horizontal Spectrum", &compositionSelect, 0);
     ImGui::RadioButton("Circular Spectrum", &compositionSelect, 1);
+    ImGui::RadioButton("RGB Spectrum", &compositionSelect, 2);
 
     if (ImGui::Button("Apply")) manager->setComposition(compositionSelect);
 }

@@ -67,7 +67,10 @@ void SmokeSimulation::updateCPU() {
         glm::vec2 position = glm::vec2(GRID_SIZE / 2 * SCREEN_WIDTH / GRID_SIZE, GRID_SIZE * SCREEN_HEIGHT / GRID_SIZE - 2);
         glm::vec2 force = glm::vec2(myRandom() * pulseForce - pulseForce / 2.0f, -pulseForce);
 
-        emitCPU(position, force, emitterRange, 0.2f, 1.0f);
+        emitCPU(position, emitterRange,
+                std::vector<Display>{ VELOCITY, DENSITY, TEMPERATURE },
+                std::vector<glm::vec3>{ glm::vec3(force, 0.0f), glm::vec3(0.2f, 0.0f, 0.0f), glm::vec3(1.0f, 0.0f, 0.0f) }
+        );
     }
 
     // Buoyancy
@@ -168,7 +171,7 @@ void SmokeSimulation::updateCPU() {
     }
 }
 
-void SmokeSimulation::emitCPU(glm::vec2 position, glm::vec2 force, float range, float densityAmount, float temperatureAmount) {
+void SmokeSimulation::emitCPU(glm::vec2 position, float range, std::vector<Display> fields, std::vector<glm::vec3> values) {
     position *= windowToGrid;
 
     for (int i = 0; i < GRID_SIZE; i++) {
@@ -178,9 +181,25 @@ void SmokeSimulation::emitCPU(glm::vec2 position, glm::vec2 force, float range, 
 
             if (distance < range) {
                 float falloff = (1.0f - distance / range);
-                velocity[i][j] += force * falloff;
-                density[i][j] += densityAmount * falloff;
-                temperature[i][j] += temperatureAmount * falloff;
+
+                for (int field = 0; field < fields.size(); field++) {
+                    switch(fields[field]) {
+                        case DENSITY:
+                            density[i][j] += values[field].x * falloff;
+                            break;
+                        case VELOCITY:
+                            velocity[i][j] += glm::vec2(values[field]) * falloff;
+                            break;
+                        case TEMPERATURE:
+                            temperature[i][j] += values[field].x * falloff;
+                            break;
+                        case RGB:
+                            textureFieldA[i][j][0] = curl[j][i];
+                            break;
+                        default:
+                            break;
+                    }
+                }
             }
         }
     }

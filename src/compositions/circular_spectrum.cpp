@@ -11,8 +11,8 @@ std::string CircularSpectrum::fragmentShaderPath() {
 
 std::vector<SmokeSimulation::Display> CircularSpectrum::displayFields() {
     return std::vector<SmokeSimulation::Display> {
-        SmokeSimulation::Display::DENSITY,
-        SmokeSimulation::Display::TEMPERATURE
+        SmokeSimulation::DENSITY,
+        SmokeSimulation::TEMPERATURE
     };
 }
 
@@ -50,6 +50,9 @@ void CircularSpectrum::renderHalfCircle(float flip) {
         float density = value * 0.0065f;
         float temperature = value * 0.02f;
 
-        smokeSimulation->emit(position, force, diameter, density, temperature);
+        smokeSimulation->emit(position, diameter,
+                              std::vector<SmokeSimulation::Display> { SmokeSimulation::VELOCITY, SmokeSimulation::DENSITY, SmokeSimulation::TEMPERATURE },
+                              std::vector<glm::vec3> { glm::vec3(force, 0.0f), glm::vec3(density, 0.0f, 0.0f), glm::vec3(temperature, 0.0f, 0.0f)}
+        );
     }
 }

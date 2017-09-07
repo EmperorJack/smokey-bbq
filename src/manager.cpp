@@ -5,6 +5,7 @@
 #include <manager.hpp>
 #include <compositions/horizontal_spectrum.hpp>
 #include <compositions/circular_spectrum.hpp>
+#include <compositions/rgb_spectrum.hpp>
 
 Manager::Manager() {
 
@@ -13,9 +14,10 @@ Manager::Manager() {
     audioAnalyzer = new AudioAnalyzer();
 
     // Setup compositions
-    currentComposition = 1;
+    currentComposition = 0;
     compositions.push_back(new HorizontalSpectrum(smokeSimulation, audioAnalyzer));
     compositions.push_back(new CircularSpectrum(smokeSimulation, audioAnalyzer));
+    compositions.push_back(new RgbSpectrum(smokeSimulation, audioAnalyzer));
 
     for (Composition* composition : compositions) {
         composition->initialize();
