@@ -30,7 +30,7 @@ glm::vec3 hue(float h) {
 float map(float value, float srcMin, float srcMax, float destMin, float destMax) {
     return (value - srcMin) * (destMax - destMin) / (srcMax - srcMin) + destMin;
 }
-#include <iostream>
+
 void RgbSpectrum::update() {
     float volume = max(audioAnalyzer->getOverallVolume(), 1.0f);
 

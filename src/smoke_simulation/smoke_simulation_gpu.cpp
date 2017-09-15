@@ -248,7 +248,6 @@ void SmokeSimulation::advect(Surface velocitySurface, Surface source, Surface de
     GLint gridSpacingLocation = glGetUniformLocation(program, "gridSpacing");
     GLint timeStepLocation = glGetUniformLocation(program, "timeStep");
     GLint dissipationLocation = glGetUniformLocation(program, "dissipation");
-    GLint velocityTextureLocation = glGetUniformLocation(program, "velocityTexture");
     GLint sourceTextureLocation = glGetUniformLocation(program, "sourceTexture");
 
     glUniform1i(gridSizeLocation, GRID_SIZE);
@@ -257,7 +256,6 @@ void SmokeSimulation::advect(Surface velocitySurface, Surface source, Surface de
     glUniform1f(gridSpacingLocation, gridSpacing);
     glUniform1f(timeStepLocation, timeStep);
     glUniform1f(dissipationLocation, dissipation);
-    glUniform1i(velocityTextureLocation, 0);
     glUniform1i(sourceTextureLocation, 1);
 
     glBindFramebuffer(GL_FRAMEBUFFER, destination.fboHandle);
@@ -278,14 +276,12 @@ void SmokeSimulation::computeDivergence(Surface velocitySurface, Surface diverge
     GLint wrapBordersLocation = glGetUniformLocation(program, "wrapBorders");
     GLint gridSpacingLocation = glGetUniformLocation(program, "gridSpacing");
     GLint gradientScaleLocation = glGetUniformLocation(program, "gradientScale");
-    GLint velocityTextureLocation = glGetUniformLocation(program, "velocityTexture");
 
     glUniform1i(gridSizeLocation, GRID_SIZE);
     glUniform1f(inverseSizeLocation, 1.0f / GRID_SIZE);
     glUniform1f(wrapBordersLocation, wrapBorders);
     glUniform1f(gridSpacingLocation, gridSpacing);
     glUniform1f(gradientScaleLocation, -((2 * gridSpacing * fluidDensity) / timeStep));
-    glUniform1i(velocityTextureLocation, 0);
 
     glBindFramebuffer(GL_FRAMEBUFFER, divergenceSurface.fboHandle);
     glActiveTexture(GL_TEXTURE0);
@@ -301,13 +297,11 @@ void SmokeSimulation::jacobi(Surface divergenceSurface, Surface pressureSource, 
     GLint gridSizeLocation = glGetUniformLocation(program, "gridSize");
     GLint inverseSizeLocation = glGetUniformLocation(program, "inverseSize");
     GLint wrapBordersLocation = glGetUniformLocation(program, "wrapBorders");
-    GLint divergenceTextureLocation = glGetUniformLocation(program, "divergenceTexture");
     GLint pressureTextureLocation = glGetUniformLocation(program, "pressureTexture");
 
     glUniform1i(gridSizeLocation, GRID_SIZE);
     glUniform1f(inverseSizeLocation, 1.0f / GRID_SIZE);
     glUniform1f(wrapBordersLocation, wrapBorders);
-    glUniform1i(divergenceTextureLocation, 0);
     glUniform1i(pressureTextureLocation, 1);
 
     glBindFramebuffer(GL_FRAMEBUFFER, pressureDestination.fboHandle);
@@ -327,13 +321,11 @@ void SmokeSimulation::applyPressure(Surface pressureSurface, Surface velocityDes
     GLint inverseSizeLocation = glGetUniformLocation(program, "inverseSize");
     GLint wrapBordersLocation = glGetUniformLocation(program, "wrapBorders");
     GLint gradientScaleLocation = glGetUniformLocation(program, "gradientScale");
-    GLint pressureTextureLocation = glGetUniformLocation(program, "pressureTexture");
 
     glUniform1i(gridSizeLocation, GRID_SIZE);
     glUniform1f(inverseSizeLocation, 1.0f / GRID_SIZE);
     glUniform1f(wrapBordersLocation, wrapBorders);
     glUniform1f(gradientScaleLocation, -(timeStep / (2 * fluidDensity * gridSpacing)));
-    glUniform1i(pressureTextureLocation, 0);
 
     glBindFramebuffer(GL_FRAMEBUFFER, velocityDestination.fboHandle);
     glActiveTexture(GL_TEXTURE0);
@@ -378,7 +370,6 @@ void SmokeSimulation::applyBuoyancy(Surface temperatureSurface, Surface densityS
     GLint riseForceLocation = glGetUniformLocation(program, "riseForce");
     GLint atmosphereTemperatureLocation = glGetUniformLocation(program, "atmosphereTemperature");
     GLint gravityLocation = glGetUniformLocation(program, "gravity");
-    GLint temperatureTextureLocation = glGetUniformLocation(program, "temperatureTexture");
     GLint densityTextureLocation = glGetUniformLocation(program, "densityTexture");
 
     glUniform1f(inverseSizeLocation, 1.0f / GRID_SIZE);
@@ -386,7 +377,6 @@ void SmokeSimulation::applyBuoyancy(Surface temperatureSurface, Surface densityS
     glUniform1f(riseForceLocation, riseForce);
     glUniform1f(atmosphereTemperatureLocation, atmosphereTemperature);
     glUniform1f(gravityLocation, gravity);
-    glUniform1i(temperatureTextureLocation, 0);
     glUniform1i(densityTextureLocation, 1);
 
     glBindFramebuffer(GL_FRAMEBUFFER, velocityDestination.fboHandle);
@@ -409,13 +399,11 @@ void SmokeSimulation::computeCurl(Surface velocitySurface, Surface curlSurface) 
     GLint inverseSizeLocation = glGetUniformLocation(program, "inverseSize");
     GLint wrapBordersLocation = glGetUniformLocation(program, "wrapBorders");
     GLint gridSpacingLocation = glGetUniformLocation(program, "gridSpacing");
-    GLint velocityTextureLocation = glGetUniformLocation(program, "velocityTexture");
 
     glUniform1i(gridSizeLocation, GRID_SIZE);
     glUniform1f(inverseSizeLocation, 1.0f / GRID_SIZE);
     glUniform1f(wrapBordersLocation, wrapBorders);
     glUniform1f(gridSpacingLocation, gridSpacing);
-    glUniform1i(velocityTextureLocation, 0);
 
     glBindFramebuffer(GL_FRAMEBUFFER, curlSurface.fboHandle);
     glActiveTexture(GL_TEXTURE0);
@@ -433,14 +421,12 @@ void SmokeSimulation::applyVorticityConfinement(Surface curlSurface, Surface vel
     GLint wrapBordersLocation = glGetUniformLocation(program, "wrapBorders");
     GLint timeStepLocation = glGetUniformLocation(program, "timeStep");
     GLint vorticityConfinementForceLocation = glGetUniformLocation(program, "vorticityConfinementForce");
-    GLint curlTextureLocation = glGetUniformLocation(program, "curlTexture");
 
     glUniform1i(gridSizeLocation, GRID_SIZE);
     glUniform1f(inverseSizeLocation, 1.0f / GRID_SIZE);
     glUniform1f(wrapBordersLocation, wrapBorders);
     glUniform1f(timeStepLocation, timeStep);
     glUniform1f(vorticityConfinementForceLocation, vorticityConfinementForce);
-    glUniform1i(curlTextureLocation, 0);
 
     glBindFramebuffer(GL_FRAMEBUFFER, velocityDestination.fboHandle);
     glActiveTexture(GL_TEXTURE0);

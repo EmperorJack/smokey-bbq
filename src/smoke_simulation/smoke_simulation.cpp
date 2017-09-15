@@ -1,5 +1,6 @@
 #include <iostream>
 #include <chrono>
+#include <thread>
 #include <vector>
 #include <main.hpp>
 #include <opengl.hpp>
@@ -43,6 +44,9 @@ SmokeSimulation::SmokeSimulation() {
 
     initCPU();
     initGPU();
+
+    // Sleep for a moment to ensure everything is setup, i.e: GPU
+    std::this_thread::sleep_for(std::chrono::milliseconds(1000));
 }
 
 void SmokeSimulation::setDefaultVariables() {
