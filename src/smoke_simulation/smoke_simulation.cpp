@@ -46,13 +46,15 @@ SmokeSimulation::SmokeSimulation() {
     initGPU();
 
     // Sleep for a moment to ensure everything is setup, i.e: GPU
+    #ifdef __linux__
     std::this_thread::sleep_for(std::chrono::milliseconds(1000));
+    #endif
 }
 
 void SmokeSimulation::setDefaultVariables() {
     timeStep = 0.05f;
     fluidDensity = 1.0f;
-    jacobiIterations = 16;
+    jacobiIterations = 40;
 
     gravity = 0.0981f;
     pulseRange = 50.0f;
