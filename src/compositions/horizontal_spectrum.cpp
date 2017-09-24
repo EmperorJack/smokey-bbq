@@ -44,7 +44,7 @@ void HorizontalSpectrum::update() {
 
         smokeSimulation->emit(position, diameter,
                               std::vector<SmokeSimulation::Display> { SmokeSimulation::VELOCITY, SmokeSimulation::DENSITY, SmokeSimulation::TEMPERATURE },
-                              std::vector<glm::vec3> { glm::vec3(force, 0.0f), glm::vec3(density, 0.0f, 0.0f), glm::vec3(temperature, 0.0f, 0.0f)}
+                              std::vector<glm::vec3> { glm::vec3(force, 0.0f), glm::vec3(density, 0.0f, 0.0f), glm::vec3(temperature, 0.0f, 0.0f) }
         );
     }
 }

@@ -11,7 +11,8 @@ std::string RgbSpectrum::fragmentShaderPath() {
 
 std::vector<SmokeSimulation::Display> RgbSpectrum::displayFields() {
     return std::vector<SmokeSimulation::Display> {
-            SmokeSimulation::Display::RGB
+        SmokeSimulation::Display::RGB,
+        SmokeSimulation::Display::TEMPERATURE
     };
 }
 
@@ -49,14 +50,15 @@ void RgbSpectrum::update() {
         glm::vec2 position = vec2(i * bandSpacing + sideOffset, SCREEN_HEIGHT * 0.95f);
         glm::vec2 force = vec2(myRandom() * 1.0f - 0.5f, -1.0f) * (volume + value + 0.5f) * 7.0f;
         float diameter = bandSpacing * 0.5f + value * 0.6f;
+        float temperature = value * 0.02f;
 
         float h = map(i, 0, AudioAnalyzer::NUM_BANDS * 2, 0.0f, 1.0f);
         float r, g, b;
         ImGui::ColorConvertHSVtoRGB(h, 1.0f, 1.0f, r, g, b);
 
         smokeSimulation->emit(position, diameter,
-                              std::vector<SmokeSimulation::Display> { SmokeSimulation::VELOCITY, SmokeSimulation::RGB },
-                              std::vector<glm::vec3> { glm::vec3(force, 0.0f), glm::vec3(r, g, b) }
+                              std::vector<SmokeSimulation::Display> { SmokeSimulation::VELOCITY, SmokeSimulation::RGB, SmokeSimulation::TEMPERATURE },
+                              std::vector<glm::vec3> { glm::vec3(force, 0.0f), glm::vec3(r, g, b), glm::vec3(temperature, 0.0f, 0.0f) }
         );
     }
 }

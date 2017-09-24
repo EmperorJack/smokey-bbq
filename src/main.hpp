@@ -5,7 +5,7 @@
 #include <glm/glm.hpp>
 
 // Screen settings
-#define FULL_SCREEN false
+#define FULL_SCREEN true
 #define BORDERLESS false
 
 #if FULL_SCREEN || BORDERLESS

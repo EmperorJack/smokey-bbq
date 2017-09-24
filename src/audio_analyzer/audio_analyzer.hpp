@@ -12,7 +12,7 @@ public:
     // Constants
     static constexpr int SAMPLE_RATE = 44100;
     static constexpr int SAMPLE_SIZE = 2048;
-    static constexpr int NUM_BANDS = 18;
+    static constexpr int NUM_BANDS = 32;
 
     // Variables
     float frequencyDamping;
