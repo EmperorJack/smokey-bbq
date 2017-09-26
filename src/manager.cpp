@@ -25,7 +25,7 @@ Manager::Manager() {
     compositions[currentComposition]->enable();
 
     // Setup toggles
-    enableCompositions = true;
+    enableCompositions = false;
     printFrameTimes = false;
 }
 

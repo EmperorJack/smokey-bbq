@@ -9,8 +9,8 @@ class SmokeSimulation {
 public:
 
     // Constants
-    static constexpr int GRID_SIZE = 512;
-    static constexpr int BENCHMARK_SAMPLES = 60;
+    static constexpr int GRID_SIZE = 1024;
+    static constexpr int BENCHMARK_SAMPLES = 12;
 
     // Variables
     float timeStep;

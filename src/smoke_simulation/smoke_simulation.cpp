@@ -79,7 +79,7 @@ void SmokeSimulation::setDefaultToggles() {
     displaySmokeField = true;
     displayVelocityField = false;
     updateSimulation = true;
-    enableEmitter = false;
+    enableEmitter = true;
     enablePressureSolver = true;
     randomPulseAngle = false;
     enableBuoyancy = true;
@@ -119,7 +119,7 @@ void SmokeSimulation::update() {
     if (benchmarking) {
         t2 = std::chrono::high_resolution_clock::now();
 
-        double duration = std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count();
+        double duration = std::chrono::duration_cast<std::chrono::microseconds>(t2 - t1).count();
         updateTimes.push_back(duration);
 
         benchmarkSample++;
@@ -152,8 +152,10 @@ void SmokeSimulation::finishBenchmark() {
     }
 
     averageDuration /= (double) BENCHMARK_SAMPLES;
+    averageDuration /= 1000.0;
 
-    std::cout << "Benchmark result: " << averageDuration << " ms" << std::endl;
+//    std::cout << "Benchmark result: " << averageDuration << " ms" << std::endl;
+    std::cout << averageDuration << std::endl;
 
     benchmarkSample = 0;
     updateTimes.clear();

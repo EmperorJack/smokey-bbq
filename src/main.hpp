@@ -8,7 +8,7 @@
 #define FULL_SCREEN false
 #define BORDERLESS false
 #define RETINA false
-#define VSYNC true
+#define VSYNC false
 
 #if FULL_SCREEN || BORDERLESS
 #define SCREEN_WIDTH 1920
