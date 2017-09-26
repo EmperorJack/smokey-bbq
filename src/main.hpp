@@ -7,7 +7,7 @@
 // Screen settings
 #define FULL_SCREEN false
 #define BORDERLESS false
-#define RETINA true
+#define RETINA false
 
 #if FULL_SCREEN || BORDERLESS
 #define SCREEN_WIDTH 1920

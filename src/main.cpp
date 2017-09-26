@@ -51,6 +51,8 @@ void keyCallback(GLFWwindow *win, int key, int scancode, int action, int mods) {
         displayMainGui = !displayMainGui;
     } else if (key == 'G' && action == GLFW_PRESS) {
         manager->smokeSimulation->useGPUImplementation = !manager->smokeSimulation->useGPUImplementation;
+    } else if (key == 'B' && action == GLFW_PRESS) {
+        manager->smokeSimulation->beginBenchmark();
     }
 }
 

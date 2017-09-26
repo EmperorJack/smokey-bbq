@@ -9,7 +9,7 @@ class SmokeSimulation {
 public:
 
     // Constants
-    static constexpr int GRID_SIZE = 512;
+    static constexpr int GRID_SIZE = 256;
     static constexpr int BENCHMARK_SAMPLES = 60;
 
     // Variables

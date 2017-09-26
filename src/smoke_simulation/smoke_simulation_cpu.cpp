@@ -50,12 +50,14 @@ void SmokeSimulation::resetFields() {
 void SmokeSimulation::updateCPU() {
 
     // Advect velocity through velocity
+    #pragma omp parallel for
     for (int i = 0; i < GRID_SIZE; i++) {
         for (int j = 0; j < GRID_SIZE; j++) {
             advectedVelocity[i][j] = getVelocity(tracePosition[i][j].x, tracePosition[i][j].y) * velocityDissipation;
         }
     }
 
+    #pragma omp parallel for
     for (int i = 0; i < GRID_SIZE; i++) {
         for (int j = 0; j < GRID_SIZE; j++) {
             velocity[i][j] = advectedVelocity[i][j];
@@ -75,6 +77,7 @@ void SmokeSimulation::updateCPU() {
 
     // Buoyancy
     if (enableBuoyancy) {
+        #pragma omp parallel for
         for (int i = 0; i < GRID_SIZE; i++) {
             for (int j = 0; j < GRID_SIZE; j++) {
                 velocity[i][j] += buoyancyForceAt(i, j);
@@ -84,6 +87,7 @@ void SmokeSimulation::updateCPU() {
 
     // Compute curl
     if (enableVorticityConfinement || computeIntermediateFields) {
+        #pragma omp parallel for
         for (int i = 0; i < GRID_SIZE; i++) {
             for (int j = 0; j < GRID_SIZE; j++) {
                 curl[i][j] = curlAt(i, j);
@@ -93,6 +97,7 @@ void SmokeSimulation::updateCPU() {
 
     // Apply vorticity confinement
     if (enableVorticityConfinement) {
+        #pragma omp parallel for
         for (int i = 0; i < GRID_SIZE; i++) {
             for (int j = 0; j < GRID_SIZE; j++) {
                 velocity[i][j] += vorticityConfinementForceAt(i, j);
@@ -102,6 +107,7 @@ void SmokeSimulation::updateCPU() {
 
     // Compute divergence
     if (enablePressureSolver || computeIntermediateFields) {
+        #pragma omp parallel for
         for (int i = 0; i < GRID_SIZE; i++) {
             for (int j = 0; j < GRID_SIZE; j++) {
                 divergence[i][j] = divergenceAt(i, j);
@@ -113,6 +119,7 @@ void SmokeSimulation::updateCPU() {
     if (enablePressureSolver) {
 
         // Reset the pressure field
+        #pragma omp parallel for
         for (int i = 0; i < GRID_SIZE; i++) {
             for (int j = 0; j < GRID_SIZE; j++) {
                 pressure[i][j] = 0.0f;
@@ -121,12 +128,14 @@ void SmokeSimulation::updateCPU() {
 
         // Iteratively solve the new pressure field
         for (int iteration = 0; iteration < jacobiIterations; iteration++) {
+            #pragma omp parallel for
             for (int i = 0; i < GRID_SIZE; i++) {
                 for (int j = 0; j < GRID_SIZE; j++) {
                     newPressure[i][j] = pressureAt(i, j);
                 }
             }
 
+            #pragma omp parallel for
             for (int i = 0; i < GRID_SIZE; i++) {
                 for (int j = 0; j < GRID_SIZE; j++) {
                     pressure[i][j] = newPressure[i][j];
@@ -137,6 +146,7 @@ void SmokeSimulation::updateCPU() {
         float a = -(timeStep / (2 * fluidDensity * gridSpacing));
 
         // Apply pressure
+        #pragma omp parallel for
         for (int i = 0; i < GRID_SIZE; i++) {
             for (int j = 0; j < GRID_SIZE; j++) {
                 float xChange = getGridPressure(clampIndex(i + 1), j) - getGridPressure(clampIndex(i - 1), j);
@@ -149,6 +159,7 @@ void SmokeSimulation::updateCPU() {
     }
 
     // Compute the trace position
+    #pragma omp parallel for
     for (int i = 0; i < GRID_SIZE; i++) {
         for (int j = 0; j < GRID_SIZE; j++) {
             tracePosition[i][j] = traceParticle(i * gridSpacing, j * gridSpacing);
@@ -156,6 +167,7 @@ void SmokeSimulation::updateCPU() {
     }
 
     // Advect density and temperature through velocity
+    #pragma omp parallel for
     for (int i = 0; i < GRID_SIZE; i++) {
         for (int j = 0; j < GRID_SIZE; j++) {
             advectedDensity[i][j] = getDensity(tracePosition[i][j].x, tracePosition[i][j].y) * densityDissipation;
@@ -163,6 +175,7 @@ void SmokeSimulation::updateCPU() {
         }
     }
 
+    #pragma omp parallel for
     for (int i = 0; i < GRID_SIZE; i++) {
         for (int j = 0; j < GRID_SIZE; j++) {
             density[i][j] = advectedDensity[i][j];
@@ -174,6 +187,7 @@ void SmokeSimulation::updateCPU() {
 void SmokeSimulation::emitCPU(glm::vec2 position, float range, std::vector<Display> fields, std::vector<glm::vec3> values) {
     position *= windowToGrid;
 
+    #pragma omp parallel for
     for (int i = 0; i < GRID_SIZE; i++) {
         for (int j = 0; j < GRID_SIZE; j++) {
             glm::vec2 gridPosition = glm::vec2(i * gridSpacing, j * gridSpacing);
@@ -396,6 +410,7 @@ int SmokeSimulation::clampIndex(int i) {
 }
 
 void SmokeSimulation::renderCPU() {
+    #pragma omp parallel for
     for (int i = 0; i < GRID_SIZE; i++) {
         for (int j = 0; j < GRID_SIZE; j++) {
             textureFieldA[i][j][0] = 0.0f;

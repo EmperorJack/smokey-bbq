@@ -4,6 +4,7 @@
 #include <vector>
 #include <main.hpp>
 #include <opengl.hpp>
+#include <omp.h>
 #include <smoke_simulation/smoke_simulation.hpp>
 #include <shaderLoader.hpp>
 
@@ -49,6 +50,9 @@ SmokeSimulation::SmokeSimulation() {
     #ifdef __linux__
     std::this_thread::sleep_for(std::chrono::milliseconds(1000));
     #endif
+
+    // Set thread limit
+    omp_set_num_threads(8);
 }
 
 void SmokeSimulation::setDefaultVariables() {
@@ -114,7 +118,7 @@ void SmokeSimulation::update() {
     if (benchmarking) {
         t2 = std::chrono::high_resolution_clock::now();
 
-        double duration = std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count();
+        double duration = std::chrono::duration_cast<std::chrono::microseconds>(t2 - t1).count();
         updateTimes.push_back(duration);
 
         benchmarkSample++;
@@ -148,6 +152,9 @@ void SmokeSimulation::finishBenchmark() {
 
     averageDuration /= (double) BENCHMARK_SAMPLES;
     std::cout << averageDuration << " ms" << std::endl;
+
+    benchmarkSample = 0;
+    updateTimes.clear();
 }
 
 void SmokeSimulation::addPulse(glm::vec2 position) {
