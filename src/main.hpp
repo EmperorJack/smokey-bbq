@@ -8,6 +8,7 @@
 #define FULL_SCREEN false
 #define BORDERLESS false
 #define RETINA false
+#define VSYNC true
 
 #if FULL_SCREEN || BORDERLESS
 #define SCREEN_WIDTH 1920
@@ -24,6 +25,9 @@ static const glm::vec2 windowToGrid = glm::vec2(1.0f, SCREEN_WIDTH / (float) SCR
 #else
 static const glm::vec2 windowToGrid = glm::vec2(1.0f, 1.0f);
 #endif
+
+// Threading
+static const int NUM_THREADS = 8;
 
 // Paths
 static const char* SHADER_PATH = "resources/shaders/";

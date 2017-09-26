@@ -29,6 +29,7 @@ void SmokeSimulationGui::renderToggles() {
     ImGui::Checkbox("Wrap Borders", &smokeSimulation->wrapBorders);
     ImGui::Checkbox("Enable Pressure Solver", &smokeSimulation->enablePressureSolver);
     ImGui::Checkbox("Compute Intermediate Fields", &smokeSimulation->computeIntermediateFields);
+    ImGui::Checkbox("CPU Multithreading", &smokeSimulation->useCPUMultithreading);
     ImGui::Checkbox("GPU Implementation", &smokeSimulation->useGPUImplementation);
 
     ImGui::Separator(); // Reset toggles

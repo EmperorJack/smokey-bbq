@@ -98,6 +98,13 @@ int main(int argc, char **argv) {
     glfwSetMouseButtonCallback(window, mouseButtonCallback);
     glfwSetKeyCallback(window, keyCallback);
 
+    // Enable / disable VSync
+    if (VSYNC) {
+        glfwSwapInterval(1);
+    } else {
+        glfwSwapInterval(0);
+    }
+
     // Setup the vertex array object
     GLuint vertexArray;
     glGenVertexArrays(1, &vertexArray);

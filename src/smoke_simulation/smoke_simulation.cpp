@@ -50,9 +50,6 @@ SmokeSimulation::SmokeSimulation() {
     #ifdef __linux__
     std::this_thread::sleep_for(std::chrono::milliseconds(1000));
     #endif
-
-    // Set thread limit
-    omp_set_num_threads(8);
 }
 
 void SmokeSimulation::setDefaultVariables() {
@@ -89,6 +86,7 @@ void SmokeSimulation::setDefaultToggles() {
     wrapBorders = false; prevWrapBorders = wrapBorders;
     enableVorticityConfinement = true;
     computeIntermediateFields = false;
+    useCPUMultithreading = true;
     useGPUImplementation = true;
 }
 
@@ -101,6 +99,9 @@ void SmokeSimulation::update() {
     if (!updateSimulation) return;
 
     glViewport(0, 0, GRID_SIZE, GRID_SIZE);
+
+    // Set thread limit
+    omp_set_num_threads(useCPUMultithreading ? NUM_THREADS : 1);
 
     std::chrono::high_resolution_clock::time_point t1;
     std::chrono::high_resolution_clock::time_point t2;
@@ -118,7 +119,7 @@ void SmokeSimulation::update() {
     if (benchmarking) {
         t2 = std::chrono::high_resolution_clock::now();
 
-        double duration = std::chrono::duration_cast<std::chrono::microseconds>(t2 - t1).count();
+        double duration = std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count();
         updateTimes.push_back(duration);
 
         benchmarkSample++;
@@ -151,7 +152,8 @@ void SmokeSimulation::finishBenchmark() {
     }
 
     averageDuration /= (double) BENCHMARK_SAMPLES;
-    std::cout << averageDuration << " ms" << std::endl;
+
+    std::cout << "Benchmark result: " << averageDuration << " ms" << std::endl;
 
     benchmarkSample = 0;
     updateTimes.clear();
