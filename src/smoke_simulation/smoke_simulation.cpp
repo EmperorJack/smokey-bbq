@@ -194,7 +194,11 @@ void SmokeSimulation::emit(glm::vec2 position, float range, std::vector<Display>
 
 void SmokeSimulation::render(glm::mat4 transform, glm::vec2 mousePosition) {
     if (displaySmokeField) {
-        glViewport(0, 0, SCREEN_WIDTH, SCREEN_HEIGHT);
+        if (RETINA) {
+            glViewport(0, 0, SCREEN_WIDTH * 2, SCREEN_HEIGHT * 2);
+        } else {
+            glViewport(0, 0, SCREEN_WIDTH, SCREEN_HEIGHT);
+        }
 
         GLuint currentShader = currentDisplay == COMPOSITION ? compositionShader : fieldShaders[currentDisplay];
         glUseProgram(currentShader);
