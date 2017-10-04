@@ -7,7 +7,6 @@
 // Screen settings
 #define FULL_SCREEN false
 #define BORDERLESS false
-#define RETINA false
 #define VSYNC true
 
 #if FULL_SCREEN || BORDERLESS

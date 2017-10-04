@@ -17,12 +17,22 @@
 
 using namespace glm;
 
+extern GLFWwindow* window;
+
 static inline void setColor(int shader, float color[]) {
     GLint useFillColorLocation = glGetUniformLocation(shader, "useFillColor");
     glUniform1i(useFillColorLocation, true);
 
     GLint fillColorLocation = glGetUniformLocation(shader, "fillColor");
     glUniform4fv(fillColorLocation, 1, color);
+}
+
+static inline void resetViewportToFramebuffer() {
+    if (window == NULL) return;
+
+    int width, height;
+    glfwGetFramebufferSize(window, &width, &height);
+    glViewport(0, 0, width, height);
 }
 
 #endif

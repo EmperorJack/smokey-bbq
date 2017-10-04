@@ -8,6 +8,9 @@
 #include <audio_analyzer/audio_analyzer_gui.hpp>
 #include <manager_gui.hpp>
 
+// Main window reference
+GLFWwindow* window;
+
 // Manager instance
 Manager* manager = nullptr;
 
@@ -71,7 +74,6 @@ int main(int argc, char **argv) {
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE); // We don't want the old OpenGL
 
     // Open a window and create its OpenGL context
-    GLFWwindow* window;
     glfwWindowHint(GLFW_RESIZABLE, GL_FALSE);
     glfwWindowHint(GLFW_AUTO_ICONIFY, GL_FALSE);
     glfwWindowHint(GLFW_DECORATED, BORDERLESS ? GL_FALSE : GL_TRUE);
