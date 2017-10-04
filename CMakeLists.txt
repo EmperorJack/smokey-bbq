@@ -1,7 +1,12 @@
 cmake_minimum_required(VERSION 3.7)
 set(CMAKE_MODULE_PATH /home/user/Libs/cmake)
 set(CMAKE_CXX_STANDARD 11)
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -pthread -fpermissive -fopenmp")
+
+# Setup LLVM paths (needed for openmp on OSX)
+if (APPLE)
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -L/usr/local/opt/llvm/lib -I/usr/local/opt/llvm/include")
+endif()
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fopenmp")
 
 # Profiling
 set(PROFILING_ENABLED FALSE)
@@ -97,3 +102,11 @@ endif()
 # Copy resources to the build directory
 set(RESOURCES_SUBDIRECTORY resources)
 file(COPY ${CMAKE_SOURCE_DIR}/${RESOURCES_SUBDIRECTORY} DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
+
+if (APPLE)
+    add_custom_command(TARGET ${PROJECT_NAME}
+        POST_BUILD COMMAND
+        ${CMAKE_INSTALL_NAME_TOOL} -add_rpath /usr/local/opt/llvm/lib
+        $<TARGET_FILE:${PROJECT_NAME}>
+    )
+endif()
