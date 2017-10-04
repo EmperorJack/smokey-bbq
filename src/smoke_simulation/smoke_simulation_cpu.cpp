@@ -43,6 +43,8 @@ void SmokeSimulation::resetFields() {
             advectedTemperatue[i][j] = atmosphereTemperature;
             tracePosition[i][j] = glm::vec2(0.0f, 0.0f);
             curl[i][j] = 0.0f;
+            rgb[i][j] = glm::vec3(0.0f, 0.0f, 0.0f);
+            advectedRgb[i][j] = glm::vec3(0.0f, 0.0f, 0.0f);
         }
     }
 }
@@ -182,6 +184,23 @@ void SmokeSimulation::updateCPU() {
             temperature[i][j] = advectedTemperatue[i][j];
         }
     }
+
+    // Advect rgb through velocity if enabled
+    if(std::find(compositionFields.begin(), compositionFields.end(), RGB) != compositionFields.end()) {
+        #pragma omp parallel for
+        for (int i = 0; i < GRID_SIZE; i++) {
+            for (int j = 0; j < GRID_SIZE; j++) {
+                advectedRgb[i][j] = getRgb(tracePosition[i][j].x, tracePosition[i][j].y) * densityDissipation;
+            }
+        }
+
+        #pragma omp parallel for
+        for (int i = 0; i < GRID_SIZE; i++) {
+            for (int j = 0; j < GRID_SIZE; j++) {
+                rgb[i][j] = advectedRgb[i][j];
+            }
+        }
+    }
 }
 
 void SmokeSimulation::emitCPU(glm::vec2 position, float range, std::vector<Display> fields, std::vector<glm::vec3> values) {
@@ -208,7 +227,7 @@ void SmokeSimulation::emitCPU(glm::vec2 position, float range, std::vector<Displ
                             temperature[i][j] += values[field].x * falloff;
                             break;
                         case RGB:
-                            textureFieldA[i][j][0] = curl[j][i];
+                            rgb[i][j] += values[field] * falloff;
                             break;
                         default:
                             break;
@@ -305,6 +324,13 @@ float SmokeSimulation::getTemperature(float x, float y) {
     return getInterpolatedTemperature(normX, normY);
 }
 
+glm::vec3 SmokeSimulation::getRgb(float x, float y) {
+    float normX = x / gridSpacing;
+    float normY = y / gridSpacing;
+
+    return getInterpolatedRgb(normX, normY);
+}
+
 float SmokeSimulation::getInterpolatedVelocity(float x, float y, bool xAxis) {
     int i = ((int) (x + GRID_SIZE)) - GRID_SIZE;
     int j = ((int) (y + GRID_SIZE)) - GRID_SIZE;
@@ -333,6 +359,16 @@ float SmokeSimulation::getInterpolatedTemperature(float x, float y) {
            (x-i) * (j+1-y)   * getGridTemperature(i+1, j) +
            (i+1-x) * (y-j)   * getGridTemperature(i, j+1) +
            (x-i) * (y-j)     * getGridTemperature(i+1, j+1);
+}
+
+glm::vec3 SmokeSimulation::getInterpolatedRgb(float x, float y) {
+    int i = ((int) (x + GRID_SIZE)) - GRID_SIZE;
+    int j = ((int) (y + GRID_SIZE)) - GRID_SIZE;
+
+    return (i+1-x) * (j+1-y) * getGridRgb(i, j) +
+           (x-i) * (j+1-y)   * getGridRgb(i+1, j) +
+           (i+1-x) * (y-j)   * getGridRgb(i, j+1) +
+           (x-i) * (y-j)     * getGridRgb(i+1, j+1);
 }
 
 glm::vec2 SmokeSimulation::getGridVelocity(int i, int j) {
@@ -380,6 +416,15 @@ float SmokeSimulation::getGridCurl(int i, int j) {
     }
 }
 
+glm::vec3 SmokeSimulation::getGridRgb(int i, int j) {
+    if (wrapBorders) {
+        return rgb[wrapIndex(i)][wrapIndex(j)];
+    } else {
+        bool boundary = clampBoundary(i) || clampBoundary(j);
+        return rgb[i][j] * (boundary ? 0.0f : 1.0f);
+    }
+}
+
 int SmokeSimulation::wrapIndex(int i) {
     if (i < 0) i = GRID_SIZE + (i % GRID_SIZE);
     else i = i >= GRID_SIZE ? i % GRID_SIZE : i;
@@ -413,30 +458,26 @@ void SmokeSimulation::renderCPU() {
     #pragma omp parallel for
     for (int i = 0; i < GRID_SIZE; i++) {
         for (int j = 0; j < GRID_SIZE; j++) {
-            textureFieldA[i][j][0] = 0.0f;
-            textureFieldA[i][j][1] = 0.0f;
-            textureFieldB[i][j][0] = 0.0f;
-            textureFieldB[i][j][1] = 0.0f;
-            textureFieldC[i][j][0] = 0.0f;
-            textureFieldC[i][j][1] = 0.0f;
+            textureFieldA[i][j] = glm::vec3();
+            textureFieldB[i][j] = glm::vec3();
 
             switch (currentDisplay) {
                 case COMPOSITION:
-                    textureFieldA[i][j][0] = dataForDisplayCPU(compositionFields[0], j, i);
-                    textureFieldB[i][j][0] = dataForDisplayCPU(compositionFields[1], j, i);
+                    textureFieldA[i][j] = dataForDisplayCPU(compositionFields[0], j, i);
+                    textureFieldB[i][j] = dataForDisplayCPU(compositionFields[1], j, i);
                     break;
                 case DENSITY:
-                    textureFieldA[i][j][0] = density[j][i];
+                    textureFieldA[i][j].r = density[j][i];
                     break;
                 case VELOCITY:
-                    textureFieldA[i][j][0] = velocity[j][i].x;
-                    textureFieldA[i][j][1] = velocity[j][i].y;
+                    textureFieldA[i][j].r = velocity[j][i].x;
+                    textureFieldA[i][j].g = velocity[j][i].y;
                     break;
                 case TEMPERATURE:
-                    textureFieldA[i][j][0] = temperature[j][i];
+                    textureFieldA[i][j].r = temperature[j][i];
                     break;
                 case CURL:
-                    textureFieldA[i][j][0] = curl[j][i];
+                    textureFieldA[i][j].r = curl[j][i];
                     break;
                 default:
                     break;
@@ -446,28 +487,26 @@ void SmokeSimulation::renderCPU() {
 
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_2D, textureA);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA32F, GRID_SIZE, GRID_SIZE, 0, GL_RG, GL_FLOAT, textureFieldA);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA32F, GRID_SIZE, GRID_SIZE, 0, GL_RGB, GL_FLOAT, &textureFieldA[0]);
 
     glActiveTexture(GL_TEXTURE1);
     glBindTexture(GL_TEXTURE_2D, textureB);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA32F, GRID_SIZE, GRID_SIZE, 0, GL_RG, GL_FLOAT, textureFieldB);
-
-    glActiveTexture(GL_TEXTURE2);
-    glBindTexture(GL_TEXTURE_2D, textureC);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA32F, GRID_SIZE, GRID_SIZE, 0, GL_RG, GL_FLOAT, textureFieldC);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA32F, GRID_SIZE, GRID_SIZE, 0, GL_RGB, GL_FLOAT, &textureFieldB[0]);
 }
 
-float SmokeSimulation::dataForDisplayCPU(Display display, int i, int j) {
+glm::vec3 SmokeSimulation::dataForDisplayCPU(Display display, int i, int j) {
     switch (display) {
         case DENSITY:
-            return density[i][j];
+            return glm::vec3(density[i][j], 0, 0);
         case TEMPERATURE:
-            return temperature[i][j];
+            return glm::vec3(temperature[i][j], 0, 0);
         case CURL:
-            return curl[i][j];
+            return glm::vec3(curl[i][j], 0, 0);
+        case RGB:
+            return rgb[i][j];
         default:
             break;
     }
 
-    return 0;
+    return glm::vec3();
 }

@@ -124,7 +124,7 @@ private:
     // Core
     void updateCPU();
     void renderCPU();
-    float dataForDisplayCPU(Display display, int i, int j);
+    glm::vec3 dataForDisplayCPU(Display display, int i, int j);
 
     // Interactions
     void emitCPU(glm::vec2 position, float range, std::vector<Display> fields, std::vector<glm::vec3> values);
@@ -141,11 +141,12 @@ private:
     float advectedTemperatue[GRID_SIZE][GRID_SIZE];
     glm::vec2 tracePosition[GRID_SIZE][GRID_SIZE];
     float curl[GRID_SIZE][GRID_SIZE];
+    glm::vec3 rgb[GRID_SIZE][GRID_SIZE];
+    glm::vec3 advectedRgb[GRID_SIZE][GRID_SIZE];
 
     // Rendering fields and textures
-    float textureFieldA[GRID_SIZE][GRID_SIZE][2];
-    float textureFieldB[GRID_SIZE][GRID_SIZE][2];
-    float textureFieldC[GRID_SIZE][GRID_SIZE][2];
+    glm::vec3 textureFieldA[GRID_SIZE][GRID_SIZE];
+    glm::vec3 textureFieldB[GRID_SIZE][GRID_SIZE];
     GLuint textureA;
     GLuint textureB;
     GLuint textureC;
@@ -162,11 +163,13 @@ private:
     glm::vec2 getVelocity(float x, float y);
     float getDensity(float x, float y);
     float getTemperature(float x, float y);
+    glm::vec3 getRgb(float x, float y);
 
     // Field interpolation
     float getInterpolatedVelocity(float x, float y, bool xAxis);
     float getInterpolatedDensity(float x, float y);
     float getInterpolatedTemperature(float x, float y);
+    glm::vec3 getInterpolatedRgb(float x, float y);
 
     // Grid access
     glm::vec2 getGridVelocity(int i, int j);
@@ -174,6 +177,7 @@ private:
     float getGridTemperature(int i, int j);
     float getGridPressure(int i, int j);
     float getGridCurl(int i, int j);
+    glm::vec3 getGridRgb(int i, int j);
 
     // Indexing
     int wrapIndex(int i);

@@ -441,12 +441,10 @@ void SmokeSimulation::applyVorticityConfinement(Surface curlSurface, Surface vel
 void SmokeSimulation::renderGPU() {
     GLuint gpuTextureA = 0;
     GLuint gpuTextureB = 0;
-    GLuint gpuTextureC = 0;
 
     if (currentDisplay == COMPOSITION) {
         gpuTextureA = dataForDisplayGPU(compositionFields[0]).ping.textureHandle;
         gpuTextureB = dataForDisplayGPU(compositionFields[1]).ping.textureHandle;
-        gpuTextureC = dataForDisplayGPU(compositionFields[2]).ping.textureHandle;
     } else {
         gpuTextureA = dataForDisplayGPU(currentDisplay).ping.textureHandle;
     }
@@ -456,9 +454,6 @@ void SmokeSimulation::renderGPU() {
 
     glActiveTexture(GL_TEXTURE1);
     glBindTexture(GL_TEXTURE_2D, gpuTextureB);
-
-    glActiveTexture(GL_TEXTURE2);
-    glBindTexture(GL_TEXTURE_2D, gpuTextureC);
 }
 
 SmokeSimulation::Slab SmokeSimulation::dataForDisplayGPU(Display display) {
