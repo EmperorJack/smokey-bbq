@@ -35,7 +35,7 @@ Progress demonstation video - https://www.youtube.com/watch?v=FYY-ArCmbB8
 #### Building
 
 CMake files provided. The implementation has been tested on:
-- Windows (MinGW / Visual Studio)
+- Windows (MinGW)
 - Linux
 - Mac (LLVM - Clang)
 
