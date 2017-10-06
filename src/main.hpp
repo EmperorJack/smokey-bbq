@@ -26,7 +26,7 @@ static const glm::vec2 windowToGrid = glm::vec2(1.0f, 1.0f);
 #endif
 
 // Threading
-static const int NUM_THREADS = 8;
+static const int NUM_THREADS = 4;
 
 // Paths
 static const char* SHADER_PATH = "resources/shaders/";

@@ -87,7 +87,7 @@ void AudioAnalyzer::resetBuffers() {
 void AudioAnalyzer::setDefaultVariables() {
     frequencyDamping = 0.72f;
     frequencyScale = 0.25f;
-    volumeScale = 0.35f;
+    volumeScale = 0.2f;
 }
 
 void AudioAnalyzer::setDefaultToggles() {
