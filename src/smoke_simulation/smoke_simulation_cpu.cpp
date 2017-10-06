@@ -1,4 +1,5 @@
 #include <iostream>
+#include <algorithm>
 #include <main.hpp>
 #include <opengl.hpp>
 #include <smoke_simulation/smoke_simulation.hpp>
@@ -186,7 +187,7 @@ void SmokeSimulation::updateCPU() {
     }
 
     // Advect rgb through velocity if enabled
-    if(std::find(compositionFields.begin(), compositionFields.end(), RGB) != compositionFields.end()) {
+    if (std::find(compositionFields.begin(), compositionFields.end(), RGB) != compositionFields.end()) {
         #pragma omp parallel for
         for (int i = 0; i < GRID_SIZE; i++) {
             for (int j = 0; j < GRID_SIZE; j++) {
