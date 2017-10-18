@@ -21,13 +21,6 @@ void SmokeSimulation::initCPU() {
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-
-    glGenTextures(1, &textureC);
-    glBindTexture(GL_TEXTURE_2D, textureC);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 }
 
 void SmokeSimulation::resetFields() {
@@ -191,7 +184,7 @@ void SmokeSimulation::updateCPU() {
         #pragma omp parallel for
         for (int i = 0; i < GRID_SIZE; i++) {
             for (int j = 0; j < GRID_SIZE; j++) {
-                advectedRgb[i][j] = getRgb(tracePosition[i][j].x, tracePosition[i][j].y) * densityDissipation;
+                advectedRgb[i][j] = getRgb(tracePosition[i][j].x, tracePosition[i][j].y) * rgbDissipation;
             }
         }
 

@@ -65,6 +65,7 @@ void SmokeSimulation::setDefaultVariables() {
     velocityDissipation = 0.98f;
     densityDissipation = 0.975f;
     temperatureDissipation = 0.94f;
+    rgbDissipation = 0.975f;
 
     riseForce = 1.0f;
     fallForce = 1.0f;
@@ -217,10 +218,8 @@ void SmokeSimulation::render(glm::mat4 transform, glm::vec2 mousePosition) {
         // Pass texture location uniforms
         GLint textureALocation = glGetUniformLocation(currentShader, "textureA");
         GLint textureBLocation = glGetUniformLocation(currentShader, "textureB");
-        GLint textureCLocation = glGetUniformLocation(currentShader, "textureC");
         glUniform1i(textureALocation, 0);
         glUniform1i(textureBLocation, 1);
-        glUniform1i(textureCLocation, 1);
 
         if (useGPUImplementation) {
             renderGPU();

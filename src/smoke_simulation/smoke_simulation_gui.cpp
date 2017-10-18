@@ -92,6 +92,8 @@ void SmokeSimulationGui::renderVariables() {
         ImGui::Text("Temperature Dissipation");
         ImGui::SliderFloat("##temperatureDissipation", &smokeSimulation->temperatureDissipation, 0.8f, 1.0f, "%.3f");
 
+        ImGui::Text("RGB Dissipation");
+        ImGui::SliderFloat("##rgbDissipation", &smokeSimulation->rgbDissipation, 0.8f, 1.0f, "%.3f");
     }
 
     if (ImGui::CollapsingHeader("Buoyancy variables")) {

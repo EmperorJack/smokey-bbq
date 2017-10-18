@@ -222,7 +222,7 @@ void SmokeSimulation::updateGPU() {
 
     // Advect rgb through velocity if enabled
     if (std::find(compositionFields.begin(), compositionFields.end(), RGB) != compositionFields.end()) {
-        advect(velocitySlab.ping, rgbSlab.ping, rgbSlab.pong, densityDissipation);
+        advect(velocitySlab.ping, rgbSlab.ping, rgbSlab.pong, rgbDissipation);
         swapSurfaces(rgbSlab);
         resetState();
     }

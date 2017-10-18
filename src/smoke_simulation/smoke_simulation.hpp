@@ -25,6 +25,7 @@ public:
     float velocityDissipation;
     float densityDissipation;
     float temperatureDissipation;
+    float rgbDissipation;
 
     float riseForce;
     float fallForce;
@@ -149,7 +150,6 @@ private:
     glm::vec3 textureFieldB[GRID_SIZE][GRID_SIZE];
     GLuint textureA;
     GLuint textureB;
-    GLuint textureC;
 
     // Algorithm
     glm::vec2 traceParticle(float x, float y);
