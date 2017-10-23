@@ -14,9 +14,5 @@ void main() {
     float density = texture(textureA, UV).r;
     float temperature = texture(textureB, UV).r;
 
-    //float nx = gl_FragCoord.x / float(screenWidth);
-    //float ny = gl_FragCoord.y / float(screenHeight);
-
-    //color = vec4(ny, nx, temperature, 0.0f) * (density * 5.0f);
     color = vec4(temperature, density, density, 1.0);
 }

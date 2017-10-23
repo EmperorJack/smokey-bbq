@@ -39,12 +39,12 @@ void CircularSpectrum::renderHalfCircle(float flip) {
 
         if (value < 3.0f) continue;
 
-        float x = sin(angle) * (radius / 2.0f * volume / 10.0f + radius);// * flip;
+        float x = sin(angle) * (radius / 2.0f * volume / 10.0f + radius);
         float y = -cos(angle) * (radius / 2.0f * volume / 10.0f + radius);
 
         glm::vec2 position = vec2(x, y) + screenCenter;
         glm::vec2 force = vec2(myRandom() * 1.0f - 0.5f, -1.0f) * (volume + value + 0.5f) * 7.0f;
-        force = glm::rotate(force, angle);// * vec2(flip, 1.0f);
+        force = glm::rotate(force, angle);
 
         float diameter = radius * 0.05f + value * 0.6f;
         float density = value * 0.0065f;

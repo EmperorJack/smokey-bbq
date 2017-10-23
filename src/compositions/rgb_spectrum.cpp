@@ -58,7 +58,7 @@ void RgbSpectrum::update() {
 
         float h = map(i, 0, AudioAnalyzer::NUM_BANDS * 2, 0.0f, 1.0f);
         float r, g, b;
-        ImGui::ColorConvertHSVtoRGB(h, 1.0f, 1.0f, r, g, b);
+        ImGui::ColorConvertHSVtoRGB(h, 1.0f, value * 0.05f, r, g, b);
 
         smokeSimulation->emit(position, diameter,
                               std::vector<SmokeSimulation::Display> { SmokeSimulation::VELOCITY, SmokeSimulation::RGB, SmokeSimulation::DENSITY, SmokeSimulation::TEMPERATURE },
