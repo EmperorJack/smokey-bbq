@@ -11,15 +11,24 @@ of the audio streams. The resulting visual effect produced can be used by visual
 visualise music in a live setting such as a concert or musical performance. The effect
 can also be used by artists to aid in the creation of music videos for prerecorded audio.
 
+The project was completed as part of my Honours degree in Computer Graphics at Victoria University of Wellington.
+
 Hosted on Github here: https://github.com/EmperorJack/smokey-bbq
 
 ## Technical Report
 
-Link goes here.
+https://drive.google.com/open?id=0B5YqYt0mLzblQmliUDZ6Q0I5dzg
 
 ## Demos
 
-Progress demonstation video - https://www.youtube.com/watch?v=FYY-ArCmbB8
+A demonstration of the smoke simulator, audio analyser and integration is available at:
+https://www.youtube.com/watch?v=Tsm45GY3AT4
+
+A demonstration of the different compositions is available at:
+https://www.youtube.com/watch?v=Wim8OpGADB4
+
+A comparison of linear and logarithmic frequency scaling is available at:
+https://www.youtube.com/watch?v=qFD48M9VfAI
 
 ## Libraries
 
