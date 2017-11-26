@@ -15,6 +15,10 @@ The project was completed as part of my Honours degree in Computer Graphics at V
 
 Hosted on Github here: https://github.com/EmperorJack/smokey-bbq
 
+![Screenshot 1](screenshot_1.jpg)
+
+![Screenshot 2](screenshot_2.jpg)
+
 ## Technical Report
 
 https://drive.google.com/open?id=0B5YqYt0mLzblQmliUDZ6Q0I5dzg
